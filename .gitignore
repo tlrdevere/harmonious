@@ -1,0 +1,9 @@
+node_modules/
+dist/server/
+dist/.openai/
+build/
+.wrangler/
+.dev.vars
+.env
+*.log
+review/

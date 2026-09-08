@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {AccountAuth,accountConfiguration} from '../worker/account-auth.mjs';
+import {handleAccountAPI,accountWorkspace,saveAccountChanges} from '../worker/account-api.mjs';
+import {AccountError} from '../worker/account-policy.mjs';
+import {accountKey} from '../dist/account-model.mjs';
+import {alice,bob,memoryStore,seedActor} from './accounts.test.mjs';
+const env={APP_ORIGIN:'https://harmonious.example',SUPABASE_URL:'https://project.supabase.co',SUPABASE_PUBLISHABLE_KEY:'public-test',SUPABASE_SECRET_KEY:'sb_secret_server-only-test',BETA_INVITE_EMAILS:'alice@example.test,bob@example.test'};
+const request=(path,body,origin=env.APP_ORIGIN,method='POST')=>new Request(env.APP_ORIGIN+path,{method:body===undefined?'GET':method,headers:body===undefined?{}:{'content-type':'application/json',origin},body:body===undefined?undefined:JSON.stringify(body)});
+assert(accountConfiguration(env));assert(!accountConfiguration({...env,BETA_INVITE_EMAILS:''}));
+let mode='ok',calls=[];const user={...alice,email:'alice@example.test',email_confirmed_at:'2026-09-08T00:00:00Z',user_metadata:{display_name:'Alice'}};
+const auth=new AccountAuth(env,async(url,options)=>{calls.push({url,options});if(url.endsWith('/user'))return mode==='expired'?Response.json({}, {status:401}):Response.json(user);if(url.includes('/token?')||url.endsWith('/verify'))return Response.json({user,access_token:'new-access',refresh_token:'new-refresh',expires_in:3600});return Response.json({});});
+await auth.requestCode({email:user.email,name:'Alice'});assert(calls.at(-1).url.endsWith('/otp'));assert.equal(JSON.parse(calls.at(-1).options.body).create_user,true);
+await assert.rejects(()=>auth.requestCode({email:'stranger@example.test',name:'Stranger'}),e=>e.status===403);
+const session=await auth.verifyCode({email:user.email,code:'123456'});for(const cookie of session.cookies){assert(cookie.includes('HttpOnly'));assert(cookie.includes('Secure'));assert(cookie.includes('SameSite=Lax'));assert(cookie.startsWith('__Host-'));}
+assert.equal(session.actor.id,alice.id);mode='expired';const restored=await auth.identify(new Request(env.APP_ORIGIN,{headers:{cookie:'__Host-harmonious-access=expired; __Host-harmonious-refresh=old-refresh'}}));assert.equal(restored.actor.id,alice.id);assert.equal(restored.cookies.length,2);assert(calls.at(-1).url.includes('grant_type=refresh_token'));
+const store=memoryStore(),fakeAuth={identify:async()=>({actor:alice,cookies:[]})};
+let response=await handleAccountAPI(request('/api/workspace'),env,{store,auth:{identify:async()=>({actor:null,cookies:[]})}});assert.equal(response.status,401);
+response=await handleAccountAPI(request('/api/workspace',{changes:[]},'https://evil.example','PUT'),env,{store,auth:fakeAuth});assert.equal(response.status,403);
+response=await handleAccountAPI(request('/api/workspace'),env,{store,auth:fakeAuth});assert.equal(response.status,200);const opened=await response.json();assert.equal(opened.actor.id,alice.id);assert.equal(opened.workspace.maps.length,1);assert(!JSON.stringify(opened).includes('server-only-test'));assert.equal(response.headers.get('cache-control'),'no-store');
+await seedActor(store,bob);let map=opened.workspace.maps[0];map.name='Across sessions';response=await handleAccountAPI(request('/api/workspace',{changes:[{kind:'map',id:map.id,expectedRevision:opened.revisions[accountKey('map',map.id)],value:map}]},env.APP_ORIGIN,'PUT'),env,{store,auth:fakeAuth});assert.equal(response.status,200);
+assert.equal((await accountWorkspace(store,alice)).workspace.maps.find(m=>m.ownerId===alice.id).name,'Across sessions');assert.equal((await accountWorkspace(store,bob)).workspace.maps.length,1);
+response=await handleAccountAPI(request('/api/workspace',{workspace:opened.workspace,expectedRevision:0},env.APP_ORIGIN,'PUT'),env,{store,auth:fakeAuth});assert.equal(response.status,400,'The old shared-workspace overwrite endpoint is not accepted');
+let races=0;const racing={snapshot:()=>store.snapshot(),commit:async(...args)=>{if(!races++){const e=new AccountError('Retry',409);e.snapshotChanged=true;throw e;}return store.commit(...args);}};
+const fresh=await accountWorkspace(store,alice);map=fresh.workspace.maps[0];map.name='Retry after unrelated write';await saveAccountChanges(racing,alice.id,[{kind:'map',id:map.id,expectedRevision:fresh.revisions[accountKey('map',map.id)],value:map}]);assert.equal(races,2);
+response=await handleAccountAPI(request('/api/session'),{...env,SUPABASE_SECRET_KEY:''});assert.equal(response.status,503);assert.equal((await response.json()).configured,false);
+console.log('Managed email-code auth, secure session cookies, refresh, account API, cross-origin rejection, and save retry passed.');

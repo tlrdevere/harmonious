@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {AccountWorkspace} from '../dist/account-ui.mjs';
+import {accountKey,accountClone,ownedAccountRecords} from '../dist/account-model.mjs';
+import {alice,memoryStore,seedActor,view} from './accounts.test.mjs';
+const store=memoryStore();await seedActor(store,alice);const data=await view(store,alice),button={disabled:false};
+globalThis.document={getElementById:()=>button};
+const c={workspace:data.workspace,ready:true,workspaceDirty:false,editor:{flushDraft:()=>true},captureActive(){},message(text){this.lastMessage=text;}};
+let scheduled=0,acknowledge;
+const state={controller:c,actor:alice,baseline:new Map(ownedAccountRecords(data.workspace,alice.id,data.ownedKeys).map(r=>[accountKey(r.kind,r.id),accountClone(r.value)])),ownedKeys:data.ownedKeys,revisions:data.revisions,saving:false,loading:false,blocked:false,status(){},schedule(){scheduled++;},request:()=>new Promise(resolve=>{acknowledge=resolve;})};
+const map=c.workspace.maps[0];map.name='First edit';c.workspaceDirty=true;
+const pending=AccountWorkspace.prototype.save.call(state,false);await Promise.resolve();assert(button.disabled);
+map.name='Edit made while save is in flight';acknowledge({revisions:{[accountKey('map',map.id)]:2}});await pending;
+assert(c.workspaceDirty,'An edit made during a request must remain unsaved');assert.equal(state.baseline.get(accountKey('map',map.id)).name,'First edit');assert.equal(map.name,'Edit made while save is in flight');assert.equal(scheduled,1);assert(!button.disabled);
+state.request=async()=>{const error=Error('A newer version exists.');error.status=409;throw error;};await AccountWorkspace.prototype.save.call(state,false);
+assert(state.blocked);assert(c.workspaceDirty);assert.equal(map.name,'Edit made while save is in flight');assert(c.lastMessage.includes('Download a backup'));
+console.log('Autosave preserves in-flight edits and retains local work after a conflicting save.');

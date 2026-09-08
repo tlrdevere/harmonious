@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "harmonious-beta",
+  "main": "build/cloudflare/worker.mjs",
+  "compatibility_date": "2026-09-08",
+  "workers_dev": true,
+  "build": {"command": "node scripts/build-cloudflare.mjs"},
+  "observability": {"enabled": false}
+}

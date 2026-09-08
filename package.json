@@ -1,0 +1,21 @@
+{
+  "name": "harmonious-map-prototype",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/graph.test.mjs && node tests/layout.test.mjs && node tests/comparison-layout.test.mjs && node tests/workspace.test.mjs && node tests/adoption.test.mjs && node tests/server.test.mjs",
+    "build": "node scripts/build-cloudflare.mjs",
+    "build:sites": "node scripts/build-worker.mjs",
+    "test:accounts": "node tests/accounts.test.mjs && node tests/account-api.test.mjs && node tests/account-database.test.mjs && node tests/account-autosave.test.mjs",
+    "deploy": "wrangler deploy",
+    "preview:upload": "wrangler versions upload",
+    "verify": "npm test && npm run test:accounts && npm run build && node tests/account-build.test.mjs",
+    "db:generate": "drizzle-kit generate"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "wrangler": "4.130.0",
+    "drizzle-kit": "0.31.10",
+    "drizzle-orm": "0.45.2"
+  }
+}
