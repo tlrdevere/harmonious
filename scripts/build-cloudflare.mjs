@@ -5,7 +5,7 @@ const assets={};
 for(const file of clientFiles){let body=await readFile(`dist/${file}`,'utf8');if(file==='index.html')body=body.replace('</head>','<link rel="stylesheet" href="./accounts.css"></head>').replace('src="./app.mjs"','src="./beta-boot.mjs"');assets[`/${file}`]={body,type:file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':'text/javascript; charset=utf-8'};}
 assets['/']=assets['/index.html'];
 const paths=['dist/account-model.mjs','dist/layout.mjs','dist/model.mjs','dist/data.mjs','dist/adoption.mjs','dist/workspace.mjs','worker/account-policy.mjs','worker/account-auth.mjs','worker/supabase-store.mjs','worker/account-api.mjs'];
-const parts=[];for(const path of paths)parts.push((await readFile(path,'utf8')).replace(/^import .*?;\n/gm,'').replace(/^export /gm,''));
+const parts=[];for(const path of paths)parts.push((await readFile(path,'utf8')).replace(/^import .*?;\r?\n/gm,'').replace(/^export /gm,''));
 const output=parts.join('\n')+`\nconst betaAssets=${JSON.stringify(assets)};
 export default {async fetch(request,env){
   const url=new URL(request.url);let response;
