@@ -1,6 +1,6 @@
 import {AccountError} from './account-policy.mjs';
 export class SupabaseStore{
-  constructor(env,fetcher=fetch){this.env=env;this.fetcher=fetcher;}
+  constructor(env,fetcher=(...args)=>fetch(...args)){this.env=env;this.fetcher=fetcher;}
   async rpc(name,input={}){
     const response=await this.fetcher(`${this.env.SUPABASE_URL}/rest/v1/rpc/${name}`,{method:'POST',headers:{apikey:this.env.SUPABASE_SECRET_KEY,'content-type':'application/json'},body:JSON.stringify(input),signal:AbortSignal.timeout(15000)});
     const result=await response.json();
@@ -10,3 +10,4 @@ export class SupabaseStore{
   snapshot(){return this.rpc('harmonious_snapshot');}
   commit(actorId,generation,changes){return this.rpc('harmonious_commit',{p_actor:actorId,p_generation:generation,p_changes:changes});}
 }
+
