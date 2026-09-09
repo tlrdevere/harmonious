@@ -3,3 +3,9 @@ SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 SUPABASE_SECRET_KEY=sb_secret_YOUR_SERVER_ONLY_SECRET_KEY
 BETA_INVITE_EMAILS=first@example.test,second@example.test
+
+# Public mode additionally requires native Supabase CAPTCHA to be enabled.
+# SIGNUP_MODE=public
+# TURNSTILE_SITE_KEY=YOUR_PUBLIC_WIDGET_KEY
+# SUPABASE_CAPTCHA_ENABLED=true
+
