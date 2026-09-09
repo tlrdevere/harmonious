@@ -1,6 +1,6 @@
 # Deployment status
 
-Verified on September 8, 2026.
+Verified on September 9, 2026 (UTC).
 
 ## Source and database
 
@@ -13,7 +13,9 @@ The `20260908233252_harmonious_accounts` database migration is applied. The chec
 ## Verified
 
 - A fresh dependency installation, all application tests, account/autosave tests, PostgreSQL tests, and the independent Worker build pass.
-- Cloudflare's deployment dry run accepts the Worker package; no live Worker has been published.
+- Cloudflare's deployment dry run accepts the Worker package. The first live deployment is published at https://harmonious-beta.tlrdevere.workers.dev.
+- The application and account suites, including embedded PostgreSQL, pass. A Windows line-ending build failure was fixed in commit `ce1d64e2e3b9da35ef95c73dc51ccb727ec9031f`; the build and generated-Worker tests then passed.
+- Live checks return HTTP 200 for the homepage, beta boot module, application module, and account stylesheet; configuration-file URLs return 404. Account/session endpoints return 503 with `configured:false`, correctly keeping sign-in disabled until configuration is complete.
 - Both application tables have row-level security enabled. Anonymous and authenticated browser roles have no direct table or RPC access.
 - The server service role can use the snapshot and commit RPCs. Those functions use `SECURITY INVOKER`, so they do not elevate their caller's privileges.
 - The service role can check account IDs but cannot select account email addresses from `auth.users` through SQL. Auth endpoints still verify the signed-in user on each application request.
@@ -21,11 +23,24 @@ The `20260908233252_harmonious_accounts` database migration is applied. The chec
 
 Supabase's security advisor reports two informational [RLS Enabled No Policy notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy). This matches the deliberate server-only access model: browser roles are denied, and the Worker validates identity, ownership, source visibility, and revisions before using the service role. No permissive browser policies should be added to silence those notices.
 
+## Cloudflare deployment
+
+- Account: `de8bd4e6fd63290ed1f91b607d1f6b56`.
+- Worker: `harmonious-beta`.
+- URL: https://harmonious-beta.tlrdevere.workers.dev
+- First deployment ID: `b2b906d2cf4f48198645091cb06553a9`.
+- Source: `ce1d64e2e3b9da35ef95c73dc51ccb727ec9031f`, built locally and uploaded through the Cloudflare API.
+- Compatibility date: `2026-09-08`. Workers.dev enabled; alternate preview URLs disabled so the configured application origin remains exact.
+- Encrypted runtime bindings configured and verified: `APP_ORIGIN`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY`.
+- `SUPABASE_SECRET_KEY` and `BETA_INVITE_EMAILS` are still absent. No placeholder credentials or guessed invite addresses were installed.
+- Automatic GitHub deployment is not connected. Cloudflare's repository-connection API reports the Git account is disconnected; the dashboard connection flow requires GitHub sign-in. No build token or build trigger exists.
+
 ## Remaining setup
 
-1. Connect an authorized Cloudflare account, configure the Worker runtime values described in [independent-beta.md](independent-beta.md), and publish the preview.
-2. Configure a custom email sender in Supabase, apply the email-code template, and set the Auth Site URL to that preview's origin. New free-plan projects need custom SMTP to customize Auth email templates; see [Supabase's June 2026 change](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier).
-3. Configure the invited-email list and the server-only Supabase secret in the hosting account. Keep their values out of GitHub and chat.
-4. Complete the two-person sign-in, privacy, co-sign, and cross-session acceptance checks described in the beta notes. Real email delivery, hosted sessions, and browser interaction have not yet been tested.
+1. Sign in to Supabase and securely configure the server-only Supabase secret and invited-email list in this Worker's runtime secrets. Keep both values out of GitHub and chat.
+2. Configure custom SMTP in Supabase, apply `supabase/templates/magic-link.html`, and set the Auth Site URL to `https://harmonious-beta.tlrdevere.workers.dev`. No Auth settings or email delivery were changed or verified during this deployment.
+3. Complete Cloudflare's GitHub connection for `tlrdevere/harmonious`, limited to the intended repository. Use production branch `main`, repository root, build command `npm run build`, and deploy command `npm run deploy`.
+4. Verify a second deployment through the connected GitHub build.
+5. Complete the two-person sign-in, privacy, co-sign, and cross-session acceptance checks in the beta notes. The beta is hosted but is not yet ready for testers; no tester accounts were created.
 
 The Supabase connection currently exposes database and project operations, but no Auth-settings or server-secret management operation. Those configuration steps require the corresponding dashboard controls or an authorized management connection; database SQL is not a substitute for configuring Auth.
