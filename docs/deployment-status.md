@@ -4,7 +4,7 @@ Verified on September 8, 2026.
 
 ## Source and database
 
-The application is prepared for publication in [tlrdevere/harmonious](https://github.com/tlrdevere/harmonious), with public source publication approved by the project owner. The framework, original license, and prior-art notice are preserved.
+The application is published in [tlrdevere/harmonious](https://github.com/tlrdevere/harmonious), with public source publication approved by the project owner. The [first application release](https://github.com/tlrdevere/harmonious/commit/95e5149e0b7771c13600314ddbcb288591319d0d) was verified against the tested local source. The framework, original license, and prior-art notice are preserved.
 
 The [Harmonious beta Supabase project](https://supabase.com/dashboard/project/hpjsieqbpnazpnjtyzdv) is active in the **Unanimous-Lovable** organization, in **us-east-1**. Supabase quoted **$0/month** for creating this project in that organization. Hosting and email service configuration remain separate.
 
