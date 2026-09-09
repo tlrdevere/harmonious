@@ -36,6 +36,28 @@ For CLI deployment, configure secrets with `wrangler secret put NAME`, entering 
 
 The Auth flow uses Supabase's OTP, verify, user and refresh endpoints. Access and refresh tokens are kept in Secure, HttpOnly, SameSite cookies, with host-only names in HTTPS deployments. Application scripts cannot read them. Writes require the exact same-origin header and JSON content type. The Worker checks the authenticated identity and permissions before calling the database. The database denies direct anonymous/authenticated table and RPC access; only the server service role may execute these functions. The RPCs run with the caller’s existing privileges (`SECURITY INVOKER`), with explicit grants for the two application tables and the account-ID existence check. Do not replace that boundary with a browser-side service key.
 
+## Connect Cloudflare directly to GitHub
+
+The ChatGPT Cloudflare plugin is optional. Cloudflare's own GitHub integration can deploy this repository and publish subsequent changes pushed to `main`.
+
+In the [Cloudflare dashboard](https://dash.cloudflare.com/), open **Workers & Pages → Create application → Import a repository**, connect GitHub, and select `tlrdevere/harmonious`. Use:
+
+| Build setting | Value |
+| --- | --- |
+| Worker name | `harmonious-beta` (must match `wrangler.jsonc`) |
+| Production branch | `main` |
+| Root directory | Repository root (leave the default) |
+| Build command | `npm run build` |
+| Deploy command | `npm run deploy` |
+
+Set the build command explicitly: Workers Builds does not use the custom build command from `wrangler.jsonc`. The repository's `.node-version` selects Node.js 22.
+
+Configure the five runtime values listed above under the Worker's **Settings → Variables & Secrets**. Build variables are separate and do not provide runtime configuration. The prepared Supabase project URL is `https://hpjsieqbpnazpnjtyzdv.supabase.co`. Once Cloudflare assigns the website URL, use its exact HTTPS origin for `APP_ORIGIN` and the Supabase Auth Site URL.
+
+A successful first deployment establishes hosting; sign-in still requires the runtime configuration and Supabase email setup above. Complete the acceptance checks before inviting testers.
+
+See [Cloudflare's GitHub deployment guide](https://developers.cloudflare.com/workers/ci-cd/builds/) and [build configuration reference](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
+
 ## Storage and migration behavior
 
 Maps, wording histories, co-sign records, comparisons, and profiles have independent stored revisions and owners. A save sends only changed owned records. PostgreSQL commits a batch atomically; an ownership or revision failure rolls back the entire batch. A short generation lock ensures the source wording validated for a co-sign cannot change during that commit. Unrelated writes can retry automatically; a stale write to the same record requires review instead of silently overwriting data.
