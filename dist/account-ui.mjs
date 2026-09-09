@@ -1,3 +1,4 @@
+import {AccountChallenge} from './account-challenge.mjs';
 import {validateWorkspace,newId} from './workspace.mjs';
 import {synchronizeIdeas} from './adoption.mjs';
 import {accountKey,accountClone,stableJSON,ownedAccountRecords,accountChanges} from './account-model.mjs';
@@ -11,7 +12,7 @@ export class AccountWorkspace{
   mount(){
     document.body.classList.add('accounts','account-locked');
     const panel=document.createElement('main');panel.id='account-gate';panel.className='account-gate';
-    panel.innerHTML=`<section class="account-card" aria-labelledby="account-title"><div class="eyebrow">HARMONIOUS BETA</div><h1 id="account-title">Make room for your worldview.</h1><p>Sign in to keep your maps and return to the conversation.</p><form id="account-email-form"><label for="account-name">Display name</label><input id="account-name" autocomplete="nickname" maxlength="100" required><p class="field-help">Other beta participants see this name when you share maps or co-sign shared nodes. Your email stays private.</p><label for="account-email">Email address</label><input id="account-email" type="email" autocomplete="email" required maxlength="254"><button class="primary" id="account-send" type="submit">Email me a sign-in code</button></form><form id="account-code-form" hidden><label for="account-code">Code from your email</label><input id="account-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" minlength="6" maxlength="10" required><button class="primary" id="account-verify" type="submit">Sign in</button><button id="account-change-email" type="button" class="text-button">Use a different email or resend</button></form><p id="account-feedback" role="status" aria-live="polite">Opening your account…</p><p class="field-help">Invited participants can create an account with their email. Personal maps start private.</p></section>`;
+    panel.innerHTML=`<section class="account-card" aria-labelledby="account-title"><div class="eyebrow">HARMONIOUS BETA</div><h1 id="account-title">Make room for your worldview.</h1><p>Sign in to keep your maps and return to the conversation.</p><form id="account-email-form"><label for="account-name">Display name</label><input id="account-name" autocomplete="nickname" maxlength="100" required><p class="field-help">Other beta participants see this name when you share maps or co-sign shared nodes. Your email stays private.</p><label for="account-email">Email address</label><input id="account-email" type="email" autocomplete="email" required maxlength="254"><div id="account-challenge"></div><button class="primary" id="account-send" type="submit">Email me a sign-in code</button></form><form id="account-code-form" hidden><label for="account-code">Code from your email</label><input id="account-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" minlength="6" maxlength="10" required><button class="primary" id="account-verify" type="submit">Sign in</button><button id="account-change-email" type="button" class="text-button">Use a different email or resend</button></form><p id="account-feedback" role="status" aria-live="polite">Opening your account…</p><p class="field-help" id="account-signup-help">Personal maps start private.</p></section>`;
     document.querySelector('.topbar').after(panel);
     const controls=document.createElement('div');controls.className='account-controls';controls.innerHTML='<span id="account-display"></span><button id="account-signout" type="button">Sign out</button>';document.querySelector('.topbar').append(controls);
     accountUI('reset').hidden=true;accountUI('open-workspace').textContent='Import maps';accountUI('reload-workspace').hidden=false;accountUI('reload-workspace').textContent='Refresh maps';
@@ -20,6 +21,8 @@ export class AccountWorkspace{
     accountUI('map-settings').textContent='Map settings';accountUI('map-settings').setAttribute('aria-label','Map name and sharing');
     const sharing=document.createElement('div');sharing.id='account-sharing';sharing.innerHTML='<label for="map-visibility">Who can see this map?</label><select id="map-visibility"><option value="private">Only me</option><option value="shared">All beta participants</option></select><p class="field-help">Sharing lets other beta participants read, copy and co-sign its nodes. They can keep copies and earlier comparison records after you make it private again.</p>';
     accountUI('map-start-group').after(sharing);
+    this.challenge=new AccountChallenge(accountUI('account-challenge'),message=>{accountUI('account-send').disabled=this.sending||!this.challenge.token;if(message)accountUI('account-feedback').textContent=message;});
+    accountUI('account-send').disabled=true;
     accountUI('account-email-form').onsubmit=e=>{e.preventDefault();this.sendCode();};accountUI('account-code-form').onsubmit=e=>{e.preventDefault();this.verifyCode();};
     accountUI('account-change-email').onclick=()=>{accountUI('account-code-form').hidden=true;accountUI('account-email-form').hidden=false;accountUI('account-feedback').textContent='You can request another code after a short wait.';accountUI('account-email').focus();};
     accountUI('account-signout').onclick=()=>this.signOut();
@@ -45,8 +48,9 @@ export class AccountWorkspace{
     if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;throw error;}return data;
   }
   async sendCode(){
-    accountUI('account-send').disabled=true;accountUI('account-feedback').textContent='Sending your code…';
-    try{const data=await this.request('/api/auth/code',{email:accountUI('account-email').value,name:accountUI('account-name').value});accountUI('account-feedback').textContent=data.message;accountUI('account-email-form').hidden=true;accountUI('account-code-form').hidden=false;accountUI('account-code').focus();}catch(error){accountUI('account-feedback').textContent=error.message;}finally{accountUI('account-send').disabled=false;}
+    if(this.signup?.mode==='public'&&!this.challenge.token){accountUI('account-feedback').textContent='Complete the security check first.';return;}
+    this.sending=true;accountUI('account-send').disabled=true;accountUI('account-feedback').textContent='Sending your code…';
+    try{const data=await this.request('/api/auth/code',{email:accountUI('account-email').value,name:accountUI('account-name').value,...(this.signup?.mode==='public'?{captchaToken:this.challenge.token}:{})});accountUI('account-feedback').textContent=data.message;accountUI('account-email-form').hidden=true;accountUI('account-code-form').hidden=false;accountUI('account-code').focus();}catch(error){accountUI('account-feedback').textContent=error.message;}finally{this.sending=false;this.challenge.reset();accountUI('account-send').disabled=this.signup?.mode==='public';}
   }
   async verifyCode(){
     accountUI('account-verify').disabled=true;accountUI('account-feedback').textContent='Checking your code…';
@@ -55,8 +59,12 @@ export class AccountWorkspace{
   async initialize(){
     const c=this.controller;clearTimeout(this.timer);this.loading=true;c.ready=false;
     try{
-      const session=await this.request('/api/session');
-      if(!session.actor){document.body.classList.add('account-locked');accountUI('account-feedback').textContent='Enter your invited email address to begin.';this.status('Sign in to open your maps');return;}
+      const session=await this.request('/api/session');this.signup=session.signup;
+      const publicSignup=this.signup?.mode==='public';
+      accountUI('account-signup-help').textContent=publicSignup?'Anyone can create an account with their email. Personal maps start private.':'Invited participants can create an account with their email. Personal maps start private.';
+      if(!session.actor&&publicSignup)await this.challenge.mount(this.signup.turnstile);
+      accountUI('account-send').disabled=publicSignup&&!this.challenge.token;
+      if(!session.actor){document.body.classList.add('account-locked');accountUI('account-feedback').textContent=publicSignup?'Enter your email address and a display name to begin.':'Enter your invited email address to begin.';this.status('Sign in to open your maps');return;}
       const data=await this.request('/api/workspace');this.actor=data.actor;this.accept(data,true);this.blocked=false;
       document.body.classList.remove('account-locked');accountUI('account-display').textContent=this.actor.name;accountUI('account-feedback').textContent='';c.message();this.status();
     }catch(error){accountUI('account-feedback').textContent=error.message;c.message(error.message);this.status('Account unavailable');}
@@ -111,3 +119,4 @@ export class AccountWorkspace{
     }catch(error){c.message(`File was not imported: ${error.message}`);}finally{accountUI('workspace-file').value='';}
   }
 }
+
