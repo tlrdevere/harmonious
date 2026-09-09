@@ -32,7 +32,10 @@ Supabase's security advisor reports two informational [RLS Enabled No Policy not
 - Source: `ce1d64e2e3b9da35ef95c73dc51ccb727ec9031f`, built locally and uploaded through the Cloudflare API.
 - Compatibility date: `2026-09-08`. Workers.dev enabled; alternate preview URLs disabled so the configured application origin remains exact.
 - Encrypted runtime bindings configured and verified: `APP_ORIGIN`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY`.
-- `SUPABASE_SECRET_KEY` and `BETA_INVITE_EMAILS` are still absent. No placeholder credentials or guessed invite addresses were installed.
+- Encrypted server secret `SUPABASE_SECRET_KEY` is now installed with owner approval.
+- Public signup uses `SIGNUP_MODE=public`, `TURNSTILE_SITE_KEY`, and `SUPABASE_CAPTCHA_ENABLED=true`; no invitation list is needed.
+- Current deployment ID: `d37341ffe38f4245abd77176d22b5baf` (September 9, 2026 UTC).
+- A live compatibility issue with calling Cloudflare fetch as a class method was fixed by wrapping the default fetcher in both Auth and database clients.
 - Automatic GitHub deployment is not connected. Cloudflare's repository-connection API reports the Git account is disconnected; the dashboard connection flow requires GitHub sign-in. No build token or build trigger exists.
 
 ## Remaining setup
@@ -44,3 +47,13 @@ Supabase's security advisor reports two informational [RLS Enabled No Policy not
 5. Complete the two-person sign-in, privacy, co-sign, and cross-session acceptance checks in the beta notes. The beta is hosted but is not yet ready for testers; no tester accounts were created.
 
 The Supabase connection currently exposes database and project operations, but no Auth-settings or server-secret management operation. Those configuration steps require the corresponding dashboard controls or an authorized management connection; database SQL is not a substitute for configuring Auth.
+
+## Email and public signup configuration
+
+- Resend domain harmonious.forum is verified; required TXT and two CNAME records are saved at Spaceship.
+- Supabase custom SMTP is enabled with smtp.resend.com:465, username resend, sender Harmonious <noreply@harmonious.forum>, and a sending-only domain-restricted Resend key. The key is saved privately in Supabase.
+- Supabase Magic Link/OTP template contains the repository’s sign-in code template. Auth Site URL is https://harmonious-beta.tlrdevere.workers.dev.
+- Native Supabase CAPTCHA is enabled using the Harmonious Turnstile widget (managed, no pre-clearance), restricted to harmonious-beta.tlrdevere.workers.dev and harmonious.forum.
+- Public session endpoint returns 200/configured:true; unauthenticated workspace returns 401; private configuration paths return 404. Missing and invalid CAPTCHA requests return 400.
+- Public signup, CAPTCHA forwarding/expiry/errors, account isolation, PostgreSQL, autosave, and generated-Worker checks pass. Full real email and two-person browser acceptance remain outstanding.
+
