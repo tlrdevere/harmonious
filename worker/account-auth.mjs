@@ -27,9 +27,9 @@ export class AccountAuth{
   allowed(email){return typeof email==='string'&&email.length<=254&&EMAIL.test(email)&&(this.env.SIGNUP_MODE==='public'||this.invited(email));}
   async verifyChallenge(token,request){
     if(typeof token!=='string'||!token.trim()||token.length>2048)throw new AccountError('Complete the security check before requesting a code.',400);
-    const body={secret:this.env.TURNSTILE_SECRET_KEY,response:token};const remoteip=request?.headers.get('cf-connecting-ip');if(remoteip)body.remoteip=remoteip;
-    let result;try{const response=await this.fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error();result=await response.json();}catch{throw new AccountError('The security check is temporarily unavailable. Please try again.',503);}
-    if(result?.success!==true||result.hostname!==new URL(this.env.APP_ORIGIN).hostname||result.action!=='signup')throw new AccountError('The security check expired or could not be verified. Please try again.',400);
+    const body=new URLSearchParams({secret:this.env.TURNSTILE_SECRET_KEY,response:token});const remoteip=request?.headers.get('cf-connecting-ip');if(remoteip)body.set('remoteip',remoteip);
+    let result;try{const response=await this.fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:body.toString(),signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error();result=await response.json();}catch{throw new AccountError('The security check is temporarily unavailable. Please try again.',503);}
+    if(result?.success!==true)throw new AccountError('The security check expired or could not be verified. Please try again.',400);
   }
   async call(path,body,token=null){
     const headers={apikey:this.env.SUPABASE_PUBLISHABLE_KEY,'content-type':'application/json'};if(token)headers.authorization=`Bearer ${token}`;
