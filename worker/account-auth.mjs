@@ -4,7 +4,7 @@ export function accountConfiguration(env){
   if(!env.APP_ORIGIN||!env.SUPABASE_URL||!env.SUPABASE_PUBLISHABLE_KEY||!env.SUPABASE_SECRET_KEY)return false;
   const mode=env.SIGNUP_MODE||'invite';
   if(mode==='public'){
-    if(!env.TURNSTILE_SITE_KEY?.trim()||env.SUPABASE_CAPTCHA_ENABLED!=='true')return false;
+    if(!env.TURNSTILE_SITE_KEY?.trim()||!env.TURNSTILE_SECRET_KEY?.trim())return false;
   }else if(mode!=='invite'||!env.BETA_INVITE_EMAILS?.split(/[\n,]/).some(email=>EMAIL.test(email.trim())))return false;
   try{const origin=new URL(env.APP_ORIGIN),db=new URL(env.SUPABASE_URL);return origin.origin===env.APP_ORIGIN&&(origin.protocol==='https:'||origin.protocol==='http:'&&['localhost','127.0.0.1'].includes(origin.hostname))&&db.protocol==='https:'&&db.origin===env.SUPABASE_URL;}catch{return false;}
 }
@@ -25,9 +25,11 @@ export class AccountAuth{
   constructor(env,fetcher=(...args)=>fetch(...args)){this.env=env;this.fetcher=fetcher;}
   invited(email){return typeof email==='string'&&(this.env.BETA_INVITE_EMAILS||'').split(/[\n,]/).map(s=>s.trim().toLowerCase()).includes(email.toLowerCase());}
   allowed(email){return typeof email==='string'&&email.length<=254&&EMAIL.test(email)&&(this.env.SIGNUP_MODE==='public'||this.invited(email));}
-  challengeToken(token){
+  async verifyChallenge(token,request){
     if(typeof token!=='string'||!token.trim()||token.length>2048)throw new AccountError('Complete the security check before requesting a code.',400);
-    return token;
+    const body={secret:this.env.TURNSTILE_SECRET_KEY,response:token};const remoteip=request?.headers.get('cf-connecting-ip');if(remoteip)body.remoteip=remoteip;
+    let result;try{const response=await this.fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error();result=await response.json();}catch{throw new AccountError('The security check is temporarily unavailable. Please try again.',503);}
+    if(result?.success!==true||result.hostname!==new URL(this.env.APP_ORIGIN).hostname||result.action!=='signup')throw new AccountError('The security check expired or could not be verified. Please try again.',400);
   }
   async call(path,body,token=null){
     const headers={apikey:this.env.SUPABASE_PUBLISHABLE_KEY,'content-type':'application/json'};if(token)headers.authorization=`Bearer ${token}`;
@@ -55,9 +57,8 @@ export class AccountAuth{
     const email=String(input.email||'').trim().toLowerCase(),name=String(input.name||'').trim();
     if(!EMAIL.test(email)||email.length>254||!name||name.length>100)throw new AccountError('Enter your email address and a display name.');
     if(!this.allowed(email))throw new AccountError('This beta is available to invited email addresses.',403);
-    // Supabase validates the token once, protecting direct Auth requests as well as this route.
-    const security=this.env.SIGNUP_MODE==='public'?{gotrue_meta_security:{captcha_token:this.challengeToken(input.captchaToken)}}:{};
-    const response=await this.call('otp',{email,create_user:true,data:{display_name:name},...security});
+    if(this.env.SIGNUP_MODE==='public')await this.verifyChallenge(input.captchaToken,request);
+    const response=await this.call('otp',{email,create_user:true,data:{display_name:name}});
     if(!response.ok){
       const error=await response.json().catch(()=>({}));
       if(error.code==='captcha_failed'||error.error_code==='captcha_failed')throw new AccountError('The security check expired or could not be verified. Please try again.',400);
