@@ -1,6 +1,6 @@
 # Harmonious: independent account beta
 
-Status: the application is prepared and the Harmonious beta Supabase project has been created. Cloudflare deployment and real email delivery still need configuration. See [deployment-status.md](deployment-status.md) for the verified setup state. No tester accounts have been created.
+Status: the application is hosted at https://harmonious-beta.tlrdevere.workers.dev and the Harmonious beta Supabase project is prepared. Sign-in remains disabled pending the server secret, invited-email list, and real email delivery setup. Automatic GitHub deployment still needs connection. See [deployment-status.md](deployment-status.md) for the verified setup state. No tester accounts have been created.
 
 ## What this build does
 
