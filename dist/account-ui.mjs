@@ -21,8 +21,7 @@ export class AccountWorkspace{
     accountUI('map-settings').textContent='Map settings';accountUI('map-settings').setAttribute('aria-label','Map name and sharing');
     const sharing=document.createElement('div');sharing.id='account-sharing';sharing.innerHTML='<label for="map-visibility">Who can see this map?</label><select id="map-visibility"><option value="private">Only me</option><option value="shared">All beta participants</option></select><p class="field-help">Sharing lets other beta participants read, copy and co-sign its nodes. They can keep copies and earlier comparison records after you make it private again.</p>';
     accountUI('map-start-group').after(sharing);
-    this.challenge=new AccountChallenge(accountUI('account-challenge'),message=>{accountUI('account-send').disabled=this.sending||!this.challenge.token;if(message)accountUI('account-feedback').textContent=message;});
-    accountUI('account-send').disabled=true;
+    this.challenge=new AccountChallenge(accountUI('account-challenge'),message=>{accountUI('account-send').disabled=this.sending||!!this.signup?.turnstile&&!this.challenge.token;if(message)accountUI('account-feedback').textContent=message;});
     accountUI('account-email-form').onsubmit=e=>{e.preventDefault();this.sendCode();};accountUI('account-code-form').onsubmit=e=>{e.preventDefault();this.verifyCode();};
     accountUI('account-change-email').onclick=()=>{accountUI('account-code-form').hidden=true;accountUI('account-email-form').hidden=false;accountUI('account-feedback').textContent='You can request another code after a short wait.';accountUI('account-email').focus();};
     accountUI('account-signout').onclick=()=>this.signOut();
@@ -48,9 +47,9 @@ export class AccountWorkspace{
     if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;throw error;}return data;
   }
   async sendCode(){
-    if(this.signup?.mode==='public'&&!this.challenge.token){accountUI('account-feedback').textContent='Complete the security check first.';return;}
+    if(this.signup?.turnstile&&!this.challenge.token){accountUI('account-feedback').textContent='Complete the security check first.';return;}
     this.sending=true;accountUI('account-send').disabled=true;accountUI('account-feedback').textContent='Sending your code…';
-    try{const data=await this.request('/api/auth/code',{email:accountUI('account-email').value,name:accountUI('account-name').value,...(this.signup?.mode==='public'?{captchaToken:this.challenge.token}:{})});accountUI('account-feedback').textContent=data.message;accountUI('account-email-form').hidden=true;accountUI('account-code-form').hidden=false;accountUI('account-code').focus();}catch(error){accountUI('account-feedback').textContent=error.message;}finally{this.sending=false;this.challenge.reset();accountUI('account-send').disabled=this.signup?.mode==='public';}
+    try{const data=await this.request('/api/auth/code',{email:accountUI('account-email').value,name:accountUI('account-name').value,...(this.signup?.turnstile?{captchaToken:this.challenge.token}:{})});accountUI('account-feedback').textContent=data.message;accountUI('account-email-form').hidden=true;accountUI('account-code-form').hidden=false;accountUI('account-code').focus();}catch(error){accountUI('account-feedback').textContent=error.message;}finally{this.sending=false;this.challenge.reset();accountUI('account-send').disabled=!!this.signup?.turnstile;}
   }
   async verifyCode(){
     accountUI('account-verify').disabled=true;accountUI('account-feedback').textContent='Checking your code…';
@@ -62,8 +61,8 @@ export class AccountWorkspace{
       const session=await this.request('/api/session');this.signup=session.signup;
       const publicSignup=this.signup?.mode==='public';
       accountUI('account-signup-help').textContent=publicSignup?'Anyone can create an account with their email. Personal maps start private.':'Invited participants can create an account with their email. Personal maps start private.';
-      if(!session.actor&&publicSignup)await this.challenge.mount(this.signup.turnstile);
-      accountUI('account-send').disabled=publicSignup&&!this.challenge.token;
+      if(!session.actor&&this.signup?.turnstile)await this.challenge.mount(this.signup.turnstile);
+      accountUI('account-send').disabled=!!this.signup?.turnstile&&!this.challenge.token;
       if(!session.actor){document.body.classList.add('account-locked');accountUI('account-feedback').textContent=publicSignup?'Enter your email address and a display name to begin.':'Enter your invited email address to begin.';this.status('Sign in to open your maps');return;}
       const data=await this.request('/api/workspace');this.actor=data.actor;this.accept(data,true);this.blocked=false;
       document.body.classList.remove('account-locked');accountUI('account-display').textContent=this.actor.name;accountUI('account-feedback').textContent='';c.message();this.status();
