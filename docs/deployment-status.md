@@ -1,59 +1,48 @@
 # Deployment status
 
-Verified on September 9, 2026 (UTC).
+Updated September 10, 2026 (UTC).
 
-## Source and database
+## Current release
 
-The application is published in [tlrdevere/harmonious](https://github.com/tlrdevere/harmonious), with public source publication approved by the project owner. The [first application release](https://github.com/tlrdevere/harmonious/commit/95e5149e0b7771c13600314ddbcb288591319d0d) was verified against the tested local source. The framework, original license, and prior-art notice are preserved.
+- Website: https://harmonious-beta.tlrdevere.workers.dev
+- Source: [49940048c7f4001deaeedd2d2a935f50c1f8ea5d](https://github.com/tlrdevere/harmonious/commit/49940048c7f4001deaeedd2d2a935f50c1f8ea5d).
+- Cloudflare account: `de8bd4e6fd63290ed1f91b607d1f6b56`; Worker: `harmonious-beta`.
+- Deployment: `55463476-3331-4691-91d6-d3ecc3d02dbf`.
+- Worker version: `9488030d-1602-4419-bf20-616d98570512`, serving 100% of traffic.
+- Uploaded September 10, 2026 at 03:07:49 UTC, using compatibility date `2026-09-08`.
+- Compare now overlays both maps in a shared frame layout, keeps source identities visible, provides A/B highlighting, and saves elicitation questions for a node or candidate pair. The owner accepted the preview. See [Compare overlay](compare-overlay.md).
+- Prior Worker version: `285c5365-5503-4620-97e8-f63a334d35b4`. A rollback to it would not understand the new `needs_elicitation` comparison state; review any new records before rolling back.
+- No database migration or account-data write was performed for this release. Runtime secrets were inherited and their names verified after upload.
 
-The [Harmonious beta Supabase project](https://supabase.com/dashboard/project/hpjsieqbpnazpnjtyzdv) is active in the **Unanimous-Lovable** organization, in **us-east-1**. Supabase quoted **$0/month** for creating this project in that organization. Hosting and email service configuration remain separate.
+## Accounts and email
 
-The `20260908233252_harmonious_accounts` database migration is applied. The checked-in migration filename matches Supabase's recorded version. The older inactive projects were not used for this beta.
+- Supabase project: `hpjsieqbpnazpnjtyzdv`, in the Unanimous-Lovable organization, us-east-1.
+- Migration `20260908233252_harmonious_accounts` is applied.
+- Public signup uses `SIGNUP_MODE=public`; no invitation list is required.
+- Turnstile and native Supabase CAPTCHA were disabled at the owner's request. Email verification and Supabase rate limits remain the signup controls. Previously configured Turnstile secrets remain stored but are unused by this release.
+- Encrypted Worker bindings: `APP_ORIGIN`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, and `SIGNUP_MODE`. Values are kept out of source control.
+- Resend's `harmonious.forum` sending domain is verified. SMTP uses `smtp.resend.com:465`, username `resend`, and sender `Harmonious <noreply@harmonious.forum>`. A sending-access API key is saved privately in Supabase.
+- The owner confirmed receiving signup confirmation emails and reported two accounts working. The actual signup message contained a confirmation link; do not assume every Auth template currently sends a numeric code. The Magic Link template was configured for codes.
+- Auth Site URL is `https://harmonious-beta.tlrdevere.workers.dev`.
 
-## Verified
+## Verification and access boundaries
 
-- A fresh dependency installation, all application tests, account/autosave tests, PostgreSQL tests, and the independent Worker build pass.
-- Cloudflare's deployment dry run accepts the Worker package. The first live deployment is published at https://harmonious-beta.tlrdevere.workers.dev.
-- The application and account suites, including embedded PostgreSQL, pass. A Windows line-ending build failure was fixed in commit `ce1d64e2e3b9da35ef95c73dc51ccb727ec9031f`; the build and generated-Worker tests then passed.
-- Live checks return HTTP 200 for the homepage, beta boot module, application module, and account stylesheet; configuration-file URLs return 404. Account/session endpoints return 503 with `configured:false`, correctly keeping sign-in disabled until configuration is complete.
-- Both application tables have row-level security enabled. Anonymous and authenticated browser roles have no direct table or RPC access.
-- The server service role can use the snapshot and commit RPCs. Those functions use `SECURITY INVOKER`, so they do not elevate their caller's privileges.
-- The service role can check account IDs but cannot select account email addresses from `auth.users` through SQL. Auth endpoints still verify the signed-in user on each application request.
-- A live database check confirmed an empty initial snapshot and rejection of an unknown account. It wrote no data and created no tester accounts.
+- Application, comparison, account API, embedded PostgreSQL, autosave, signup, and generated Worker checks passed before release.
+- Comparison tests include 100 expansion/filter patterns, unequal trees, independent source IDs, collapsed endpoints, source snapshots, and elicitation review history.
+- Live homepage and updated Compare modules return 200. The session endpoint returns 200 with `configured:true` and public signup; unauthenticated workspace returns 401; `/.dev.vars` returns 404.
+- Automated visual inspection of the local preview was blocked by browser URL policy. The owner provided visual acceptance. An authenticated live save/reopen test of the new elicitation state has not been performed by the agent.
+- Both application tables have RLS enabled, and browser roles cannot directly access the tables or RPCs. The Worker checks identity, ownership, visibility, and revisions before using the service role. RPCs use `SECURITY INVOKER`.
+- Informational RLS-without-policy notices match this server-only access design; do not add permissive policies to silence them.
+- The service role may check account IDs but cannot select account email addresses from `auth.users` through SQL.
 
-Supabase's security advisor reports two informational [RLS Enabled No Policy notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy). This matches the deliberate server-only access model: browser roles are denied, and the Worker validates identity, ownership, source visibility, and revisions before using the service role. No permissive browser policies should be added to silence those notices.
+## Next development
 
-## Cloudflare deployment
+The owner prioritized Compare and then Argument. Argument should be a separate view built on comparison records. Pod-map design, the custom website domain, and automatic GitHub deployments are deferred.
 
-- Account: `de8bd4e6fd63290ed1f91b607d1f6b56`.
-- Worker: `harmonious-beta`.
-- URL: https://harmonious-beta.tlrdevere.workers.dev
-- First deployment ID: `b2b906d2cf4f48198645091cb06553a9`.
-- Source: `ce1d64e2e3b9da35ef95c73dc51ccb727ec9031f`, built locally and uploaded through the Cloudflare API.
-- Compatibility date: `2026-09-08`. Workers.dev enabled; alternate preview URLs disabled so the configured application origin remains exact.
-- Encrypted runtime bindings configured and verified: `APP_ORIGIN`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY`.
-- Encrypted server secret `SUPABASE_SECRET_KEY` is now installed with owner approval.
-- Public signup uses `SIGNUP_MODE=public`, `TURNSTILE_SITE_KEY`, and `SUPABASE_CAPTCHA_ENABLED=true`; no invitation list is needed.
-- Current deployment ID: `d37341ffe38f4245abd77176d22b5baf` (September 9, 2026 UTC).
-- A live compatibility issue with calling Cloudflare fetch as a class method was fixed by wrapping the default fetcher in both Auth and database clients.
-- Automatic GitHub deployment is not connected. Cloudflare's repository-connection API reports the Git account is disconnected; the dashboard connection flow requires GitHub sign-in. No build token or build trigger exists.
+Compare still needs semantic alignment beyond provisional sibling placement, decisions about displaying equivalent statements, and an elicitation response workflow. Argument is not implemented.
 
-## Remaining setup
+Cloudflare's GitHub build connection is not configured; this release was built locally and uploaded through the Cloudflare connector. The `harmonious.forum` domain is currently used for email; it has not been connected as the app's primary URL.
 
-1. Sign in to Supabase and securely configure the server-only Supabase secret and invited-email list in this Worker's runtime secrets. Keep both values out of GitHub and chat.
-2. Configure custom SMTP in Supabase, apply `supabase/templates/magic-link.html`, and set the Auth Site URL to `https://harmonious-beta.tlrdevere.workers.dev`. No Auth settings or email delivery were changed or verified during this deployment.
-3. Complete Cloudflare's GitHub connection for `tlrdevere/harmonious`, limited to the intended repository. Use production branch `main`, repository root, build command `npm run build`, and deploy command `npm run deploy`.
-4. Verify a second deployment through the connected GitHub build.
-5. Complete the two-person sign-in, privacy, co-sign, and cross-session acceptance checks in the beta notes. The beta is hosted but is not yet ready for testers; no tester accounts were created.
+## Earlier release
 
-The Supabase connection currently exposes database and project operations, but no Auth-settings or server-secret management operation. Those configuration steps require the corresponding dashboard controls or an authorized management connection; database SQL is not a substitute for configuring Auth.
-
-## Email and public signup configuration
-
-- Resend domain harmonious.forum is verified; required TXT and two CNAME records are saved at Spaceship.
-- Supabase custom SMTP is enabled with smtp.resend.com:465, username resend, sender Harmonious <noreply@harmonious.forum>, and a sending-only domain-restricted Resend key. The key is saved privately in Supabase.
-- Supabase Magic Link/OTP template contains the repository’s sign-in code template. Auth Site URL is https://harmonious-beta.tlrdevere.workers.dev.
-- Native Supabase CAPTCHA is enabled using the Harmonious Turnstile widget (managed, no pre-clearance), restricted to harmonious-beta.tlrdevere.workers.dev and harmonious.forum.
-- Public session endpoint returns 200/configured:true; unauthenticated workspace returns 401; private configuration paths return 404. Missing and invalid CAPTCHA requests return 400.
-- Public signup, CAPTCHA forwarding/expiry/errors, account isolation, PostgreSQL, autosave, and generated-Worker checks pass. Full real email and two-person browser acceptance remain outstanding.
-
+The first independent deployment used source `ce1d64e2e3b9da35ef95c73dc51ccb727ec9031f`. The original license and prior-art notice remain in the repository. The initial database boundary and unknown-account rejection were verified before testers joined.
