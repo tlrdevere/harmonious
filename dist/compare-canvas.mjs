@@ -18,6 +18,11 @@ export class ComparisonCanvas{
       const button=document.createElement('button');button.type='button';button.textContent=label;button.setAttribute('aria-label',aria);button.onclick=action;controls.append(button);if(label==='Focus pair')this.focusButton=button;
     }
     this.zoomLabel=document.createElement('span');this.zoomLabel.className='comparison-zoom';controls.prepend(this.zoomLabel);this.surface.append(controls);host.append(this.surface);
+    if(!options.single){
+      this.layerControls=document.createElement('div');this.layerControls.className='comparison-layer-controls';this.layerControls.setAttribute('role','group');this.layerControls.setAttribute('aria-label','Emphasize a map');
+      for(const [value,label]of [['both','Both maps'],['a','Highlight A'],['b','Highlight B']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.layer=value;button.setAttribute('aria-pressed',String(value==='both'));button.onclick=()=>{this.surface.dataset.layer=value;for(const b of this.layerControls.children)b.setAttribute('aria-pressed',String(b===button));};this.layerControls.append(button);}
+      host.before(this.layerControls);
+    }
     if(options.single){this.surface.classList.add('single-map-canvas');this.surface.setAttribute('aria-label','Radial map. Select a node for its wording and co-signs. Drag to pan and scroll to zoom.');controls.children[3].textContent='Fit map';controls.children[3].setAttribute('aria-label','Fit map');this.focusButton.textContent='Focus node';this.focusButton.setAttribute('aria-label','Focus selected node');}
     const pointers=new Map();let drag=null,pinch=null;
     this.surface.addEventListener('wheel',e=>{if(e.target.closest('button'))return;e.preventDefault();const r=this.surface.getBoundingClientRect();this.zoom(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
@@ -74,11 +79,11 @@ export class ComparisonCanvas{
   svgElement(tag,attributes={}){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attributes))el.setAttribute(key,value);return el;}
   buildWorld(){
     this.world.replaceChildren();this.cards=new Map();this.laneElements=new Map();this.branches=[];this.links=[];
-    for(const lane of this.layout.lanes){const el=document.createElement('div');el.className='comparison-map-lane';const label=document.createElement('div');label.className='comparison-map-label';const badge=document.createElement('span');badge.className='map-letter';badge.textContent=lane.side.toUpperCase();const title=document.createElement('strong');title.textContent=this.states[lane.side].map.name;label.append(badge,title);el.append(label);this.world.append(el);this.laneElements.set(lane.side,el);}
+    for(const lane of this.layout.lanes){const el=document.createElement('div');el.className='comparison-map-lane';const label=document.createElement('div');label.className='comparison-map-label';for(const side of this.layout.overlay?['a','b']:[lane.side]){const badge=document.createElement('span');badge.className='map-letter';badge.textContent=side.toUpperCase();const title=document.createElement('strong');title.textContent=this.states[side].map.name;label.append(badge,title);}el.append(label);this.world.append(el);this.laneElements.set(lane.side,el);}
     const svg=this.svgElement('svg',{'aria-label':'Map connections'});svg.classList.add('comparison-lines');this.world.append(svg);
     for(const side of ['a','b']){
       const view=this.layout.maps[side],state=this.states[side];if(!view)continue;
-      for(const edge of view.layout.edges){if(!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;const path=this.svgElement('path',{stroke:edge.frame<0?'#899bb0':this.colors[edge.frame],fill:'none','stroke-width':2,'aria-hidden':'true'});if(edge.kind==='spine')path.setAttribute('stroke-dasharray','6 5');path.classList.add('comparison-tree-edge');svg.append(path);this.branches.push({path,edge,side});}
+      for(const edge of view.layout.edges){if(!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;const path=this.svgElement('path',{stroke:edge.frame<0?'#899bb0':this.colors[edge.frame],fill:'none','stroke-width':2,'aria-hidden':'true','data-side':side});if(edge.kind==='spine'||side==='b')path.setAttribute('stroke-dasharray','6 5');path.classList.add('comparison-tree-edge');svg.append(path);this.branches.push({path,edge,side});}
       const byId=new Map(state.map.nodes.map(n=>[n.id,n]));
       for(const [id,p]of view.positions){
         const node=byId.get(id),kids=view.layout.children.get(id),card=document.createElement('article');card.className=`node${node.parent===null?' root':''}${state.selected===id?' selected':''}`;card.dataset.frame=p.frame;card.dataset.side=side;
@@ -90,6 +95,9 @@ export class ComparisonCanvas{
         card.append(main,bottom);this.world.append(card);this.cards.set(comparisonNodeKey(side,id),card);
       }
     }
+    // A question can belong to a single source while its counterpart is unknown.
+    // Keep it discoverable even though there is no two-ended line to draw yet.
+    for(const record of this.records){if(record.questionStatus!=='needs_elicitation')continue;const ends=comparisonRecordEnds(record,this.states);if(!ends)continue;for(const side of ['a','b']){const endpoint=visibleComparisonEndpoint(this.layout,side,ends[side]);if(!endpoint)continue;const card=this.cards.get(endpoint.key),button=document.createElement('button');button.type='button';button.className='elicitation-marker';button.textContent='?';button.title=record.question;button.setAttribute('aria-label',`Review elicitation question: ${record.question}`);button.onclick=()=>this.onRecord(record.id);card.querySelector('.node-bottom').append(button);}}
     let relevant=0,drawn=0,proxied=0;
     for(const record of this.records){const ends=comparisonRecordEnds(record,this.states);if(!ends)continue;relevant++;const a=visibleComparisonEndpoint(this.layout,'a',ends.a),b=visibleComparisonEndpoint(this.layout,'b',ends.b);if(!a||!b)continue;
       const status=record.needsReview?'Needs review':record.answerStatus?ANSWER_STATUSES[record.answerStatus]:QUESTION_STATUSES[record.questionStatus];
@@ -99,7 +107,7 @@ export class ComparisonCanvas{
     const active=this.records.find(r=>r.id===this.activeRecord),activeEnds=active&&comparisonRecordEnds(active,this.states);
     const same=activeEnds&&activeEnds.a===this.states.a.selected&&activeEnds.b===this.states.b.selected;
     if(a&&b&&!same)this.addLink(svg,a,b,{label:'Selected pair · not recorded',status:'draft',active:true});
-    this.hint.textContent=a&&b?'Selected pair connected. Review the question in the panel.':a||b?`Choose a node in map ${a?'B':'A'} to connect the pair.`:'Choose a node in A, then one in B.';
+    this.hint.textContent=a&&b?'Candidate pair selected. Decide on counterparts or record an elicitation question.':a||b?`Choose a counterpart in map ${a?'B':'A'}, or record a question for this node.`:'Shared frame layout · Nearby nodes are not yet confirmed counterparts.';
     this.linkStatus.textContent=relevant?`${drawn} of ${relevant} recorded links shown${proxied?' · Dashed ends include collapsed nodes':''}`:'Recorded comparisons will connect these maps.';
     this.focusButton.disabled=!a&&!b;
     if(this.options.single){this.hint.textContent=this.options.hint||'Choose a node to read, co-sign, or copy it.';this.linkStatus.hidden=true;}
@@ -117,7 +125,7 @@ export class ComparisonCanvas{
     for(const [key,card]of this.cards){const p=this.positions.get(key);card.style.transform=`translate(${p.x}px,${p.y}px)`;}
     for(const lane of lanes){const el=this.laneElements.get(lane.side);el.style.transform=`translate(${lane.x}px,${lane.y}px)`;el.style.width=lane.width+'px';el.style.height=lane.height+'px';}
     for(const {path,edge,side}of this.branches){const a=this.positions.get(comparisonNodeKey(side,edge.from)),b=this.positions.get(comparisonNodeKey(side,edge.to)),root=this.positions.get(comparisonNodeKey(side,roots[edge.frame]));path.setAttribute('d',connectorRoute(a,b,edge.kind==='spine'?null:root).d);}
-    for(const link of this.links){const a=this.positions.get(link.a.key),b=this.positions.get(link.b.key);if(!a||!b)continue;const {x1,y1,x2,y2}=edgeEndpoints(a,b),middle=(y1+y2)/2,d=`M ${x1} ${y1} C ${x1} ${middle} ${x2} ${middle} ${x2} ${y2}`;link.path.setAttribute('d',d);link.hit?.setAttribute('d',d);if(link.badge)link.badge.style.transform=`translate(${(x1+x2)/2}px,${middle}px) translate(-50%,-50%)`;}
+    for(const link of this.links){const a=this.positions.get(link.a.key),b=this.positions.get(link.b.key);if(!a||!b)continue;const {x1,y1,x2,y2}=edgeEndpoints(a,b),horizontal=Math.abs(y1-y2)<CARD_H,middle=horizontal?Math.min(a.y,b.y)-36:(y1+y2)/2,d=`M ${x1} ${y1} C ${x1} ${middle} ${x2} ${middle} ${x2} ${y2}`;link.path.setAttribute('d',d);link.hit?.setAttribute('d',d);if(link.badge)link.badge.style.transform=`translate(${(x1+x2)/2}px,${horizontal?middle-10:middle}px) translate(-50%,-50%)`;}
   }
   fitCamera(points=null){
     const w=this.surface.clientWidth,h=this.surface.clientHeight;if(!w||!h)return this.camera;

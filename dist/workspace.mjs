@@ -3,7 +3,7 @@ import { validateGraph, graphEdges } from './model.mjs';
 import {upgradeWorkspace,validateAdoptionData,createOwnedMap} from './adoption.mjs';
 import {stableJSON} from './account-model.mjs';
 
-export const QUESTION_STATUSES={matched:'Same question',unmatched_relevant:'Unanswered but relevant',incommensurable:'Different questions'};
+export const QUESTION_STATUSES={matched:'Same question',needs_elicitation:'Needs elicitation',unmatched_relevant:'Unanswered but relevant',incommensurable:'Different questions'};
 export const ANSWER_STATUSES={aligned:'Aligned',partial:'Partially aligned',divergent:'Apparent divergence',asymmetric:'Unanswered on one side'};
 export function newId(prefix){return `${prefix}-${globalThis.crypto.randomUUID()}`;}
 export function createMap(name,person,withExample=false){return {id:newId('map'),name,person,revision:1,nodes:withExample?exampleMap():exampleMap().filter(n=>n.parent===null),relations:withExample?exampleRelations():[],updatedAt:new Date().toISOString()};}

@@ -3,6 +3,7 @@ import {CARD_W,CARD_H,FRAME_GAP,layoutForest} from './layout.mjs';
 // The two maps share frame columns, but retain independent trees and expansion state.
 export function comparisonNodeKey(side,id){return JSON.stringify([side,id]);}
 export function layoutComparison(states,roots){
+  if(states.a.map&&states.b.map)return layoutOverlay(states,roots);
   const maps={},columns=new Map();
   for(const side of ['a','b']){
     const state=states[side];if(!state.map)continue;
@@ -29,6 +30,34 @@ export function layoutComparison(states,roots){
     }));y+=height+136;
   }
   return {maps,positions,lanes,bounds:{x:0,y:0,width,height:Math.max(0,y-136)}};
+}
+
+// Sibling paths provide provisional display slots, never semantic matches.
+// Source identities, parent edges, and expansion remain independent per map.
+function layoutOverlay(states,roots){
+  const maps={},slots=new Map(roots.map(id=>[id,{id,parent:null}])),slotFor={a:new Map(),b:new Map()};
+  for(const side of ['a','b']){
+    const state=states[side],layout=layoutForest(state.map.nodes,roots,state.expanded);
+    const visible=new Map([...layout.positions].filter(([,p])=>state.frame==='all'||roots[p.frame]===state.frame));
+    maps[side]={map:state.map,layout,positions:new Map()};
+    function visit(id,slot,parent){
+      if(!visible.has(id))return;
+      slots.set(slot,{id:slot,parent});slotFor[side].set(id,slot);
+      layout.children.get(id).forEach((child,index)=>visit(child,`${slot}/${index}`,slot));
+    }
+    roots.forEach(id=>visit(id,id,null));
+  }
+  const joint=layoutForest([...slots.values()],roots,new Set(slots.keys()));
+  const positions=new Map(),pairOffset=(CARD_W+16)/2;
+  for(const side of ['a','b'])for(const [id,slot]of slotFor[side]){
+    const p=joint.positions.get(slot),point={...p,x:p.x*2.2+(side==='a'?-pairOffset:pairOffset),y:p.y*1.3,side,slot};
+    maps[side].positions.set(id,point);positions.set(comparisonNodeKey(side,id),point);
+  }
+  const points=[...positions.values()];
+  const minX=Math.min(...points.map(p=>p.x)),minY=Math.min(...points.map(p=>p.y));
+  for(const p of points){p.x+=32-minX;p.y+=106-minY;}
+  const width=Math.max(...points.map(p=>p.x+CARD_W))+32,height=Math.max(...points.map(p=>p.y+CARD_H))+32;
+  return {maps,positions,lanes:[{side:'a',x:0,y:0,width,height}],overlay:true,bounds:{x:0,y:0,width,height}};
 }
 
 export function visibleComparisonEndpoint(layout,side,id){
