@@ -3,13 +3,11 @@ const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function accountConfiguration(env){
   if(!env.APP_ORIGIN||!env.SUPABASE_URL||!env.SUPABASE_PUBLISHABLE_KEY||!env.SUPABASE_SECRET_KEY)return false;
   const mode=env.SIGNUP_MODE||'invite';
-  if(mode==='public'){
-    if(!env.TURNSTILE_SITE_KEY?.trim()||!env.TURNSTILE_SECRET_KEY?.trim())return false;
-  }else if(mode!=='invite'||!env.BETA_INVITE_EMAILS?.split(/[\n,]/).some(email=>EMAIL.test(email.trim())))return false;
+  if(mode!=='public'&&(mode!=='invite'||!env.BETA_INVITE_EMAILS?.split(/[\n,]/).some(email=>EMAIL.test(email.trim()))))return false;
   try{const origin=new URL(env.APP_ORIGIN),db=new URL(env.SUPABASE_URL);return origin.origin===env.APP_ORIGIN&&(origin.protocol==='https:'||origin.protocol==='http:'&&['localhost','127.0.0.1'].includes(origin.hostname))&&db.protocol==='https:'&&db.origin===env.SUPABASE_URL;}catch{return false;}
 }
 export function accountSignupConfiguration(env){
-  return env.SIGNUP_MODE==='public'?{mode:'public',turnstile:{siteKey:env.TURNSTILE_SITE_KEY,action:'signup'}}:{mode:'invite'};
+  return env.SIGNUP_MODE==='public'?{mode:'public'}:{mode:'invite'};
 }
 export function requireAccountOrigin(request,env){
   if(new URL(request.url).origin!==env.APP_ORIGIN||request.headers.get('origin')!==env.APP_ORIGIN)throw new AccountError('Open Harmonious at its own address before making changes.',403);
@@ -57,7 +55,6 @@ export class AccountAuth{
     const email=String(input.email||'').trim().toLowerCase(),name=String(input.name||'').trim();
     if(!EMAIL.test(email)||email.length>254||!name||name.length>100)throw new AccountError('Enter your email address and a display name.');
     if(!this.allowed(email))throw new AccountError('This beta is available to invited email addresses.',403);
-    if(this.env.SIGNUP_MODE==='public')await this.verifyChallenge(input.captchaToken,request);
     const response=await this.call('otp',{email,create_user:true,data:{display_name:name}});
     if(!response.ok){
       const error=await response.json().catch(()=>({}));
