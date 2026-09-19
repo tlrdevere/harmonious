@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
 import {exampleMap} from '../dist/data.mjs';
-import {validateWorkspace,recordComparison,comparisonHealth,newId} from '../dist/workspace.mjs';
+import {validateWorkspace,recordComparison,comparisonHealth,comparisonConsensus,newId} from '../dist/workspace.mjs';
 import {synchronizeIdeas,endorseNodes,endorsementIndex,nodeEndorsements,withdrawEndorsement,transferNodes} from '../dist/adoption.mjs';
 import {accountKey,accountClone,ownedAccountRecords,accountChanges,stableJSON} from '../dist/account-model.mjs';
-import {initialAccountChanges,projectAccountWorkspace,validateAccountChanges} from '../worker/account-policy.mjs';
+import {AccountError,initialAccountChanges,projectAccountWorkspace,validateAccountChanges} from '../worker/account-policy.mjs';
 
 export const alice={id:'11111111-1111-4111-8111-111111111111',name:'Alice'};
 export const bob={id:'22222222-2222-4222-8222-222222222222',name:'Bob'};
-export function memoryStore(){let snapshot={revision:0,records:[]};return {async snapshot(){return accountClone(snapshot);},async commit(actor,generation,changes){assert.equal(generation,snapshot.revision);const revisions={};for(const c of changes){const key=accountKey(c.kind,c.id),old=snapshot.records.find(r=>r.kind===c.kind&&r.id===c.id);const r={kind:c.kind,id:c.id,ownerId:actor,revision:(old?.revision||0)+1,value:accountClone(c.value)};if(old)snapshot.records[snapshot.records.indexOf(old)]=r;else snapshot.records.push(r);revisions[key]=r.revision;}snapshot.revision++;return {revisions,revision:snapshot.revision};}};}
+export function memoryStore(){let snapshot={revision:0,records:[]};return {async snapshot(){return accountClone(snapshot);},async commit(actor,generation,changes){if(generation!==snapshot.revision){const error=new AccountError('snapshot_changed',409);error.snapshotChanged=true;throw error;}const revisions={};for(const c of changes){const key=accountKey(c.kind,c.id),old=snapshot.records.find(r=>r.kind===c.kind&&r.id===c.id);const r={kind:c.kind,id:c.id,ownerId:old?.ownerId||actor,revision:(old?.revision||0)+1,value:accountClone(c.value)};if(old)snapshot.records[snapshot.records.indexOf(old)]=r;else snapshot.records.push(r);revisions[key]=r.revision;}snapshot.revision++;return {revisions,revision:snapshot.revision};}};}
 export async function seedActor(store,actor){const snapshot=await store.snapshot(),changes=initialAccountChanges(actor);validateAccountChanges(snapshot,actor.id,changes);await store.commit(actor.id,snapshot.revision,changes);}
 export async function view(store,actor){return projectAccountWorkspace(await store.snapshot(),actor.id);}
 export async function edit(store,actor,fn){const data=await view(store,actor),base=new Map(ownedAccountRecords(data.workspace,actor.id,data.ownedKeys).map(r=>[accountKey(r.kind,r.id),accountClone(r.value)]));await fn(data.workspace);const changes=accountChanges(ownedAccountRecords(data.workspace,actor.id,data.ownedKeys),base,data.revisions);if(changes.length){const snapshot=await store.snapshot();validateAccountChanges(snapshot,actor.id,changes);await store.commit(actor.id,snapshot.revision,changes);}return changes;}
@@ -35,9 +36,34 @@ export async function exerciseAccounts(store){
   assert(a.workspace.endorsements.filter(e=>e.participantId===bob.id).every(e=>e.entries.every(n=>n.targetMapId===null&&n.targetNodeId===null)));
   b=await view(store,bob);const fake=accountClone(b.workspace.endorsements.find(e=>e.id===bRecord));fake.id=newId('endorsement');fake.participantId=alice.id;
   assert.throws(()=>validateAccountChanges(snap,bob.id,[{kind:'endorsement',id:fake.id,expectedRevision:0,value:fake}]),e=>e.status===403);
-  await edit(store,bob,w=>{const own=w.maps.find(m=>m.ownerId===bob.id),copy=own.nodes.find(n=>n.parent!==null);w.comparisons.push(recordComparison(w,{aMapId:aliceMapId,bMapId:own.id,aNodeId:nodeId,bNodeId:copy.id,questionStatus:'matched',question:'What do we share?',answerStatus:'aligned',notes:'BOB PRIVATE COMPARISON'}));});
-  assert(!JSON.stringify(await view(store,alice)).includes('BOB PRIVATE COMPARISON'));
+  await edit(store,bob,w=>{const own=w.maps.find(m=>m.ownerId===bob.id),copy=own.nodes.find(n=>n.parent!==null);own.visibility='shared';w.comparisons.push(recordComparison(w,{aMapId:aliceMapId,bMapId:own.id,aNodeId:nodeId,bNodeId:copy.id,questionStatus:'matched',question:'What do we share?',answerStatus:'aligned',notes:'BOB SHARED COMPARISON'},null,bob.id));});
+  assert(JSON.stringify(await view(store,alice)).includes('BOB SHARED COMPARISON'));
   b=await view(store,bob);assert.equal(comparisonHealth(b.workspace,b.workspace.comparisons[0]).needsReview,false);
+  a=await view(store,alice);let sharedComparison=a.workspace.comparisons.find(c=>c.notes==='BOB SHARED COMPARISON');assert(sharedComparison);assert.equal(comparisonConsensus(a.workspace,sharedComparison).state,'pending');
+  await edit(store,alice,w=>{const c=w.comparisons.find(c=>c.id===sharedComparison.id);const next=recordComparison(w,{aMapId:c.aMapId,bMapId:c.bMapId,aNodeId:c.aNodeId,bNodeId:c.bNodeId,questionStatus:'matched',question:c.question,answerStatus:'aligned',notes:'ALICE AGREES'},c,alice.id);w.comparisons=w.comparisons.map(item=>item.id===c.id?next:item);});
+  a=await view(store,alice);sharedComparison=a.workspace.comparisons.find(c=>c.id===sharedComparison.id);assert.equal(comparisonConsensus(a.workspace,sharedComparison).state,'agreed');assert.equal(sharedComparison.judgments.length,2);
+  b=await view(store,bob);assert.equal(comparisonConsensus(b.workspace,b.workspace.comparisons.find(c=>c.id===sharedComparison.id)).state,'agreed');
+  // Exercise the actual account boundary, including tampered request bodies.
+  const judgmentSnapshot=await store.snapshot(),savedComparison=judgmentSnapshot.records.find(r=>r.id===sharedComparison.id&&r.kind==='comparison');
+  assert.equal(savedComparison.ownerId,bob.id,'A participant reply must not transfer ownership');
+  const requestFor=value=>[{kind:'comparison',id:value.id,expectedRevision:savedComparison.revision,value}];
+  const honestReply=recordComparison(a.workspace,{...sharedComparison,notes:'Alice reconsiders'},sharedComparison,alice.id);
+  validateAccountChanges(judgmentSnapshot,alice.id,requestFor(honestReply));
+  const batchedReply=recordComparison(a.workspace,{...sharedComparison,notes:'A second edit before autosave'},honestReply,alice.id);
+  validateAccountChanges(judgmentSnapshot,alice.id,requestFor(batchedReply));
+  const erasedHistory=accountClone(honestReply);erasedHistory.judgments.find(j=>j.actorId===alice.id).history=[];
+  assert.throws(()=>validateAccountChanges(judgmentSnapshot,alice.id,requestFor(erasedHistory)),/Earlier judgment history/);
+  const forgedSummary=accountClone(honestReply);forgedSummary.notes='Forged creator summary';
+  assert.throws(()=>validateAccountChanges(judgmentSnapshot,alice.id,requestFor(forgedSummary)),/creator’s judgment/);
+  const forgedOther=accountClone(honestReply);forgedOther.judgments.find(j=>j.actorId===bob.id).notes='Not Bob’s choice';
+  assert.throws(()=>validateAccountChanges(judgmentSnapshot,alice.id,requestFor(forgedOther)),/Another participant/);
+  const privateSnapshot=accountClone(judgmentSnapshot);privateSnapshot.records.find(r=>r.kind==='map'&&r.id===sharedComparison.bMapId).value.visibility='private';
+  assert(!projectAccountWorkspace(privateSnapshot,alice.id).workspace.comparisons.some(c=>c.id===sharedComparison.id),'A private source must not leak through a comparison snapshot');
+  const ownPairSnapshot=accountClone(judgmentSnapshot),ownMap=ownPairSnapshot.records.find(r=>r.kind==='map'&&r.ownerId===bob.id),secondOwn=accountClone(ownMap);secondOwn.id=newId('map');secondOwn.value.id=secondOwn.id;ownPairSnapshot.records.push(secondOwn);
+  const ownWorkspace=projectAccountWorkspace(ownPairSnapshot,bob.id).workspace,ownNode=ownMap.value.nodes.find(n=>n.parent!==null).id;
+  const ownComparison=recordComparison(ownWorkspace,{aMapId:ownMap.id,bMapId:secondOwn.id,aNodeId:ownNode,bNodeId:ownNode,questionStatus:'matched',question:'Comparing my own maps',answerStatus:'aligned'},null,bob.id);
+  const ownThread=ownWorkspace.comparisonThreads.find(thread=>thread.id===ownComparison.comparisonId);
+  validateAccountChanges(ownPairSnapshot,bob.id,[{kind:'comparison_thread',id:ownThread.id,expectedRevision:0,value:ownThread},{kind:'comparison',id:ownComparison.id,expectedRevision:0,value:ownComparison}]);
   // JSONB may reorder object keys. Opening it must not create new idea versions
   // or flag unchanged comparison snapshots as changed.
   const reordered=JSON.parse(stableJSON(b.workspace));validateWorkspace(reordered);const count=reordered.ideas.reduce((n,i)=>n+i.versions.length,0);for(const m of reordered.maps)synchronizeIdeas(reordered,m);assert.equal(reordered.ideas.reduce((n,i)=>n+i.versions.length,0),count);assert.equal(comparisonHealth(reordered,reordered.comparisons[0]).needsReview,false);
@@ -50,18 +76,18 @@ export async function exerciseAccounts(store){
   await edit(store,bob,w=>{w.maps.find(m=>m.ownerId===bob.id).name='Another Bob edit';});current=await store.snapshot();
   const independent=[{kind:'map',id:next.id,expectedRevision:a.revisions[accountKey('map',next.id)],value:next}];validateAccountChanges(current,alice.id,independent);await store.commit(alice.id,current.revision,independent);
   // Private edits to an adopted node affect health, without revealing the edit.
-  await edit(store,bob,w=>{const map=w.maps.find(m=>m.ownerId===bob.id);map.nodes.find(n=>n.parent!==null).title='BOB PRIVATE ADAPTATION';synchronizeIdeas(w,map);});
+  await edit(store,bob,w=>{const map=w.maps.find(m=>m.ownerId===bob.id);map.visibility='private';map.nodes.find(n=>n.parent!==null).title='BOB PRIVATE ADAPTATION';synchronizeIdeas(w,map);});
   a=await view(store,alice);assert(!JSON.stringify(a).includes('BOB PRIVATE ADAPTATION'));node=a.workspace.maps.find(m=>m.id===aliceMapId).nodes.find(n=>n.id===nodeId);assert.equal(nodeEndorsements(endorsementIndex(a.workspace),node).current.size,1);assert.equal(nodeEndorsements(endorsementIndex(a.workspace),node).review.size,1);
   await edit(store,bob,w=>{withdrawEndorsement(w,bRecord,bob.id);});
   await edit(store,alice,w=>{const m=w.maps.find(m=>m.id===aliceMapId);m.visibility='private';m.name='ALICE PRIVATE TITLE';m.nodes.find(n=>n.id===nodeId).title='ALICE NEW PRIVATE WORDING';synchronizeIdeas(w,m);});
-  b=await view(store,bob);const text=JSON.stringify(b);assert(!text.includes('ALICE PRIVATE TITLE'));assert(!text.includes('ALICE NEW PRIVATE WORDING'));assert(!text.includes('UNPUBLISHED DRAFT'));assert(b.workspace.maps.some(m=>m.unavailable));assert.equal(b.workspace.comparisons[0].notes,'BOB PRIVATE COMPARISON');validateWorkspace(b.workspace);
+  b=await view(store,bob);const text=JSON.stringify(b);assert(!text.includes('ALICE PRIVATE TITLE'));assert(!text.includes('ALICE NEW PRIVATE WORDING'));assert(!text.includes('UNPUBLISHED DRAFT'));assert(b.workspace.maps.some(m=>m.unavailable));assert.equal(b.workspace.comparisons[0].notes,'BOB SHARED COMPARISON');validateWorkspace(b.workspace);
   a=await view(store,alice);const oldIdea=accountClone(a.workspace.ideas.find(i=>i.id===sourceIdea));oldIdea.versions[0].content.title='Rewritten past';current=await store.snapshot();
   assert.throws(()=>validateAccountChanges(current,alice.id,[{kind:'idea',id:oldIdea.id,expectedRevision:a.revisions[accountKey('idea',oldIdea.id)],value:oldIdea}]),/Earlier wording/);
   return {aliceMapId,nodeId};
 }
 
 // Keep reusable helpers importable by the database and API suites.
-if(import.meta.url===new URL(process.argv[1],'file:').href){
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   const store=memoryStore();
   await exerciseAccounts(store);
   const copies=memoryStore();await seedActor(copies,alice);await seedActor(copies,bob);let sourceId,sourceNode;

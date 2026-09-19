@@ -3,10 +3,20 @@ import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 import {exerciseAccounts,alice,bob} from './accounts.test.mjs';
 import {AccountError} from '../worker/account-policy.mjs';
+import {exerciseComparisonThreads} from './comparison-threads.test.mjs';
+import {exerciseElicitation} from './elicitation.test.mjs';
+import {exerciseDiscussions} from './discussion.test.mjs';
+import {exerciseDefinitions} from './definitions.test.mjs';
+import {exerciseArguments} from './argument.test.mjs';
 
 const db=new PGlite();
 await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key); insert into auth.users(id) values('${alice.id}'),('${bob.id}');`);
 await db.exec(await readFile('supabase/migrations/20260908233252_harmonious_accounts.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260910043435_allow_shared_comparison_judgments.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260910212254_overall_comparisons.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260910212326_argument_records.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260911094003_on_map_conversations.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260912045603_definitions_library.sql','utf8'));
 assert((await db.query("select prosecdef from pg_proc where proname in ('harmonious_snapshot','harmonious_commit')")).rows.every(row=>!row.prosecdef),'Application RPCs must not elevate the caller\'s privileges');
 await db.exec('set role service_role');
 const store={
@@ -14,6 +24,26 @@ const store={
   async commit(actor,generation,changes){try{return (await db.query('select public.harmonious_commit($1::uuid,$2::bigint,$3::jsonb) as data',[actor,generation,JSON.stringify(changes)])).rows[0].data;}catch(e){const error=new AccountError(e.message,e.code==='PT409'?409:e.code==='PT403'?403:400);error.snapshotChanged=e.message==='snapshot_changed';throw error;}}
 };
 await exerciseAccounts(store);
+await exerciseDiscussions(store);
+await exerciseDefinitions(store);
+await exerciseCounterparts(store);
+const definitionSnapshot=await store.snapshot(),definitionRecord=definitionSnapshot.records.find(r=>r.kind==='definition');
+const forgedDefinition=structuredClone(definitionRecord.value);forgedDefinition.versions[0].body='Overwritten past';
+await assert.rejects(()=>store.commit(definitionRecord.ownerId,definitionSnapshot.revision,[{kind:'definition',id:forgedDefinition.id,expectedRevision:definitionRecord.revision,value:forgedDefinition}]),/history cannot change/);
+await assert.rejects(()=>store.commit(bob.id,definitionSnapshot.revision,[{kind:'definition',id:'forged-definition',expectedRevision:0,value:{...definitionRecord.value,id:'forged-definition',authorId:alice.id}}]),/Invalid definition author/);
+assert.deepEqual(await store.snapshot(),definitionSnapshot,'Rejected library writes leave the database unchanged');
+await exerciseElicitation(store);
+await exerciseArguments(store);
+const argumentSnapshot=await store.snapshot(),argumentEdge=argumentSnapshot.records.find(r=>r.kind==='argument_edge');
+const invalidEndpoint=structuredClone(argumentEdge.value);invalidEndpoint.id='missing-endpoint-version';delete invalidEndpoint.from.version;
+await assert.rejects(()=>store.commit(argumentEdge.ownerId,argumentSnapshot.revision,[{kind:'argument_edge',id:invalidEndpoint.id,expectedRevision:0,value:invalidEndpoint}]),/Invalid reasoning endpoint/);
+const invalidAuthor={...argumentEdge.value,id:'forged-reasoning-author',authorId:argumentEdge.ownerId===alice.id?bob.id:alice.id};
+await assert.rejects(()=>store.commit(argumentEdge.ownerId,argumentSnapshot.revision,[{kind:'argument_edge',id:invalidAuthor.id,expectedRevision:0,value:invalidAuthor}]),e=>e.status===403);
+assert.deepEqual(await store.snapshot(),argumentSnapshot,'Rejected reasoning writes must leave the database unchanged');
+const {thread}=await exerciseComparisonThreads(store);
+const duplicate={...thread,id:'duplicate-parent'};
+const duplicateSnapshot=await store.snapshot();
+await assert.rejects(()=>store.commit(thread.createdBy,duplicateSnapshot.revision,[{kind:'comparison_thread',id:duplicate.id,value:duplicate,expectedRevision:0}]),e=>e.status===400);
 const before=await store.snapshot(),owned=before.records.find(r=>r.kind==='map'&&r.ownerId===alice.id),other=before.records.find(r=>r.kind==='map'&&r.ownerId===bob.id);
 await assert.rejects(()=>store.commit(alice.id,before.revision,[{kind:'map',id:owned.id,expectedRevision:owned.revision,value:{...owned.value,name:'Must roll back'}},{kind:'map',id:other.id,expectedRevision:other.revision,value:{...other.value,name:'Forbidden'}}]),e=>e.status===403);
 assert.deepEqual(await store.snapshot(),before,'Partial batches must roll back');
@@ -27,3 +57,4 @@ for(const role of ['anon','authenticated']){
 }
 await db.exec('set role service_role');assert((await store.snapshot()).records.length>0);await db.exec('reset role');
 await db.close();console.log('PostgreSQL migration, two-account persistence, atomic rollback, revision conflicts, and database access boundaries passed.');
+import {exerciseCounterparts} from './counterparts.test.mjs';

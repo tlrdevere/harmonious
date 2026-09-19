@@ -13,7 +13,12 @@ export function ownedAccountRecords(workspace,actorId,ownedKeys=[]){
   for(const m of maps)add('map',m);
   for(const i of workspace.ideas)if(mapIds.has(i.originMapId)||known.has(accountKey('idea',i.id)))add('idea',i);
   for(const e of workspace.endorsements)if(e.participantId===actorId){const value=accountClone(e);for(const entry of value.entries)delete entry.serverIssue;add('endorsement',value);}
+  for(const thread of workspace.comparisonThreads||[])add('comparison_thread',thread);
   for(const c of workspace.comparisons)add('comparison',c);
+  for(const node of workspace.argumentNodes||[])if(node.authorId===actorId)add('argument_node',node);
+  for(const edge of workspace.argumentEdges||[])if(edge.authorId===actorId)add('argument_edge',edge);
+  for(const item of workspace.discussions||[])if(item.authorId===actorId)add('discussion',item);
+  for(const d of workspace.definitions||[])if(d.authorId===actorId)add('definition',d);
   return records;
 }
 export function accountChanges(records,baseline,revisions){

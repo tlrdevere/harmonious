@@ -1,5 +1,8 @@
-.accounts .topbar{height:auto;min-height:68px;flex-wrap:wrap;gap:12px;padding-block:12px}
-.account-controls{display:flex;align-items:center;gap:14px;margin-left:auto;font-size:14px}
+.accounts .topbar{height:auto;min-height:68px;flex-wrap:wrap;gap:10px 16px;padding:8px 22px}
+.accounts .topbar-primary-nav{flex:0 1 auto}.accounts .topbar-tabs{flex:0 1 auto}
+.accounts .topbar-tabs button{font-size:13px;padding:7px 11px}
+.accounts .topbar .session-note{margin-left:auto}
+.account-controls{display:flex;align-items:center;gap:14px;margin-left:0;font-size:14px}
 .account-gate{min-height:calc(100vh - 90px);display:grid;place-items:center;padding:32px 20px;background:radial-gradient(ellipse at 15% 20%,#dff3ef 0,transparent 55%),radial-gradient(ellipse at 95% 80%,#e9e4f7 0,transparent 60%),#f6f8fc}
 .account-card{width:min(100%,470px);padding:36px;background:white;border:1px solid #d8e2ec;border-radius:20px;box-shadow:0 16px 52px #19294512}
 .account-card h1{font-size:32px;line-height:1.18;letter-spacing:-.7px;margin:14px 0}
@@ -12,10 +15,10 @@
 #account-feedback{min-height:26px;color:#124c60}
 .accounts:not(.account-locked) #account-gate{display:none}
 .account-locked> :not(.topbar):not(#account-gate):not(script):not(link){display:none!important}
-.account-locked .account-controls{display:none}
+.account-locked .account-controls,.account-locked .topbar-primary-nav{display:none}
 .accounts .participant-control{display:none!important}
 .accounts .workspace-files{flex-wrap:wrap}
 #account-sharing{margin-block:18px}
 #account-sharing select{width:100%}
 #account-gate [hidden]{display:none}
-@media(max-width:640px){.account-card{padding:26px 22px}.account-card h1{font-size:28px}.account-controls{width:100%;justify-content:space-between}.accounts .session-note{white-space:normal}}
+@media(max-width:760px){.accounts .topbar{padding:8px 12px;gap:7px 10px}.accounts .topbar .brand{margin-right:auto}.accounts .topbar .session-note{display:none}.accounts .topbar-primary-nav{order:3;width:100%}.accounts .topbar-tabs{width:100%;justify-content:space-between}.accounts .topbar-tabs button{flex:1 1 auto;padding:7px 5px;font-size:12px}.account-controls{width:auto;justify-content:flex-end}.account-card{padding:26px 22px}.account-card h1{font-size:28px}}

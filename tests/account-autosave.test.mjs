@@ -13,4 +13,10 @@ map.name='Edit made while save is in flight';acknowledge({revisions:{[accountKey
 assert(c.workspaceDirty,'An edit made during a request must remain unsaved');assert.equal(state.baseline.get(accountKey('map',map.id)).name,'First edit');assert.equal(map.name,'Edit made while save is in flight');assert.equal(scheduled,1);assert(!button.disabled);
 state.request=async()=>{const error=Error('A newer version exists.');error.status=409;throw error;};await AccountWorkspace.prototype.save.call(state,false);
 assert(state.blocked);assert(c.workspaceDirty);assert.equal(map.name,'Edit made while save is in flight');assert(c.lastMessage.includes('Download a backup'));
+const draftController={workspace:{comparisonThreads:[]},workspaceDirty:false,comparisonDirty:true},startState={controller:draftController,baseline:new Map(),revisions:{},save:async()=>{},request:()=>new Promise(resolve=>{acknowledge=resolve;})};
+const starting=AccountWorkspace.prototype.startComparison.call(startState,'map-a','map-b');await Promise.resolve();
+assert(startState.loading,'Background refresh must pause while a parent is being created');
+acknowledge({comparisonThread:{id:'thread-one'},revision:1});const started=await starting;
+assert.equal(started.id,'thread-one');assert(draftController.comparisonDirty,'Starting a comparison must preserve an unrecorded judgment draft');assert(!startState.loading);
+assert.equal(startState.baseline.get(accountKey('comparison_thread',started.id)).id,started.id,'A directly saved parent must not be submitted again by autosave');
 console.log('Autosave preserves in-flight edits and retains local work after a conflicting save.');

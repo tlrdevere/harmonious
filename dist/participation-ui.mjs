@@ -29,7 +29,7 @@ export class ParticipationUI{
     this.index=endorsementIndex(this.workspace);adUI('discovery-browse').hidden=this.history;adUI('endorsement-history').hidden=!this.history;
     adUI('browse-endorsements').classList.toggle('active',!this.history);adUI('my-endorsements').classList.toggle('active',this.history);
     const pending=this.workspace.endorsements.filter(e=>e.participantId===this.actorId&&e.status==='active'&&endorsementHealth(this.workspace,e).needsReview).length;
-    adUI('my-endorsements').textContent=`My co-signs${pending?` · ${pending} need review`:''}`;
+    adUI('my-endorsements').textContent=`My contributions${pending?` · ${pending} need review`:''}`;
     if(this.history){this.renderHistory();return;}
     this.renderCatalog();const map=this.source();if(!map)return;
     if(!map.nodes.some(n=>n.id===this.nodeId))this.nodeId=null;
@@ -62,7 +62,7 @@ export class ParticipationUI{
     if(counts.current.has(this.actorId)){const b=adEl('button','Review or withdraw my co-signs','text-button');b.onclick=()=>{this.history=true;this.renderExplore();};supporters.append(b);}
     adUI('cosign-node').disabled=latest.version!==node.ideaVersion;
   }
-  editSource(){const map=this.source();if(!map||!this.controller.showMode('individual'))return;this.controller.loadMap(map.id);this.controller.populateMaps();if(this.nodeId)this.controller.editor.focusNode(this.nodeId);}
+  editSource(){const map=this.source();if(map)this.controller.library.openMap(map.id,this.nodeId);}
   openAction(mode,scope='node',record=null){
     const map=this.source();if(!map)return;this.pending={mode,sourceMapId:map.id,actorId:this.actorId,anchorId:this.nodeId,replaceId:record?.id||null,record};
     adUI('adoption-title').textContent=mode==='copy'?'Copy content to adapt':record?`Review co-sign for ${this.personName(this.actorId)}`:`Co-sign as ${this.personName(this.actorId)}`;

@@ -1,5 +1,7 @@
 # Endorsement model — first prototype
 
+> This documents the existing prototype. The owner has since deferred pod design and prioritized Compare and Argument; derived versus authored pod maps remains an open decision. See [Argument readiness](argument-readiness.md).
+
 This iteration implements the user-approved bridge from deliberate reuse of shared nodes toward automatic consensus views. Personal maps and authored reference maps are separate objects. Pods are derived from explicit co-sign records. Authorship and copying alone supply no endorsements.
 
 ## Three actions

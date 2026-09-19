@@ -3,3 +3,7 @@ SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 SUPABASE_SECRET_KEY=sb_secret_YOUR_SERVER_ONLY_SECRET_KEY
 BETA_INVITE_EMAILS=first@example.test,second@example.test
+
+# Set public mode to allow any verified email address.
+# SIGNUP_MODE=public
+# This release does not request CAPTCHA tokens; Supabase CAPTCHA must be disabled.

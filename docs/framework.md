@@ -1,5 +1,7 @@
 # Harmonious
 
+> Historical framework text follows. As of September 10, 2026, a web beta with accounts, radial maps and shared comparison judgments exists. The owner wants a separate Argument view built directly over Compare; it is not implemented yet. Pod design remains undecided. See [deployment status](deployment-status.md) and [Argument readiness](argument-readiness.md) for current implementation and priorities. Statements below about a facilitator-only prototype or what is not built describe the earlier framework stage.
+
 **Harmonious is an open framework and prototype process for mapping, comparing, and reconciling worldviews.**
 
 Its goal is not to force universal agreement. Its goal is to make agreement, disagreement, uncertainty, and asymmetry legible enough that people can understand one another more accurately, identify where consensus is actually possible, and coordinate around the next shared step.

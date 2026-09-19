@@ -1,4 +1,5 @@
 import {WorkspaceController} from './workspace-ui.mjs';
+import {NodeActions} from './node-actions.mjs';
 import {newId} from './workspace.mjs';
 import {CARD_W,CARD_H,layoutForest,connectorRoute,edgeEndpoints} from './layout.mjs';
 import {roots,exampleMap,exampleRelations} from './data.mjs';
@@ -27,10 +28,13 @@ function makeCard(n){
   const meta=document.createElement('span');meta.className='node-meta';
   const toggle=document.createElement('button');toggle.type='button';toggle.className='toggle';
   const sign=document.createElement('span'),count=document.createElement('span');count.className='child-count';toggle.append(sign,count);
-  const leaf=document.createElement('span');leaf.className='leaf';bottom.append(meta,toggle,leaf);card.append(main,bottom);
+  const leaf=document.createElement('span');leaf.className='leaf';
+  const add=document.createElement('button');add.type='button';add.className='node-add-child';add.textContent='+';add.setAttribute('aria-label',`Add a child to “${n.title}”`);add.title='Add child';
+  add.onclick=e=>{e.stopPropagation();selectNode(n.id);if(selected===n.id){nodeActions.show(nodeById(n.id),'child');nodeActions.position(positions.get(n.id),camera);}};
+  bottom.append(meta,toggle,leaf,add);card.append(main,bottom);
   main.addEventListener('click',()=>selectNode(n.id));
   toggle.addEventListener('click',()=>{if(expanded.has(n.id)){if(selected&&descendants(n.id).includes(selected)&&!allowLeave())return;expanded.delete(n.id);}else expanded.add(n.id);update({anchor:n.id});});
-  $('cards').append(card);const el={card,main,title,summary,meta,toggle,sign,count,leaf};elements.set(n.id,el);return el;
+  $('cards').append(card);const el={card,main,title,summary,meta,toggle,sign,count,leaf,add};elements.set(n.id,el);return el;
 }
 function syncCards(){
   workspaceController.captureActive();
@@ -40,6 +44,7 @@ function syncCards(){
     const n=nodeById(id),el=elements.get(id)||makeCard(n),kids=result.children.get(id),links=connectedEdges(id);
     el.card.dataset.frame=p.frame;el.card.classList.toggle('root',roots.includes(id));el.card.classList.toggle('selected',selected===id);el.card.classList.toggle('related-node',selected!==id&&neighbors.has(id)&&$('relation-view').value!=='none');
     el.title.textContent=n.title;el.summary.textContent=n.summary;el.main.setAttribute('aria-label',`Edit ${kindLabel(n).toLowerCase()}: ${n.title}`);el.main.title=n.summary||n.title;
+    el.add.hidden=!workspaceController.canEditMap(workspaceController.activeMap());el.add.setAttribute('aria-label',`Add a child to “${n.title}”`);
     el.meta.textContent=kindLabel(n)+(n.kind==='position'&&n.confidence!==null?` · ${n.confidence}%`:'');el.meta.dataset.kind=n.kind;el.meta.title=n.confidence===null?'Confidence not assessed':`Confidence ${n.confidence}%`;
     el.sign.textContent=expanded.has(id)?'−':'＋';el.count.textContent=String(kids.length);el.toggle.style.display=kids.length?'flex':'none';el.leaf.hidden=!!kids.length;el.leaf.textContent=links.length?`${links.length} ${links.length===1?'link':'links'}`:'Leaf node';
     el.toggle.setAttribute('aria-expanded',String(expanded.has(id)));el.toggle.setAttribute('aria-label',`${expanded.has(id)?'Collapse':'Expand'} ${n.title}, ${kids.length} child nodes`);
@@ -86,6 +91,7 @@ function draw(){
     if(r.label)r.label.setAttribute('transform',`translate(${(x1+3*c1x+3*c2x+x2)/8},${(y1+3*c1y+3*c2y+y2)/8})`);
   }
   $('zoom').textContent=`${Math.round(camera.z*100)}%`;
+  nodeActions.position(positions.get(selected),camera);
 }
 function fitCamera(){const w=viewport.clientWidth,h=viewport.clientHeight;const z=Math.min(1,(w-90)/result.width,(h-140)/result.height);return {z:Math.max(.02,z),x:(w-result.width*Math.max(.02,z))/2,y:Math.max(62,(h-result.height*Math.max(.02,z))/2-10)};}
 function transition(targets,targetCamera,instant=false){
@@ -105,7 +111,7 @@ function update({anchor=null,fit=false,instant=false}={}){
 }
 
 function settle(){if(animation){cancelAnimationFrame(animation);animation=0;}}
-function closeInspector(force=false){if(!force&&!allowLeave())return false;selected=null;dirty=false;connectionDirty=false;activeRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;if(result){syncCards();draw();}return true;}
+function closeInspector(force=false){if(!force&&!allowLeave())return false;selected=null;dirty=false;connectionDirty=false;activeRelation=null;nodeActions.hide();$('inspector').hidden=true;$('connection-form').hidden=true;if(result){syncCards();draw();}return true;}
 function refreshKindFields(){
   if(!selected)return;const n=nodeById(selected),kind=$('kind').value,isRoot=n.parent===null;
   $('kind-group').hidden=isRoot;$('structural-group').hidden=isRoot;$('time-group').hidden=isRoot||frameOf(nodes,n.id)!=='status';$('confidence-group').hidden=kind!=='position'||isRoot;
@@ -127,8 +133,8 @@ function loadInspector(){
   renderConnections();
 }
 function selectNode(id){
-  if(selected===id)return;if(!allowLeave())return;
-  selected=id;activeRelation=null;loadInspector();syncCards();draw();
+  if(selected===id){nodeActions.show(nodeById(id));nodeActions.position(positions.get(id),camera);return;}if(!allowLeave())return;
+  selected=id;activeRelation=null;loadInspector();if(matchMedia('(max-width: 780px)').matches)$('inspector').hidden=true;nodeActions.show(nodeById(id));syncCards();draw();
 }
 function focusNodes(ids){
   const pts=ids.map(id=>result.positions.get(id)).filter(Boolean);if(!pts.length)return;
@@ -182,7 +188,7 @@ function addChild(kind){
   if(!selected||!allowLeave())return;const parent=selected,p=nodeById(parent),id=newId('node');
   const node={id,parent,title:kind==='question'?'New question':kind==='explainer'?'New example':kind==='topic'?'New topic':'New position',summary:'',details:'',confidence:null,kind,structuralType:p.kind==='question'&&kind==='position'?'answer':'nesting',timeScope:p.timeScope||'present',sourceTitle:'',sourceUrl:''};
   nodes.push(node);if(kind==='explainer')relations.push({id:newId('relation'),from:id,to:parent,type:'illustrative',note:''});
-  dirty=false;expanded.add(parent);selected=id;update({anchor:parent});loadInspector();syncCards();draw();$('title').focus();$('title').select();
+  dirty=false;expanded.add(parent);selected=id;nodeActions.hide();update({anchor:parent});loadInspector();syncCards();draw();$('title').focus();$('title').select();
 }
 $('close').addEventListener('click',()=>closeInspector());
 $('inspect-cosigns').addEventListener('click',()=>{if(selected)workspaceController.exploreNode(workspaceController.activeMapId,selected);});
@@ -224,13 +230,21 @@ viewport.addEventListener('pointerup',endPointer);viewport.addEventListener('poi
 viewport.addEventListener('keydown',event=>{if(event.target!==viewport)return;const steps={ArrowLeft:[60,0],ArrowRight:[-60,0],ArrowUp:[0,60],ArrowDown:[0,-60]};if(steps[event.key]){event.preventDefault();settle();positions=new Map(result.positions);camera.x+=steps[event.key][0];camera.y+=steps[event.key][1];draw();}else if(event.key==='+'||event.key==='=')zoom(1.2);else if(event.key==='-')zoom(1/1.2);else if(event.key.toLowerCase()==='f')transition(result.positions,fitCamera());});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeInspector();});
 let oldWidth=viewport.clientWidth,oldHeight=viewport.clientHeight;
-new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(result&&(w!==oldWidth||h!==oldHeight)){settle();positions=new Map(result.positions);camera.x+=(w-oldWidth)/2;camera.y+=(h-oldHeight)/2;draw();}oldWidth=w;oldHeight=h;}).observe(viewport);
+new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(result&&(w!==oldWidth||h!==oldHeight)){settle();positions=new Map(result.positions);if(!oldWidth||!oldHeight)camera=fitCamera();else{camera.x+=(w-oldWidth)/2;camera.y+=(h-oldHeight)/2;}draw();}oldWidth=w;oldHeight=h;}).observe(viewport);
 const workspaceController=new WorkspaceController({
   getMapData:()=>({nodes,relations}),beforeLeave:allowLeave,hasDraft:()=>dirty||connectionDirty,
   discardDraft:()=>closeInspector(true),
   flushDraft:()=>{if(connectionDirty)$('connection-form').requestSubmit();if(connectionDirty)return false;if(dirty)$('edit-form').requestSubmit();return !dirty;},
-  setMap:map=>{selected=null;dirty=false;connectionDirty=false;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
+  setMap:map=>{nodeActions.hide();selected=null;dirty=false;connectionDirty=false;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
   focusNode:id=>{expanded=revealPath(nodes,id,expanded);selected=id;update();loadInspector();requestAnimationFrame(()=>focusNodes([id]));}
+});
+const nodeActions=new NodeActions(viewport,{
+  addChild,edit:()=>{$('inspector').hidden=false;$('title').focus();},connect:()=>{$('inspector').hidden=false;openConnectionForm();},remove:()=>{$('remove').click();nodeActions.hide();},
+  compare:id=>workspaceController.library.createComparison(workspaceController.activeMapId,id),
+  definitions:id=>workspaceController.library.definitions.choose({type:'node',mapId:workspaceController.activeMapId,nodeId:id}),
+  contributions:id=>workspaceController.library.openSource(workspaceController.activeMapId,id),
+  canArgue:id=>{const p=workspaceController.workspace.comparisons.find(p=>p.id===workspaceController.editingRecord);return !!p&&['a','b'].some(s=>p[`${s}MapId`]===workspaceController.activeMapId&&p[`${s}NodeId`]===id);},
+  argue:()=>workspaceController.argument.open(),focusNode:()=>elements.get(selected)?.main.focus()
 });
 update({fit:true,instant:true});
 workspaceController.initialize();

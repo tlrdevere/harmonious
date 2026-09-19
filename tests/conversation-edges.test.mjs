@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {groupSourceConnections,groupComparisonConnections} from '../dist/conversation-tree.mjs';
+const structural={id:'structure:example',from:'parent',to:'example',structural:true},illustration={id:'illustration',from:'example',to:'parent',type:'illustrative'};
+const source=groupSourceConnections([structural,illustration,{id:'other',from:'parent',to:'different'}]);
+assert.equal(source.length,2);assert.deepEqual(source[0],[structural,illustration],'Reverse direction and different meanings share a line without losing details');
+const a={mapId:'a',nodeId:'n'},b={mapId:'b',nodeId:'n'},c={mapId:'b',nodeId:'child'};
+const records=[{id:'counterpart',target:a,other:b},{id:'agreement',target:b,other:a},{id:'disagreement',target:a,other:b},{id:'legacy',legacy:true,target:a,other:b},{id:'descendant',target:a,other:c}];
+const endpoint=t=>JSON.stringify([t.mapId,t.nodeId]);
+const expanded=groupComparisonConnections(records,endpoint);assert.equal(expanded.length,2);assert.equal(expanded[0].records.length,4);
+const collapsed=groupComparisonConnections(records,t=>JSON.stringify([t.mapId,t.nodeId==='child'?'n':t.nodeId]));assert.equal(collapsed.length,1);assert.equal(collapsed[0].records.length,5,'Collapsed descendants share the displayed line while keeping their source records');
+assert.equal(groupComparisonConnections(records,t=>t.mapId==='b'?null:endpoint(t)).length,0,'Unavailable endpoints are not drawn');
+console.log('Single-edge grouping passed: reverse source connections, multiple judgments, earlier records, collapsed endpoints and retained details.');

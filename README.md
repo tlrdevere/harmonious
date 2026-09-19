@@ -7,11 +7,13 @@ Harmonious maps, compares, and helps people reconcile worldviews. This repositor
 The application includes:
 
 - Radial maps with three frames: **Status Quo**, **Transformative Action**, and **Goal State**. Branches expand and collapse while the layout makes space for them.
-- Two maps on one comparison canvas, with recorded question/answer correspondences and retained source snapshots.
+- Two maps on one comparison canvas, with immediate agreement/disagreement, counterpart requests, inquiries, arguments on nodes and edges, and author definitions/standards. Missing counterparts have reserved display spots and a direct create-or-choose flow. Earlier question/answer judgments and their source snapshots remain accessible.
 - Personal and authored reference maps, explicit co-signs, wording history, and pod memberships derived from those co-signs.
 - An independent Cloudflare Worker build with Supabase email-code accounts, PostgreSQL persistence, private/shared maps, ownership checks, and automatic saving.
 
-**Beta status:** the application is implemented and the Supabase database is configured and its access rules are verified. Hosting configuration and real sign-in email delivery must be completed before inviting testers. See [deployment status](docs/deployment-status.md) and [beta setup](docs/independent-beta.md).
+**Beta status:** public signup, Map Library, shared overall Comparisons and focused on-map relationships, questions, challenges and requests are deployed. The owner has reported two accounts working. The earlier [Argument view](docs/argument-view.md) remains available for existing proposals. See [deployment status](docs/deployment-status.md), [beta setup](docs/independent-beta.md), and the [next-work plan](docs/next-work-plan.md). Collapsible source attachments, a private reusable definitions/standards library and authored challenge responses/resolution are also live; see [the delivered workflow](docs/attached-conversations-library.md).
+
+The next product pass is captured in the [next-work plan](docs/next-work-plan.md), and the hands-on checks are in the [user-testing checklist](docs/user-testing-checklist.md).
 
 Public source code does not make participant data public. Account records belong in the configured database; credentials and workspace exports must not be committed to this repository.
 
@@ -37,7 +39,7 @@ For a portable facilitator demo, run `python scripts/export-standalone.py`; it g
 - [Prototype development history](docs/prototype-history.md)
 - [Public disclosure and prior-art notice](NOTICE.md)
 
-The original framework text is preserved as the conceptual record. Later prototype decisions, including explicit co-signs as the initial basis for pods, are documented alongside it.
+The original framework text is preserved as the conceptual record. Map Library is the starting point; Compare and Argument are two modes of one Comparison. Existing co-sign-derived pods are a prototype; the future pod design remains undecided.
 
 ## License
 

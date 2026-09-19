@@ -3,6 +3,7 @@ dist/server/
 dist/.openai/
 build/
 .wrangler/
+supabase/.temp/
 .dev.vars
 .env
 *.log

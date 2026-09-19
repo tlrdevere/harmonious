@@ -1,27 +1,29 @@
 # Harmonious: independent account beta
 
-Status: the application is hosted at https://harmonious-beta.tlrdevere.workers.dev and the Harmonious beta Supabase project is prepared. Sign-in remains disabled pending the server secret, invited-email list, and real email delivery setup. Automatic GitHub deployment still needs connection. See [deployment-status.md](deployment-status.md) for the verified setup state. No tester accounts have been created.
+Status: public signup is deployed at https://harmonious-beta.tlrdevere.workers.dev with Resend email delivery. The owner reported two accounts working. Turnstile and Supabase CAPTCHA are disabled at the owner's request. See [deployment-status.md](deployment-status.md) for the live release and pending local cleanup.
 
 ## What this build does
 
 The existing radial map editor, shared comparison canvas, reference maps, co-signs, and pods run on a standard Cloudflare Worker. Supabase provides managed email-code authentication and PostgreSQL storage. Testers do not need ChatGPT accounts.
 
-Each invited email address gets one authenticated identity, a display name, and an initially private worldview with three frames. The same identity opens the same saved maps after signing out or using another device. Display names are visible within the beta; email addresses are not included in shared workspace responses.
+Each verified email address gets one authenticated identity, a display name, and an initially private worldview with three frames. The same identity opens the same saved maps after signing out or using another device. Display names are visible within the beta; email addresses are not included in shared workspace responses.
 
-Map settings let the owner choose **Only me** or **All beta participants**. Reference maps are also private until explicitly shared. Only owners edit their maps. Participants may copy or co-sign visible nodes; they can edit their own adopted copies. Co-signs on shared source maps disclose the person's display name and selected wording, without exposing the person's private destination map. Comparisons are private to the person recording them. There is no shared editing of a single map in this release.
+Map settings let the owner choose **Only me** or **All beta participants**. Reference maps are also private until explicitly shared. Only owners edit their maps. Participants may copy or co-sign visible nodes; they can edit their own adopted copies. Co-signs on shared source maps disclose the person's display name and selected wording, without exposing the person's private destination map. Comparisons between shared maps are joint records: both map owners see the same correspondence and can save separate judgments, notes, and history. A comparison involving a private source remains visible only to the participant who recorded it until both sources are shared. There is no shared editing of a single personal map in this release.
 
 Valid node form edits save after a short pause. Map changes, recorded comparisons, co-signs and withdrawals also save automatically. Unrecorded comparison drafts still need **Record comparison**; incomplete node/connection forms stay on the page and trigger the existing leave warning. A save failure retains local work, shows a message, and offers retry and backup. Another person's activity refreshes about every 30 seconds when the local page has no pending edits or open dialog. **Refresh maps** requests it immediately.
 
-Changing a shared map back to private removes its current contents from other people's views. Copies and the snapshots in their earlier comparisons or endorsements remain theirs. Private unpublished wording versions are redacted from other people's responses, even when a later version is shared. An unavailable comparison source has a placeholder with its previously recorded comparison snapshot preserved.
+Changing a shared map back to private removes its current contents from other people's views. Copies and endorsement snapshots remain theirs. In the pending local cleanup, the comparison recorder retains their historical comparison; the other participant sees that record only while both sources remain visible to them. Private unpublished wording versions are redacted from other people's responses, even when a later version is shared. An unavailable comparison source has a placeholder with its previously recorded comparison snapshot preserved for its recorder. Symmetric historical access needs an explicit sharing model; see [Argument readiness](argument-readiness.md).
 
 ## Services and configuration
 
+The pending local release also requires `20260910212254_overall_comparisons.sql`. It introduces persistent overall Comparisons and links existing proposals to them. Follow the coordinated rollout in [overall Comparisons](overall-comparisons.md); this migration is not yet applied to the live beta.
+
 Use the project owner’s [Harmonious GitHub repository](https://github.com/tlrdevere/harmonious), approved for public source publication. GitHub and Supabase are connected. Cloudflare can connect to this repository for builds. The original Sites checkout retains its deployment manifest and resources for rollback; this independent checkout does not carry that Site identity.
 
-1. Create/select a Supabase project, then apply `supabase/migrations/20260908233252_harmonious_accounts.sql` once. Apply migrations through the connected project or the Supabase SQL editor. The migration creates the account record store, atomic save RPC, and access restrictions. It does not modify existing Sites/D1 data.
+1. Create/select a Supabase project, then apply `supabase/migrations/20260908233252_harmonious_accounts.sql` once and apply later migrations in timestamp order, including `20260910043435_allow_shared_comparison_judgments.sql`. Apply migrations through the connected project or the Supabase SQL editor. The migrations create the account record store, atomic save RPC, access restrictions, and shared-comparison judgment access. They do not modify existing Sites/D1 data.
 2. Configure an SMTP provider in Supabase Auth so sign-in emails can reach actual testers. The default Supabase sender is limited to project-team email addresses. New free-plan projects also require custom SMTP before changing Auth email templates, following [Supabase’s June 2026 change](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier). Set the **Magic Link** email template to `supabase/templates/magic-link.html`, which displays the email OTP. Set the Auth Site URL to the intended Harmonious origin. Keep email rate limits enabled. These are prerequisites for testing email delivery.
 3. Run `npm ci`, `npm test`, `npm run test:accounts`, and `npm run build`. The output is `build/cloudflare/worker.mjs`.
-4. In Cloudflare, create/select the Worker named by `wrangler.jsonc` and connect the repository. The build command is `npm run build`, and the deployment command is `npm run deploy`. Set the five runtime values below as Worker secrets. Use a dedicated preview Worker/project if production accounts already exist.
+4. In Cloudflare, create/select the Worker named by `wrangler.jsonc` and connect the repository. The build command is `npm run build`, and the deployment command is `npm run deploy`. Set the runtime values below as Worker secrets. Use a dedicated preview Worker/project if production accounts already exist.
 5. Publish the preview and run the acceptance flow below. Publish a second change to confirm the ongoing edit/deploy path before moving testers over. Keep the previous Sites app available until that handoff succeeds.
 
 | Worker runtime value | Purpose |
@@ -30,7 +32,10 @@ Use the project owner’s [Harmonious GitHub repository](https://github.com/tlrd
 | `SUPABASE_URL` | Exact HTTPS project origin, without a trailing slash. |
 | `SUPABASE_PUBLISHABLE_KEY` | Project publishable key used by the Worker for Auth requests. |
 | `SUPABASE_SECRET_KEY` | Server-only `sb_secret_…` key used for the database RPCs. Never put it in frontend code, a repository, or a chat message. |
-| `BETA_INVITE_EMAILS` | Comma- or newline-separated invited email addresses. An empty/missing list disables sign-in. Each authenticated request rechecks membership. |
+| `SIGNUP_MODE` | `public` allows any confirmed email address; omitted or `invite` requires the invitation list. Unknown modes disable sign-in. |
+| `BETA_INVITE_EMAILS` | Optional in public mode. In invite mode, a comma/newline list of permitted emails; an empty list disables sign-in and every authenticated request rechecks membership. |
+
+This release requests email codes without a CAPTCHA token. Keep Supabase CAPTCHA disabled to match that flow, and retain native email and verification rate limits. The repository retains an unused challenge component from the earlier setup; setting old Turnstile environment values alone does not enable bot protection. Reintroducing it would require a coordinated client, Worker and Supabase change.
 
 For CLI deployment, configure secrets with `wrangler secret put NAME`, entering values through its secure prompt. Do not embed values in command arguments. Cloudflare's secret dashboard is also suitable. `.dev.vars.example` documents local development values; `.dev.vars` is ignored by Git. No live secrets are included in the source or generated Worker.
 
@@ -52,7 +57,7 @@ In the [Cloudflare dashboard](https://dash.cloudflare.com/), open **Workers & Pa
 
 Set the build command explicitly: Workers Builds does not use the custom build command from `wrangler.jsonc`. The repository's `.node-version` selects Node.js 22.
 
-Configure the five runtime values listed above under the Worker's **Settings → Variables & Secrets**. Build variables are separate and do not provide runtime configuration. The prepared Supabase project URL is `https://hpjsieqbpnazpnjtyzdv.supabase.co`. Once Cloudflare assigns the website URL, use its exact HTTPS origin for `APP_ORIGIN` and the Supabase Auth Site URL.
+Configure the runtime values listed above under the Worker's **Settings → Variables & Secrets**. Build variables are separate and do not provide runtime configuration. The prepared Supabase project URL is `https://hpjsieqbpnazpnjtyzdv.supabase.co`. Once Cloudflare assigns the website URL, use its exact HTTPS origin for `APP_ORIGIN` and the Supabase Auth Site URL.
 
 A successful first deployment establishes hosting; sign-in still requires the runtime configuration and Supabase email setup above. Complete the acceptance checks before inviting testers.
 
@@ -68,7 +73,7 @@ For this small beta the Worker reads a bounded snapshot and projects the private
 
 ## Acceptance checks before inviting testers
 
-- Sign in with two different invited email addresses. Verify real code delivery, sign-out, and access again from a fresh browser session/device.
+- Sign in with two different email addresses without an invitation list. Verify real code delivery, sign-out, and access again from a fresh browser session/device.
 - Each person starts with their own private three-frame map. Confirm neither can read or write the other's private map, including through API requests.
 - One person shares a map; both co-sign one node. Both should see two unique people in the shared node's membership, while adopted personal maps remain private.
 - Edit maps in both accounts and confirm both saves persist. Edit the same map in two sessions and confirm an older save is rejected without losing the page's unsaved work.
