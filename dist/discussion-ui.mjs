@@ -1,5 +1,6 @@
 import {CounterpartUI} from './counterpart-ui.mjs';
-import {makeDiscussion,discussionLayer,discussionSource,discussionTargetLabel,discussionHealth,DISCUSSION_LABELS} from './discussion.mjs';
+import {ReasoningUI} from './reasoning-ui.mjs';
+import {makeDiscussion,discussionLayer,discussionSource,discussionTargetLabel,discussionHealth,DISCUSSION_LABELS,isReason,isChallenge,canExplainReasoning} from './discussion.mjs';
 import {comparisonPairKey,validateWorkspace} from './workspace.mjs';
 import {comparisonNodeKey,visibleComparisonEndpoint} from './comparison-layout.mjs';
 import {graphEdges,STRUCTURAL_TYPES,RELATION_TYPES} from './model.mjs';
@@ -23,7 +24,6 @@ export class DiscussionUI{
     this.host.addEventListener('input',()=>{this.dirty=true;this.c.status();});
     const controls=discussEl('div','','discussion-layers');controls.setAttribute('role','group');controls.setAttribute('aria-label','Visible comparison layers');
     for(const [key,label]of [['map','Map'],['inquiries','Inquiries'],['arguments','Arguments']]){const b=discussButton(label,()=>{this.layers[key]=!this.layers[key];b.setAttribute('aria-pressed',String(this.layers[key]));if(this.groupTarget)this.openGroup(this.groupTarget);this.draw();this.position();});b.dataset.layer=key;b.setAttribute('aria-pressed','true');controls.append(b);}
-    controls.append(discussButton('Focus arguments',()=>{if(!this.canLeave())return;this.layers.inquiries=false;this.layers.arguments=true;this.listArguments();for(const b of controls.querySelectorAll('[data-layer]'))b.setAttribute('aria-pressed',String(this.layers[b.dataset.layer]));this.draw();}));
     const earlier=discussButton('Earlier records',()=>this.setRecordsOpen(this.recordsPanel.hidden));
     earlier.className='discussion-secondary';earlier.setAttribute('aria-controls','comparison-panel');earlier.setAttribute('aria-expanded','false');
     controls.append(discussButton('Refresh',async()=>{if(!this.c.account)return;if(this.dirty){this.c.message('Save or close your conversation draft before refreshing.');return;}await this.c.account.save();await this.c.account.refresh();if(this.viewId)this.open(this.viewId);},'discussion-secondary'),discussButton('Conversations',()=>this.list(),'discussion-secondary'),earlier);
@@ -51,7 +51,9 @@ export class DiscussionUI{
     discussUI('new-comparison').hidden=true;
     document.querySelector('.comparison-heading p').textContent='Connect positions, ask questions, and challenge reasoning together.';
     document.querySelector('.comparison-canvas-footer').textContent='Select nodes or connections to relate, ask, or challenge · Drag empty space to pan · Scroll to zoom';
-    discussUI('compare-view-mode').textContent='Map & conversation';discussUI('argument-mode').textContent='Earlier argument view';
+    discussUI('compare-view-mode').textContent='Map & conversation';discussUI('argument-mode').textContent='Earlier reasoning';
+    for(const b of controls.querySelectorAll('[data-layer]'))if(b.dataset.layer!=='inquiries')options.append(b);
+    this.reasoning=new ReasoningUI(this);
   }
   setMode(mode){
     const views=discussUI('comparison-view-modes'),heading=discussUI('comparison-context').querySelector('.context-heading');
@@ -67,6 +69,7 @@ export class DiscussionUI{
   actor(){return this.c.account?.actor?.id||this.c.participation.actorId||this.c.workspace.maps.find(m=>m.id===this.c.sides.a.mapId)?.ownerId;}
   thread(){return this.c.workspace.comparisonThreads?.find(t=>comparisonPairKey(t)===comparisonPairKey({aMapId:this.c.sides.a.mapId,bMapId:this.c.sides.b.mapId}));}
   entries(){return (this.c.workspace.discussions||[]).filter(r=>r.comparisonId===this.thread()?.id&&r.status==='active');}
+  allEntries(){return (this.c.workspace.discussions||[]).filter(r=>r.comparisonId===this.thread()?.id);}
   name(id){return this.c.workspace.participants.find(p=>p.id===id)?.name||'Participant';}
   canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.dirty=false;this.viewId=null;this.groupTarget=null;this.host.hidden=true;this.c.status();return true;}
   close(){const entry=this.viewId;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.draw();const marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry);(marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
@@ -75,6 +78,7 @@ export class DiscussionUI{
   selectNode(side,id){if(!this.canLeave())return;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
   selectTarget(target){if(!this.canLeave())return;this.target=target;this.returnFocus=document.activeElement;this.actions();}
   actions(){
+    if(this.target?.type==='inference'){this.reasoning.openInference(this.target.entryId);return;}
     if(!this.target)return;const ws=this.c.workspace,source=discussionSource(ws,this.target),own=source?.map.ownerId===this.actor();this.shell(discussionTargetLabel(ws,this.target));
     if(source){const text=source.item.details||source.item.summary;if(text){const details=discussEl('details');details.append(discussEl('summary','Read source'),discussEl('p',text,'discussion-body'));this.host.append(details);}}
     const pair=['a','b'].map(side=>({type:'node',mapId:this.c.sides[side].mapId,nodeId:this.c.sides[side].nodeId}));
@@ -83,6 +87,7 @@ export class DiscussionUI{
       this.host.append(discussButton('Clear other selection',()=>{const side=this.c.sides.a.mapId===this.target.mapId?'b':'a';this.c.sides[side].nodeId=null;discussUI(`compare-node-${side}`).value='';this.c.canvas.pick(side,null);this.actions();},'discussion-text-action'));
     }
     const understand=[],respond=[],collaborate=[];
+    if(canExplainReasoning(ws,this.target,this.actor()))respond.push(discussButton('Explain my reasoning',()=>this.compose('argument','reason')));
     if(source){
       const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(this.target));
       if(context)understand.push(discussButton('View definitions & standards',()=>this.openContexts(this.target)));
@@ -95,23 +100,26 @@ export class DiscussionUI{
   }
   compose(kind,action,old=null,extra={}){
     if(!this.canLeave())return;this.groupTarget=null;const target=old?.target||this.target,{title,...saveExtra}=extra;this.target=target;this.shell(old?'Edit contribution':title||contributionLabel({kind,action}));
-    const form=discussEl('form'),fieldLabel=kind==='context'?'Author’s definitions and standards':kind==='inquiry'?'Your question':kind==='argument'?'Your challenge':['counterpart','adoption'].includes(kind)?'Optional note':'Description';const label=discussEl('label',fieldLabel);label.htmlFor='discussion-body';
-    let options=kind==='inquiry'?['question','explain','example','evidence']:kind==='argument'?['challenge','inference','counterexample','fallacy']:kind==='relationship'?['agreement','disagreement']:null;
+    const reasoning=kind==='argument'&&action==='reason',argumentReply=kind==='reply'&&(old?.layer||saveExtra.layer)==='arguments';
+    const form=discussEl('form'),fieldLabel=kind==='context'?'Author’s definitions and standards':kind==='inquiry'?'Your question':reasoning?'Your reason':kind==='argument'?'Your challenge':['counterpart','adoption'].includes(kind)?'Optional note':'Description';const label=discussEl('label',fieldLabel);label.htmlFor='discussion-body';
+    let options=kind==='inquiry'?['question','explain','example','evidence']:kind==='argument'&&!reasoning?['challenge','inference','counterexample','fallacy']:kind==='relationship'?['agreement','disagreement']:null;
+    if(reasoning||kind==='argument'||argumentReply)form.append(discussEl('p',target.type==='inference'?'Addresses the reasoning connection, not the statement itself.':`Addresses: ${discussionTargetLabel(this.c.workspace,target)}`,'discussion-target-note'));
     if(old&&options&&!options.includes(action))options=[...options,action];
     const select=discussEl('select');select.id='discussion-action';select.setAttribute('aria-label','Contribution type');if(options){for(const value of options){const o=discussEl('option',contributionLabel({kind,action:value}));o.value=value;select.append(o);}select.value=action;form.append(select);}
     const body=discussEl('textarea');body.id='discussion-body';body.rows=5;body.maxLength=10000;body.value=old?.body||'';body.required=!['counterpart','adoption','relationship'].includes(kind);
     const prompts={explain:'Could you explain this in more detail?',example:'Could you give an example?',evidence:'What evidence supports this?'};
-    body.placeholder=kind==='context'?'Define key terms, then describe the standards or criteria used here.':kind==='counterpart'?'Describe the counterpart you are looking for.':kind==='adoption'?'Explain why this node may belong in the other person’s map.':kind==='relationship'?'Describe the relationship (optional).':kind==='argument'?'Explain the problem you see.':'Write your question.';
+    body.placeholder=reasoning?'Explain why this supports your position.':argumentReply?'Explain your response.':kind==='context'?'Define key terms, then describe the standards or criteria used here.':kind==='counterpart'?'Describe the counterpart you are looking for.':kind==='adoption'?'Explain why this node may belong in the other person’s map.':kind==='relationship'?'Describe the relationship (optional).':kind==='argument'?'Explain the problem you see.':'Write your question.';
     if(options)select.onchange=()=>{if(kind==='inquiry'&&(!body.value||Object.values(prompts).includes(body.value)))body.value=prompts[select.value]||'';this.dirty=true;};
     if(!old&&kind==='inquiry'&&prompts[action])body.value=prompts[action];
-    if(kind==='argument')form.append(discussEl('p','Choose the closest type, then explain the problem in your own words.','field-help'));
+    if(kind==='argument'&&!reasoning)form.append(discussEl('p','Choose the closest type, then explain the problem in your own words.','field-help'));
     const reference=discussEl('input');reference.type='url';reference.id='discussion-reference';reference.maxLength=2000;reference.placeholder='https://';reference.value=old?.referenceUrl||'';
     if(kind==='counterpart'){const thread=this.thread(),other=this.c.workspace.maps.find(m=>[thread?.aMapId,thread?.bMapId].includes(m.id)&&m.id!==target.mapId);form.append(discussEl('p',`Request to ${this.name(other?.ownerId)} to add a corresponding node.`,'field-help'));}
     if(kind==='adoption'){const thread=this.thread(),other=this.c.workspace.maps.find(m=>[thread?.aMapId,thread?.bMapId].includes(m.id)&&m.id!==target.mapId);form.append(discussEl('p',`Suggestion to ${this.name(other?.ownerId)} to consider this node for their map.`,'field-help'));}
-    form.append(label,body);if(old?.referenceUrl){const refLabel=discussEl('label','Reference link');refLabel.htmlFor=reference.id;form.append(refLabel,reference);}
+    form.append(label,body);if(old?.referenceUrl||reasoning||argumentReply){const refLabel=discussEl('label','Reference link (optional)');refLabel.htmlFor=reference.id;form.append(refLabel,reference);}
+    const readDefinitions=kind==='argument'||argumentReply?this.reasoning.definitionChoices(form,old):null;
     const submitLabels={inquiry:'Send question',argument:'Add challenge',counterpart:'Send request',adoption:'Send suggestion',relationship:'Record relationship',reply:'Post response',context:'Save definition'};
-    const submit=discussEl('button',old?'Save changes':['resolve','reopen','accept','maintain','no_position','not_applicable','close_request','reopen_request'].includes(action)?DISCUSSION_LABELS[action]:submitLabels[kind]||'Save','primary');submit.type='submit';form.append(submit);this.host.append(form);
-    form.onsubmit=e=>{e.preventDefault();this.save({...old,...saveExtra,kind,action:options?select.value:action,target,body:body.value,referenceUrl:reference.value},old);};this.positionPopover();body.focus({preventScroll:true});
+    const submit=discussEl('button',old?'Save changes':reasoning?'Add reason':['resolve','reopen','accept','maintain','no_position','not_applicable','close_request','reopen_request'].includes(action)?DISCUSSION_LABELS[action]:submitLabels[kind]||'Save','primary');submit.type='submit';form.append(submit);this.host.append(form);
+    form.onsubmit=e=>{e.preventDefault();this.save({...old,...saveExtra,kind,action:options?select.value:action,target,body:body.value,referenceUrl:reference.value,...(readDefinitions?{definitionRefs:readDefinitions()}: {})},old);};this.positionPopover();body.focus({preventScroll:true});
   }
   async save(input,old=null){
     if(this.saving)return;this.saving=true;this.host.inert=true;
@@ -120,6 +128,7 @@ export class DiscussionUI{
       const value=makeDiscussion(this.c.workspace,{...input,comparisonId:thread?.id||null},this.actor(),old);
       const candidate={...this.c.workspace,discussions:[...(this.c.workspace.discussions||[]).filter(r=>r.id!==value.id),value]};validateWorkspace(candidate);this.c.workspace=candidate;this.dirty=false;this.c.markDirty();
       if(thread){this.c.activeComparisonPair=comparisonPairKey(thread);this.c.setComparisonRoute(thread.id);}
+      if(discussionLayer(value)==='arguments'&&value.status==='active')this.reasoning.focusEntry(value);
       this.c.renderComparison();this.c.library.render();if(value.status==='active')this.open(value.id);else this.close();
     }catch(e){let error=this.host.querySelector('[role=alert]');if(!error){error=discussEl('p');error.setAttribute('role','alert');this.host.append(error);}error.textContent=e.message;}finally{this.saving=false;this.host.inert=false;}
   }
@@ -127,15 +136,18 @@ export class DiscussionUI{
     if(!this.canLeave())return;const r=this.c.workspace.discussions?.find(e=>e.id===id);if(!r)return;this.target={type:'entry',entryId:id};this.returnFocus=document.activeElement;this.shell(contributionLabel(r));this.viewId=id;this.groupTarget=null;
     const anchor=conversationAnchor(this.c.workspace.discussions,r);
     if(anchor&&r.kind!=='context')this.host.append(discussButton('All attached conversations',()=>this.openGroup(anchor),'discussion-text-action'));
+    if(r.target.type==='inference')this.host.append(discussButton('Addresses: reasoning connection',()=>this.reasoning.openInference(r.target.entryId),'discussion-parent-link'));
     if(r.target.type==='entry'){const parent=this.c.workspace.discussions.find(p=>p.id===r.target.entryId);if(parent)this.host.append(discussButton(`Responding to: ${contributionLabel(parent)} by ${this.name(parent.authorId)}`,()=>this.open(parent.id),'discussion-parent-link'));}
-    if(r.kind==='argument')this.host.append(discussEl('p',challengeState(this.entries(),r),'discussion-state'));
+    if(isChallenge(r))this.host.append(discussEl('p',challengeState(this.entries(),r),'discussion-state'));
     const byline=r.kind==='relationship'?`Recorded by ${this.name(r.authorId)} · Source: ${r.targetLabel}`:`${this.name(r.authorId)} · Source: ${r.targetLabel}`;
     this.host.append(discussEl('p',byline,'discussion-byline'),discussEl('p',r.body|| (r.kind==='relationship'?'Relationship recorded.':r.kind==='adoption'?'Please consider adopting this node.':'Please add a corresponding node.'),'discussion-body'));
     if(r.referenceUrl){const link=discussEl('a','Open evidence / reference');link.href=r.referenceUrl;link.target='_blank';link.rel='noopener noreferrer';this.host.append(link);}
+    if(r.definitionRefs?.length)this.host.append(discussButton('View invoked definitions & standards',()=>this.reasoning.showDefinitions(r)));
+    if(discussionLayer(r)==='arguments'){this.host.append(discussButton('Follow argument',()=>this.reasoning.follow({type:'entry',entryId:r.id})),discussButton('Back to source',()=>{this.reasoning.anchor=anchor;this.reasoning.back();}));}
     const health=discussionHealth(this.c.workspace,r);
     if(['changed','unavailable'].includes(health.state))this.host.append(discussEl('p',health.label,'review-warning'));
     this.sourceHistory(r,health);
-    const responses=this.entries().filter(e=>e.target.type==='entry'&&e.target.entryId===id);
+    const responses=this.entries().filter(e=>['entry','inference'].includes(e.target.type)&&e.target.entryId===id);
     if(responses.length){const heading=discussEl('h3','Conversation');this.host.append(heading);for(const reply of responses){const card=discussButton('',()=>this.open(reply.id),'discussion-reply discussion-list-item');card.append(discussEl('strong',`${contributionLabel(reply)} · ${this.name(reply.authorId)}`),discussEl('p',reply.body));this.host.append(card);}}
     if(r.status==='active'){
       if(r.kind==='counterpart')this.counterparts.requestActions(r);
@@ -145,22 +157,28 @@ export class DiscussionUI{
         if(r.authorId!==this.actor())this.actionGroup('Respond',[discussButton(`Contest ${r.action}`,()=>this.compose('argument','challenge',null,{title:`Contest ${r.action}`}))]);
       }else if(['inquiry','counterpart','adoption'].includes(r.kind)&&r.authorId!==this.actor())this.actionGroup('Respond',[discussButton(r.kind==='inquiry'?'Answer':'Respond',()=>this.compose('reply','reply',null,{layer:discussionLayer(r)}))]);
       else if(['argument','reply'].includes(r.kind)){
-        const buttons=[discussButton('Respond',()=>this.compose('reply','reply',null,{layer:discussionLayer(r)}))];
-        if(r.authorId!==this.actor())buttons.push(discussButton('Challenge response',()=>this.compose('argument','challenge')));
-        if(r.kind==='argument'){
+        const buttons=isReason(r)?[]:[discussButton('Respond',()=>this.compose('reply','reply',null,{layer:discussionLayer(r)}))];
+        if(canExplainReasoning(this.c.workspace,this.target,this.actor()))buttons.push(discussButton('Add supporting reason',()=>this.compose('argument','reason')));
+        if(r.authorId!==this.actor())buttons.push(discussButton(isReason(r)?'Challenge reason':'Challenge response',()=>this.compose('argument','challenge')));
+        if(isReason(r))buttons.push(discussButton('Inspect reasoning connection',()=>this.reasoning.openInference(r.id)));
+        if(isChallenge(r)){
           if(r.authorId===this.actor()){const action=challengeState(this.entries(),r)==='Open'?'resolve':'reopen';buttons.push(discussButton(action==='resolve'?'Mark resolved':'Reopen challenge',()=>this.compose('reply',action,null,{layer:'arguments'})));}
           else for(const action of ['accept','maintain'])buttons.push(discussButton(DISCUSSION_LABELS[action],()=>this.compose('reply',action,null,{layer:'arguments'})));
         }
         this.actionGroup('Respond',buttons);
       }
     }
-    if(r.authorId===this.actor())this.actionGroup('Manage',[discussButton('Edit',()=>r.definitionRefs?this.c.library.definitions.choose(r.target):this.compose(r.kind,r.action,r)),discussButton('Withdraw',()=>{if(confirm('Withdraw your contribution? Its history will remain saved.'))this.save({...r,status:'withdrawn'},r);})]);
+    if(r.authorId===this.actor())this.actionGroup('Manage',[discussButton('Edit',()=>r.kind==='context'&&r.definitionRefs?this.c.library.definitions.choose(r.target):this.compose(r.kind,r.action,r)),discussButton('Withdraw',()=>{if(confirm('Withdraw your contribution? Its history will remain saved.'))this.save({...r,status:'withdrawn'},r);})]);
     if(r.history.length){const details=discussEl('details');details.append(discussEl('summary','Earlier wording'));for(const v of r.history)details.append(discussEl('p',`${DISCUSSION_LABELS[v.action]} · ${v.body||'No description'}`));this.host.append(details);}
     this.draw();this.positionPopover();
   }
   sourceHistory(r,health){
     const details=discussEl('details','','discussion-source-history');details.append(discussEl('summary','Source wording & history'));
-    const add=(title,snapshots)=>{details.append(discussEl('strong',title));if(!snapshots){details.append(discussEl('p','Not captured for this earlier contribution.'));return;}for(const s of snapshots){const article=discussEl('article');article.append(discussEl('strong',s?.label||'Unavailable source'));if(s){const wording=s.wording;for(const value of [wording.from,wording.to].filter(Boolean))article.append(discussEl('p',[value.title,value.summary,value.details].filter(Boolean).join('\n'),'discussion-body'));const text=[wording.title,wording.summary,wording.details,wording.body].filter(Boolean).join('\n');if(text)article.append(discussEl('p',text,'discussion-body'));for(const d of s.definitions)article.append(discussEl('p',`Definitions / standards: ${d.body}`,'discussion-body'));}details.append(article);}};
+    const renderSnapshot=(s,depth=0)=>{const article=discussEl('article');article.append(discussEl('strong',s?.label||'Unavailable source'));if(!s||depth>3)return article;const wording=s.wording||{};
+      for(const key of ['reason','conclusion'])if(wording[key]){article.append(discussEl('h4',key==='reason'?'Reason':'Conclusion'),renderSnapshot(wording[key],depth+1));}
+      for(const value of [wording.from,wording.to].filter(Boolean))article.append(discussEl('p',[value.title,value.summary,value.details,value.body].filter(Boolean).join('\n'),'discussion-body'));
+      const text=[wording.title,wording.summary,wording.details,wording.body].filter(Boolean).join('\n');if(text)article.append(discussEl('p',text,'discussion-body'));for(const d of s.definitions||[])article.append(discussEl('p',`Definitions / standards: ${d.title||''} ${d.body}`,'discussion-body'));return article;};
+    const add=(title,snapshots)=>{details.append(discussEl('strong',title));if(!snapshots){details.append(discussEl('p','Not captured for this earlier contribution.'));return;}for(const s of snapshots)details.append(renderSnapshot(s));};
     add('Originally discussed',r.sourceSnapshots);if(r.reviewedSources)add('Last reviewed',r.reviewedSources);if(health.needsReview)add('Current source',health.current);
     if(r.authorId===this.actor()&&health.state==='changed')details.append(discussButton('Confirm current source wording',()=>this.save({...r,reviewSources:true},r)));
     this.host.append(details);
@@ -178,15 +196,15 @@ export class DiscussionUI{
   entryButton(r){
     const children=this.entries().filter(e=>e.target.entryId===r.id),b=discussButton('',()=>this.open(r.id),'discussion-list-item');
     b.dataset.entry=r.id;b.append(discussEl('strong',`${contributionLabel(r)} · ${this.name(r.authorId)}`),discussEl('p',r.body||'Open request','discussion-body'));
-    if(r.kind==='argument')b.append(discussEl('small',challengeState(this.entries(),r)));
+    if(isChallenge(r))b.append(discussEl('small',challengeState(this.entries(),r)));
     if(children.length)b.append(discussEl('small',` · ${children.length} responses`));return b;
   }
   openGroup(target,kind=null,groups=null){
     if(!this.canLeave())return;this.target=target;this.groupTarget=target;this.shell(discussionTargetLabel(this.c.workspace,target));
-    const selected=groups||conversationGroups(this.entries()).filter(g=>stableJSON(g.target)===stableJSON(target));
+    const selected=groups||conversationGroups(this.allEntries()).filter(g=>stableJSON(g.target)===stableJSON(target));
     const entries=selected.flatMap(g=>g.entries),roots=entries.filter(r=>r.kind!=='reply'||!entries.some(p=>p.id===r.target.entryId));
     const heading=kind==='challenges'?'Challenges':kind==='questions'?'Questions & requests':'Attached conversations';this.host.append(discussEl('h3',heading));
-    const visible=roots.filter(r=>kind?kind==='challenges'?r.kind==='argument':r.kind!=='argument':this.layers[discussionLayer(r)]);
+    const visible=roots.filter(r=>kind?kind==='challenges'?isChallenge(r):kind==='reasons'?isReason(r):discussionLayer(r)==='inquiries':this.layers[discussionLayer(r)]);
     for(const r of visible)this.host.append(this.entryButton(r));
     if(!visible.length)this.host.append(discussEl('p',roots.length?'These conversations are collapsed by the display controls.':'No active questions or challenges.'));
     if(visible.length<roots.length)this.host.append(discussButton(`Show all ${roots.length} attached conversations`,()=>{this.layers.inquiries=true;this.layers.arguments=true;for(const b of this.controls.querySelectorAll('[data-layer]'))b.setAttribute('aria-pressed',String(this.layers[b.dataset.layer]));this.openGroup(target,null,selected);}));
@@ -194,9 +212,10 @@ export class DiscussionUI{
   }
   listArguments(){
     this.target=null;this.groupTarget=null;this.shell('Arguments in this comparison');
-    const records=this.entries(),args=records.filter(r=>r.kind==='argument').sort((a,b)=>(challengeState(records,a)==='Open'?0:1)-(challengeState(records,b)==='Open'?0:1));
+    const records=this.entries(),args=records.filter(isChallenge).sort((a,b)=>(challengeState(records,a)==='Open'?0:1)-(challengeState(records,b)==='Open'?0:1));
     this.host.append(discussEl('p',`${args.filter(r=>challengeState(records,r)==='Open').length} open challenges · ${args.filter(r=>challengeState(records,r)!=='Open').length} resolved by their authors.`));
     for(const r of args)this.host.append(this.entryButton(r));
+    for(const r of records.filter(isReason))this.host.append(this.entryButton(r));
     if(!args.length)this.host.append(discussEl('p','Select another person’s node or edge and choose Challenge.'));
     this.positionPopover();
   }
@@ -215,8 +234,9 @@ export class DiscussionUI{
   }
   point(target,visited=new Set()){
     if(!target)return null;
+    if(target.type==='inference'){const p=this.reasoning?.inferences.get(target.entryId);if(p)return p;const r=this.c.workspace.discussions.find(e=>e.id===target.entryId);if(!r||visited.has(r.id))return null;visited.add(r.id);return this.point(r.target,visited);}
     if(target.type==='connection'){const a=this.point(target.a,visited),b=this.point(target.b,visited);return a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:null;}
-    while(target.type==='entry'){if(this.entryPositions?.has(target.entryId))return this.entryPositions.get(target.entryId);if(visited.has(target.entryId))return null;visited.add(target.entryId);const r=this.c.workspace.discussions?.find(e=>e.id===target.entryId);if(!r)return null;if(['relationship','correspondence'].includes(r.kind)){const p=this.point(r.target,visited),q=this.point(r.other,visited);return p&&q?{x:(p.x+q.x)/2,y:(p.y+q.y)/2}:p;}target=r.target;}
+    while(target.type==='entry'){if(this.reasoning?.positions.has(target.entryId))return this.reasoning.positions.get(target.entryId);if(this.entryPositions?.has(target.entryId))return this.entryPositions.get(target.entryId);if(visited.has(target.entryId))return null;visited.add(target.entryId);const r=this.c.workspace.discussions?.find(e=>e.id===target.entryId);if(!r)return null;if(['relationship','correspondence'].includes(r.kind)){const p=this.point(r.target,visited),q=this.point(r.other,visited);return p&&q?{x:(p.x+q.x)/2,y:(p.y+q.y)/2}:p;}target=r.target;if(target.type==='inference')return this.point(target,visited);}
     const side=['a','b'].find(s=>this.canvas.states[s].map?.id===target.mapId);if(!side)return null;
     if(target.type==='edge'){const rendered=this.items?.find(i=>i.type==='edge'&&i.targets?.some(t=>t.edgeId===target.edgeId&&t.mapId===target.mapId));if(rendered?.path.getAttribute('d')){const p=rendered.path.getPointAtLength(rendered.path.getTotalLength()/2);return {x:p.x,y:p.y};}const source=discussionSource(this.c.workspace,target);if(!source)return null;const a=this.point({type:'node',mapId:target.mapId,nodeId:source.item.from}),b=this.point({type:'node',mapId:target.mapId,nodeId:source.item.to});return a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:a||b;}
     const end=visibleComparisonEndpoint(this.canvas.layout,side,target.nodeId),p=end&&this.canvas.positions.get(end.key);return p?{x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H}:null;
@@ -246,7 +266,7 @@ export class DiscussionUI{
       }
     }
     for(const r of this.c.workspace.discussions||[])if(r.kind==='context'&&r.status==='active'&&r.target.type==='node'&&this.layers.map){const side=['a','b'].find(s=>canvas.states[s].map?.id===r.target.mapId),card=side&&canvas.cards.get(comparisonNodeKey(side,r.target.nodeId));if(card&&!card.querySelector('.discussion-context-icon')){const b=discussButton('▤',()=>this.openContexts(r.target),'discussion-context-icon');b.setAttribute('aria-label','Definitions and standards for '+r.targetLabel);card.querySelector('.node-bottom').append(b);}}
-    const groups=conversationGroups(this.entries());
+    const groups=conversationGroups(this.allEntries());
     const previous=canvas.records.map(r=>({...r,legacy:true,target:{type:'node',mapId:r.aMapId,nodeId:r.aNodeId},other:{type:'node',mapId:r.bMapId,nodeId:r.bNodeId}}));
     const endpoint=t=>{const side=['a','b'].find(s=>canvas.states[s].map?.id===t?.mapId);return side&&visibleComparisonEndpoint(canvas.layout,side,t.nodeId)?.key;};
     const connections=groupComparisonConnections([...this.entries().filter(r=>['relationship','correspondence'].includes(r.kind)),...previous],endpoint);
@@ -270,16 +290,17 @@ export class DiscussionUI{
       const key=card||(g.target.type==='edge'?this.sourceEdgeKeys.get(stableJSON(g.target)):g.target.type==='entry'?this.connectionKeys.get(g.target.entryId):null)||g.key;if(!rails.has(key))rails.set(key,{card,groups:[],target:g.target});rails.get(key).groups.push(g);
     }
     for(const rail of rails.values()){
-      const counts={questions:0,challenges:0};for(const g of rail.groups){counts.questions+=g.questions;counts.challenges+=g.challenges;}
+      const counts={questions:0,challenges:0,reasons:0};for(const g of rail.groups){counts.questions+=g.questions;counts.challenges+=g.challenges;counts.reasons+=g.reasons||0;}
       const bar=discussEl('span','','discussion-rail discussion-drawing');
-      for(const [kind,icon]of [['questions','?'],['challenges','!']])if(counts[kind]){
-        const b=discussButton(`${icon} ${counts[kind]}`,()=>this.openGroup(rail.target,kind,rail.groups));b.setAttribute('aria-label',`${counts[kind]} ${kind} attached to ${discussionTargetLabel(this.c.workspace,rail.target)}`);b.setAttribute('aria-expanded',String(stableJSON(this.groupTarget)===stableJSON(rail.target)));b.className=kind;b.dataset.collapsed=String(!this.layers[kind==='challenges'?'arguments':'inquiries']);b.title='Open attached '+kind;bar.append(b);
+      for(const [kind,icon]of [['reasons','↳'],['questions','?'],['challenges','!']])if(counts[kind]){
+        const b=discussButton(`${icon} ${counts[kind]}`,()=>kind==='reasons'&&rail.groups.length===1?this.reasoning.follow(rail.target):this.openGroup(rail.target,kind,rail.groups));b.setAttribute('aria-label',`${counts[kind]} ${kind} attached to ${discussionTargetLabel(this.c.workspace,rail.target)}`);b.setAttribute('aria-expanded',String(stableJSON(this.groupTarget)===stableJSON(rail.target)));b.className=kind;b.dataset.collapsed=String(!this.layers[kind==='questions'?'inquiries':'arguments']);b.title='Open attached '+kind;bar.append(b);
       }
-      if(!counts.questions&&!counts.challenges){const b=discussButton('Responses',()=>this.openGroup(rail.target,null,rail.groups));bar.append(b);}
+      if(!counts.questions&&!counts.challenges&&!counts.reasons){const b=discussButton('Responses',()=>this.openGroup(rail.target,null,rail.groups));bar.append(b);}
       if(rail.card){rail.card.hidden=false;rail.card.querySelector('.node-bottom').append(bar);}
       else{canvas.world.append(bar);this.items.push({type:'badge',target:rail.target,b:bar});}
     }
     this.counterparts.draw();
+    this.reasoning.draw();
     canvas.hint.textContent='Select two nodes to record agreement or disagreement. Select a source to ask or challenge. Open its ? / ! counts to follow conversations.';
     canvas.linkStatus.textContent=`${this.entries().filter(r=>r.kind!=='reply').length} contributions in this comparison`;
     document.querySelector('.comparison-heading').hidden=!!this.thread();
@@ -298,7 +319,7 @@ export class DiscussionUI{
       else {const p=this.point(item.target);const el=item.b;el.hidden=!p;if(!p)continue;const w=el.offsetWidth,h=el.offsetHeight;let x=p.x-w/2,y=p.y-CARD_H/2-h-18;if(item.target.type==='edge'){x=p.x+8;y=p.y-h/2;}else if(el.classList.contains('discussion-rail')){x=p.x+(p.w||0)/2+8;y=p.y-h/2;}while(overlaps(x,y,w,h))y-=h+12;occupied.push({x,y,w,h});if(el.classList.contains('discussion-badge'))for(const id of item.aliases||(item.target.type==='entry'?[item.target.entryId]:[]))this.entryPositions.set(id,{x:x+w/2,y:y+h/2,w,h});el.style.transform=`translate(${x}px,${y}px)`;}
     }
     if(occupied.length){const x=Math.min(0,...occupied.map(r=>r.x)),y=Math.min(0,...occupied.map(r=>r.y));this.canvas.layout.bounds={x,y,width:Math.max(...occupied.map(r=>r.x+r.w))+32-x,height:Math.max(...occupied.map(r=>r.y+r.h))+32-y};}
-    this.counterparts.position();this.positionPopover();
+    this.counterparts.position();this.reasoning.position();this.positionPopover();
   }
   positionPopover(){
     if(this.host.hidden)return;const {surface,camera}=this.canvas,p=this.point(this.target),width=Math.min(350,surface.clientWidth-24);

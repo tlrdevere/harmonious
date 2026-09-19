@@ -28,12 +28,13 @@ export function definitionReference(d,version=d.versions.length){
   return {definitionId:d.id,authorId:d.authorId,type:d.type,version:v.version,title:v.title,body:v.body};
 }
 export const definitionReferenceText=refs=>refs.map(r=>`${r.type==='standard'?'Standard':'Definition'}: ${r.title}\n${r.body}`).join('\n\n');
+export const canInvokeDefinitions=r=>r.kind==='context'||r.kind==='argument'||r.kind==='reply'&&r.layer==='arguments';
 export function validateDefinitionReferences(ws,old,r,actor){
   if(r.definitionRefs===undefined){if(old?.definitionRefs)throw Error('Keep the referenced definitions when editing.');return;}
-  if(r.kind!=='context'||!Array.isArray(r.definitionRefs)||r.definitionRefs.length>30||new Set(r.definitionRefs.map(v=>v.definitionId)).size!==r.definitionRefs.length)throw Error('Invalid definition references.');
+  if(!canInvokeDefinitions(r)||!Array.isArray(r.definitionRefs)||r.definitionRefs.length>30||new Set(r.definitionRefs.map(v=>v.definitionId)).size!==r.definitionRefs.length)throw Error('Invalid definition references.');
   for(const ref of r.definitionRefs){
     const d=ws.definitions?.find(d=>d.id===ref.definitionId);
     if(!d||d.authorId!==actor||stableJSON(ref)!==stableJSON(definitionReference(d,ref.version)))throw Error('Choose an available version from your definitions library.');
   }
-  if(r.body!==definitionReferenceText(r.definitionRefs))throw Error('Referenced wording must match its library version.');
+  if(r.kind==='context'&&r.body!==definitionReferenceText(r.definitionRefs))throw Error('Referenced wording must match its library version.');
 }

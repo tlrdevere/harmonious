@@ -2,7 +2,9 @@
 
 The main goal is a usable Argument mode inside the shared Comparison: someone can explain a position, another person can challenge the claim or its reasoning, and both can follow the exchange on the map. This is a priority order and an estimated five-day sequence, not a promise that every stretch item will fit.
 
-## Starting point
+Progress update (September 19 UTC): the core workflow and automated acceptance checks below have now been implemented ahead of the planned week. See [the current workflow](current-argument-workflow.md), [release status](deployment-status.md), and [remaining priorities](next-work-plan.md). The original sequence is retained for context; hosted CI, finer branch folding and owner usability acceptance remain outstanding.
+
+## Original starting point
 
 Current Compare already supports agreement/disagreement, counterpart requests and direct fulfillment, source-attached inquiries and challenges, nested responses, author-controlled challenge outcomes, and reusable definitions/standards. The latest fixes hide counterpart requests when a link exists and combine multiple connection meanings into one visible edge per node pair. These need acceptance checks, not rebuilding.
 

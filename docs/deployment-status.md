@@ -4,6 +4,26 @@ Updated September 19, 2026 (UTC).
 
 ## Current release
 
+Shared Comparison Argument mode deployed September 19, 2026 at 03:26 UTC (September 18 at 11:26 p.m. in New York).
+
+- Worker version: `749a4446-4096-4106-9976-47e8acf7e2a3`, serving 100% of traffic. Deployment: `6aa90a97-943e-4435-a324-f0bf57f1162c`.
+- **Compare** and **Argument** are compact modes of the same shared Comparison. Selecting one's own ordinary node offers **Explain my reasoning**; authors can add supporting reasons to their own reasons and Argument responses. No question, proposal, agreement or co-sign is required.
+- Participants can challenge a source position, a reason's statement, or its **Supports** connection separately, then respond, accept/maintain, and resolve/reopen with explicit authorship. Acceptance does not resolve another person's challenge automatically.
+- Reasons, challenges and responses appear as source-attached cards. **Follow argument**, **Fit argument**, **Back to source** and **Collapse argument** preserve access through collapsed counters. Automatic connectors avoid source/reason cards, keep Supports labels clear and indicate the support direction. Source-map structure and positions are unchanged.
+- Optional reference links and exact invoked definitions/standards are available in reasoning contributions. Earlier wording, endpoint snapshots, withdrawn ancestors and private-map access remain protected. Authors can withdraw unchanged child contributions after their parent is withdrawn.
+- New portable workspaces use schema version 3 and read versions 1/2. Capability checks stop unsupported older clients before receiving or saving new reasoning records, with a recovery message. Earlier proposal-based graphs remain under **Earlier reasoning**. Prefer forward fixes; do not deploy a pre-capability Worker after new reasoning is saved.
+- Migration `20260919032433_comparison_reasoning` is applied. The file was first created with Supabase CLI 2.117.0, then renamed to the migration connector's applied timestamp. It replaces only the existing conversation validation trigger function, retaining SECURITY INVOKER and an empty search path. No table, grant or stored contribution was rewritten.
+- Before/after database verification: **41 records**, generation **48**, content digest `a30e085d12ffc32e1044e1d66c3f1958` unchanged. No live test accounts or contributions were created.
+- All **24 application/account test scripts** and **four browser walkthroughs** passed, including isolated two-account reason/inference/response flow and direct PostgreSQL boundary tests. Final routing checks verify complete badge clearance and rendered SVG geometry. Portable export, portable reopen/navigation, production build, complete module graph and security-header checks passed.
+- Public verification confirms all **33 client files** and the homepage exactly match the tested release. Configured sign-in, anonymous account-access denial and private-configuration denial passed. The first public read was blocked by the local network sandbox; the approved read-only retry passed.
+- Local Worker SHA-256: `cbe0d0302b7a5d9d4ba49ed8ff7913e8ec33ef851f743eb79ed168bb6598fd9b`. All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were preserved. No dependencies were changed or registry inventory sent.
+- The security advisor reports only the existing server-only table notices ([RLS explanation](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)) and existing Auth password warning ([password protection guidance](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)); no Auth settings or grants changed.
+- Read [the current Argument workflow](current-argument-workflow.md) and [the updated two-account checklist](user-testing-checklist.md). **Reload both PCs before testing.** The owner's live usability acceptance is still outstanding. Source is checkpointed locally with this release; it has not been pushed to GitHub.
+
+The canvas expands one source group and displays up to 40 cards with necessary ancestors retained; list access exposes the rest. Finer subbranch folding, denser-graph navigation, hosted CI and recipient-controlled adoption fulfillment remain follow-ups. Dragging, pod design and arbitrary graph cross-links remain deferred.
+
+## Preceding single-edge release
+
 Single comparison edges and linked-counterpart request cleanup deployed September 19, 2026 at 01:21 UTC.
 
 - Worker version: `6802bb32-fd1a-40bf-b289-fd0df1ed9d88`, serving 100% of traffic. Deployment: `0f919609-89b5-4c6d-9cf2-e21df1e79ba0`.

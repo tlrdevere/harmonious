@@ -1,25 +1,20 @@
 # Harmonious next-work plan
 
-## Next-week roadmap — September 21–25, 2026
+## Current priorities — September 19, 2026 (UTC)
 
-The [preparation pass is complete](argument-preparation-status.md): baseline checkpoint and tests, integration decision, clickable interaction sketch, and acceptance plan. The next step is implementing the reason/inference model and its account/database tests, followed by the on-map flow.
-
-See the [proposed five-day plan](next-week-plan-2026-09-21.md). The main priority is a coherent Argument mode over the current shared Comparison: positions, reasons, challenges to claims or reasoning connections, and responses displayed as a readable on-map chain. It builds on the delivered conversations and preserves earlier Argument records without restoring proposal prerequisites. The plan also covers Compare acceptance, focused cleanup, two-account verification and release preparation. Dates are estimates; the complete core workflow comes before stretch features.
-
-## Current priorities — September 18
-
-The three approved priorities are delivered: source-attached conversations, the central definitions/standards library, and Argument responses with author-controlled outcomes. See [the delivered workflow and its boundaries](attached-conversations-library.md) and [deployment status](deployment-status.md).
+The core Argument workflow from the [weekly plan](next-week-plan-2026-09-21.md) is implemented: reasons and supporting reasons, separate challenges to statements and reasoning connections, responses, attributed outcomes, references and pinned definitions, all within one shared Comparison. Read [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md) for release evidence.
 
 Next:
 
-1. Complete the owner's two-account acceptance pass using the [updated checklist](user-testing-checklist.md): density of source counters, reuse of definitions, and following a challenge through its responses and resolution.
-2. Counterpart placeholders, direct create-or-choose fulfillment and request outcomes are now delivered; see [counterpart workflow](counterpart-workflow.md). Use acceptance feedback to refine dense-map behavior and conversation navigation. Adoption suggestions still require separate recipient map edits.
-3. The accumulated working tree is checkpointed locally as `94a8033`, with baseline checks passing. Establish repeatable CI and release checks during implementation. The [dependency advisories and future disclosure reminder](dependency-review.md) remain tracked; do not silently repeat a registry lookup.
-4. Continue breaking up conversation UI and accumulated styles when the next interaction change creates a useful boundary.
+1. Complete the owner's two-account walkthrough in [the checklist](user-testing-checklist.md), especially whether the distinction between challenging a statement and challenging its reasoning is clear.
+2. Refine dense-map navigation from that feedback. Current automatic placement routes lines around cards and expands one source group, with a 40-card limit that preserves ancestors and offers list access to the rest. Individual subbranch folding and easier navigation through larger arguments are still useful follow-ups.
+3. Add repeatable CI around the existing application, account, database, browser, export and build checks. The local release checks are repeatable; a hosted CI workflow has not yet been configured.
+4. Add recipient-controlled adoption fulfillment when appropriate. The existing suggestion must not silently copy or edit another person's worldview.
+5. Revisit the tracked [development dependency advisories](dependency-review.md) in a separate tested update. Remind the owner about software-inventory disclosure before another registry audit; this release changed no dependencies and performed no new registry lookup.
 
-The current implementation keeps one source window open, keeps counters visible when a conversation type or source branch is collapsed, and does not move source nodes. Definitions are private library entries with explicitly versioned source references. Challenge outcomes identify who accepted, maintained a position, resolved or reopened; they do not imply agreement by both users.
+The current workflow preserves source maps, authorship, exact invoked definitions and contribution history. Acceptance does not automatically resolve a challenge or declare agreement by both people. Older proposal-based graphs remain available through **Earlier reasoning**.
 
-Dragging/rearranging and the future pod model remain deferred. Multiple pinned conversation windows and richer argument graph layouts can follow usability feedback.
+Manual dragging/rearranging, the future pod model, automatic merging, multiple pinned windows and arbitrary reasoning links remain deferred. The original weekly estimates below and in the linked plan are planning history, not a promise that all stretch items have shipped.
 
 ## Historical navigation and earlier Argument design
 

@@ -2,6 +2,8 @@
 
 Prepared September 18, 2026 (New York). This records preparation for the [next-week plan](next-week-plan-2026-09-21.md), not a new application release.
 
+Follow-up: the core implementation has now been released; see [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md). This page remains the historical preparation record.
+
 ## Recoverable baseline
 
 - Local commit `94a8033` checkpoints the accumulated comparison prototype, tests, migration files and documentation before Argument integration. It was not pushed.

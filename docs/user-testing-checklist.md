@@ -1,6 +1,25 @@
 # Harmonious: what to check on your next visit
 
-## Start here: missing counterparts
+## Start here: the current Argument workflow
+
+Use a different signed-in account on each PC or browser profile. Reload after the update is deployed, use disposable test maps, and wait for **All changes saved** before refreshing the other account. See [the current Argument guide](current-argument-workflow.md) for the intended behavior and remaining limits.
+
+- [ ] Open the same Comparison from both accounts. **Compare** and **Argument** should be modes in its toolbar, without requiring a proposal or shared question.
+- [ ] As account A, select your own ordinary source node and choose **Explain my reasoning**. Add a reason with an optional reference link. Confirm account B sees the saved reason, its author, and its **Supports** connection after refreshing. Neither original worldview should acquire a new node.
+- [ ] Open your reason and choose **Add supporting reason**. Follow the two-step chain back to the source. Reasons should have their own **↳** count, not increase the **!** challenge count.
+- [ ] As account B, try three distinct actions: **Challenge** the original source node, **Challenge reason** on its reason card, and **Challenge reasoning** through the **Supports** connection. Each contribution should identify the correct target; the last should let you inspect both the reason and conclusion.
+- [ ] As account A, **Respond** to a challenge, include a reference link, and add a supporting reason to your response. As B, challenge that response. Use parent links and **Back to source** to retrace the exchange.
+- [ ] Choose **Accept challenge** or **Maintain position** as the recipient. The challenge should remain open until its author chooses **Mark resolved**. Reopen it as that author. None of these actions should change agreement/disagreement between the source nodes automatically.
+- [ ] Invoke a library definition or standard on a reason, challenge, and Argument response. Read the exact selected version through the definition icon from the other account. Edit the library entry; existing contributions must keep their chosen version, and the other account must not see uninvoked wording.
+- [ ] Use **Follow argument**, **Fit argument**, **Collapse argument**, and the source indicators. Hide Arguments through **View options**, and collapse a source-map branch. Its conversation counts should remain discoverable. If several source conversations share one collapsed indicator, confirm you can choose among them.
+- [ ] Type an unfinished reason, switch **Compare → Argument → Compare**, and check that its text and selected definitions remain. The mode switch should preserve the camera and selection. Trying to leave the draft should ask before discarding it. Save before reloading: unfinished forms do not survive a reload.
+- [ ] Edit a reason that has been challenged, then edit its source position. Check **Source wording & history** from the other account. Original wording must remain intact; a connection challenge should retain both original endpoints and indicate relevant source changes.
+- [ ] Withdraw a reason with a response or challenge beneath it. The active descendants should remain reachable through a labeled historical parent. The other author should still be able to withdraw their own child contribution; adding or rewriting contributions against unavailable sources should fail.
+- [ ] On a busy test argument, confirm that no more than 40 cards appear at once and that displayed children keep their necessary parents. **Show all … contributions** opens a list for the rest; responses remain reachable through their conversations. Repeat normal navigation at a narrow window width and with the keyboard.
+- [ ] Make one source map private, then refresh the other account. The inaccessible conversation, references, invoked definitions, and any open contribution window should disappear there. Restore sharing when finished.
+- [ ] After both accounts report **All changes saved**, reopen the Comparison and verify the chain, authors, outcomes, and histories. Existing proposal-based work should still open through **View options → Earlier reasoning** where available.
+
+## Then check: missing counterparts
 
 Reload both PCs before trying the new flow.
 
@@ -24,7 +43,7 @@ Reload both PCs and use a different signed-in account on each. Wait for **All ch
 - [ ] Challenge a node, an edge and a recorded relationship. Their **!** counters should open the relevant conversations. Collapse Inquiries/Arguments and a source branch; the counters should remain discoverable.
 - [ ] Open **Map Library → Definitions & standards**, create an entry, then invoke it on your own node using **Use definitions & standards**. The other account should read its wording through the source's definition icon.
 - [ ] Edit the library entry. The existing source should still use the earlier wording until you explicitly choose the newer version. The other account should not see unused entries or uninvoked wording.
-- [ ] Open **Focus arguments**, follow a challenge and its responses, and use a response's parent link. Check that you can tell who said what and what they were responding to.
+- [ ] Open **Argument**, follow a challenge and its responses, and use a response's parent link. Check that you can tell who said what and what they were responding to.
 - [ ] As the recipient, **Accept challenge** or **Maintain position** with an explanation. The challenge stays open until its author marks it resolved. Reopen it as the author and confirm the history remains.
 - [ ] Repeat opening and closing attachments at different zoom levels and on a narrow window. Note anything that covers too much of the map or makes it hard to find the source.
 
@@ -61,7 +80,7 @@ Start by reloading the page. Download a backup before experimenting, and use cle
 - [ ] Select the other person's node and **Ask**. Try explanation, example, evidence and a freely worded question.
 - [ ] Select an edge and **Challenge**. Try a general challenge, Reasoning does not follow, Counterexample and Logical fallacy or reasoning error. Repeat on a node or a relationship between maps.
 - [ ] If an older node has definitions or standards, confirm **View definitions & standards** still opens it. New per-node definition creation should not be offered.
-- [ ] Toggle **Map**, **Inquiries** and **Arguments** independently. Open an attached conversation, respond, and use **Fit both** if needed to see all sources.
+- [ ] Toggle **Inquiries** in the toolbar and **Map** / **Arguments** under **View options** independently. Open an attached conversation, respond, and use **Fit both** if needed to see all sources.
 - [ ] Start typing a contribution, try leaving, and cancel the discard prompt. Your draft should still be present.
 - [ ] Reopen the Comparison after both accounts report **All changes saved**. Verify your relationships, requests, questions, arguments and replies remain.
 - [ ] Check that the previous judgments remain under **Earlier records** and that existing Argument links still open their earlier view.
@@ -80,7 +99,7 @@ Dragging nodes and rearranging maps are deliberately deferred.
 - [ ] A fresh visit opens **Map Library**. No map canvas appears until you choose a map; a saved direct link still opens its specific map or comparison.
 - [ ] **My maps** shows your maps. Open one, return to Library, and create another using **Create map**. New account maps start private.
 - [ ] **Comparisons & arguments** lists overall map pairs. **Create comparison** lets you choose your own and another accessible map. Shared maps are choices here, rather than a separate top-level tab.
-- [ ] Inside a Comparison, **Map**, **Inquiries**, and **Arguments** control the new conversation layers. Earlier judgments and their Argument view remain available for existing records.
+- [ ] Inside a Comparison, **Compare** / **Argument** choose its focus. **Inquiries** and the **View options** visibility controls manage clutter. Earlier judgments and **Earlier reasoning** remain available for existing records.
 - [ ] **View source map** opens the source and its co-sign/copy controls. The back button returns to Comparisons. Co-sign history remains available here.
 - [ ] The account menu, opened using your name, contains refresh, import, backup, save and sign out.
 - [ ] **Pods** lists the existing derived views. It clearly explains that these come from co-signs; independent pod authoring remains undecided.
@@ -116,7 +135,7 @@ Dragging nodes and rearranging maps are deliberately deferred.
 - [ ] Edit a reason that the other person connected to. The existing connection should show **Needs review**. Its history should retain the earlier endpoint version; the connection's author can review and save against the revised reason.
 - [ ] Withdraw a test contribution, then undo it. Check that history survives. Undo is limited to changes on the current page/context; it is not a permanent account-wide undo list.
 
-## Return to it later
+## Earlier Argument: return to it later
 
 - [ ] Start an unfinished form, switch between Compare and Argument, and return. The draft should still be there. Leaving for a different task should warn before discarding it. Save the form before reloading: unfinished drafts do not survive a page reload.
 - [ ] After **All changes saved**, reload both accounts. The same reasons, connections, authors and histories should remain.
@@ -124,14 +143,14 @@ Dragging nodes and rearranging maps are deliberately deferred.
 - [ ] On a disposable proposal, change the proposed question or source wording. Earlier reasoning should remain under its original version and be marked for review, rather than silently moving to the changed question.
 - [ ] Download a backup. It should include comparisons and arguments. Opening it in the portable demo preserves that history; importing into a signed-in account currently imports private map copies only.
 
-## Things to judge, rather than merely pass or fail
+## Things to judge about the current workflow
 
-- Is it obvious which question you are working on and whose position each card represents?
+- Is it obvious which position or reasoning connection you are addressing and who authored each card?
 - Is the transition from Compare to Argument natural?
-- Do the distinction between Ground, Evidence and Value, and the connection choices, match how you want people to reason?
-- Does the layout help you follow an argument, or do the author columns and automatic positioning get in the way?
+- Is the distinction between challenging a position, a reason, and a reasoning connection clear?
+- Does the layout help you follow an argument, or do the placement and number of expanded cards get in the way?
 - Is agreement prominent enough, and does **Needs review** explain the next step clearly?
 
-The first Argument version has automatic positioning, with reasons below the compared maps. Individual card dragging, argument outcomes and merged agreement cards are not implemented yet. Pod design remains deferred.
+The current Argument mode has automatic positioning and authored challenge outcomes. Individual card dragging, finer subbranch folding, arbitrary graph links, and merged agreement cards remain deferred. Pod design is also deferred. The separate Ground/Evidence/Value graph is the earlier compatibility view.
 
 If something fails, note the account label (A or B), map/proposal name, the action you took, what you expected, and what happened. A screenshot and the visible error text are useful. Do not share sign-in codes or private keys.

@@ -2,6 +2,8 @@
 
 Prepared September 18, 2026. This is an implementation design, not a claim that the new features are deployed. Read with [the weekly plan](next-week-plan-2026-09-21.md), [acceptance plan](argument-acceptance-plan.md), and [completed preparation record](argument-preparation-status.md). The [clickable sketch](design/argument-interaction.html) demonstrates one interaction chain.
 
+Implementation note (September 19 UTC): the core design below is now implemented. The sections describing the earlier starting point are retained as design history. See [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md) for delivered behavior and release evidence.
+
 ## Decision
 
 Extend the existing Comparison conversation records (`discussions`) into the current Argument mode. A **reason** is an authored, versioned contribution that supports one source position or an earlier contribution. Its support connection is derived from its immutable target. A challenge can target the reason's wording or that specific support connection.

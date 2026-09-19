@@ -1,6 +1,7 @@
 import {AccountChallenge} from './account-challenge.mjs';
 import {validateWorkspace,newId} from './workspace.mjs';
 import {synchronizeIdeas} from './adoption.mjs';
+import {discussionSource} from './discussion.mjs';
 import {accountKey,accountClone,stableJSON,ownedAccountRecords,accountChanges} from './account-model.mjs';
 const accountUI=id=>document.getElementById(id);
 const accountOption=(value,label)=>{const o=document.createElement('option');o.value=value;o.textContent=label;return o;};
@@ -44,9 +45,9 @@ export class AccountWorkspace{
     const record=c.record.bind(c);c.record=async()=>{await record();if(accountUI('comparison-error').dataset.state==='success')accountUI('comparison-error').textContent='Judgment recorded. Saving to your account…';};
   }
   async request(path,body,method='POST'){
-    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:body===undefined?{}:{'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1',...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
     let data;try{data=await response.json();}catch{throw Error('The service could not be reached. Your work is still on this page.');}
-    if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;throw error;}return data;
+    if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;error.code=data.code;if(error.code==='CLIENT_UPDATE_REQUIRED'){this.blocked=true;this.controller.message(error.message);this.status('Update needed · Your work is still on this page');}throw error;}return data;
   }
   async startComparison(aMapId,bMapId){
     await this.save();
@@ -70,7 +71,7 @@ export class AccountWorkspace{
     try{await this.request('/api/auth/verify',{email:accountUI('account-email').value,code:accountUI('account-code').value});await this.initialize();}catch(error){accountUI('account-feedback').textContent=error.message;}finally{accountUI('account-verify').disabled=false;}
   }
   async initialize(){
-    const c=this.controller;clearTimeout(this.timer);this.loading=true;c.ready=false;
+    const c=this.controller,previousReady=c.ready;clearTimeout(this.timer);this.loading=true;c.ready=false;
     try{
       const session=await this.request('/api/session');this.signup=session.signup;
       const publicSignup=this.signup?.mode==='public';
@@ -78,14 +79,21 @@ export class AccountWorkspace{
       if(!session.actor&&this.signup?.turnstile)await this.challenge.mount(this.signup.turnstile);
       accountUI('account-send').disabled=!!this.signup?.turnstile&&!this.challenge.token;
       if(!session.actor){document.body.classList.add('account-locked');accountUI('account-feedback').textContent=publicSignup?'Enter your email address and a display name to begin.':'Enter your invited email address to begin.';this.status('Sign in to open your maps');return;}
-      const data=await this.request('/api/workspace');this.actor=data.actor;this.accept(data,true);this.blocked=false;
+      const data=await this.request('/api/workspace');if(this.accept(data,true)===false){c.ready=previousReady;return;}this.blocked=false;
       document.body.classList.remove('account-locked');accountUI('account-display').textContent=this.actor.name;accountUI('account-feedback').textContent='';c.message();this.status();
     }catch(error){accountUI('account-feedback').textContent=error.message;c.message(error.message);this.status('Account unavailable');}
     finally{this.loading=false;}
   }
   accept(data,reset=false){
+    const actorChanged=!!this.actor&&this.actor.id!==data.actor.id;
+    if(actorChanged&&(this.controller.workspaceDirty||this.controller.comparisonDirty||this.controller.discussion?.dirty||this.controller.argument?.dirty||this.controller.editor.hasDraft())){this.blocked=true;this.controller.message('Another account is signed in. Download your unsaved work before reopening Harmonious. The current account and drafts have been kept on this page.');this.status('Account changed · Download your unsaved work');return false;}
+    reset=reset||actorChanged;
     const c=this.controller,workspace=validateWorkspace(data.workspace),oldMap=c.activeMap(),oldContent=oldMap?stableJSON(oldMap):'';
-    if(reset)c.argument?.reset();c.workspace=workspace;this.revisions=data.revisions;this.ownedKeys=data.ownedKeys;this.actor=data.actor;
+    const d=c.discussion,visibleEntries=new Set(workspace.discussions.map(r=>r.id)),available=target=>!target||(['entry','inference'].includes(target.type)?visibleEntries.has(target.entryId):!!discussionSource(workspace,target));
+    const lostConversation=(c.workspace.discussions||[]).some(r=>!visibleEntries.has(r.id));
+    if(reset)c.argument?.reset();
+    if(d&&(reset||!d.dirty&&(lostConversation||!available(d.target)||!available(d.groupTarget)||d.viewId&&!visibleEntries.has(d.viewId)))){d.dirty=false;d.viewId=null;d.target=null;d.groupTarget=null;d.reasoning?.reset();if(d.host){d.host.hidden=true;d.host.replaceChildren();}}
+    c.workspace=workspace;this.revisions=data.revisions;this.ownedKeys=data.ownedKeys;this.actor=data.actor;
     this.baseline=new Map(ownedAccountRecords(workspace,this.actor.id,this.ownedKeys).map(r=>[accountKey(r.kind,r.id),r.value]));
     c.ready=true;c.cloudLoaded=true;c.workspaceDirty=false;document.body.classList.remove('account-locked');
     if(reset){c.activeComparisonPair=null;c.activeMapId=null;c.editor.discardDraft();c.clearComparison();c.sides={a:{mapId:null,nodeId:null},b:{mapId:null,nodeId:null}};c.mode='library';c.updateNavigation?.();}
@@ -94,7 +102,7 @@ export class AccountWorkspace{
     if(c.activeMapId&&(reset||oldContent!==stableJSON(c.activeMap())))c.loadMap(c.activeMapId);
     const selected=workspace.comparisons.find(record=>record.id===c.editingRecord);
     if(selected&&!c.comparisonDirty){c.sides={a:{mapId:selected.aMapId,nodeId:selected.aNodeId},b:{mapId:selected.bMapId,nodeId:selected.bNodeId}};c.loadComparisonForm(selected);}
-    c.populateMaps();if(c.mode==='compare')c.renderComparison();c.participation.actorId=this.actor.id;c.participation.peopleSelection=null;c.participation.refresh();if(c.mode==='argument')c.argument.render();if(reset)c.openComparisonRoute();
+    c.populateMaps();if(c.mode==='compare')c.renderComparison();c.participation.actorId=this.actor.id;c.participation.peopleSelection=null;c.participation.refresh();if(c.mode==='argument')c.argument.render();if(reset)c.openComparisonRoute();return true;
   }
   status(message=null){
     const c=this.controller;accountUI('save-workspace').textContent=this.blocked?'Retry save':'Save now';accountUI('storage-status').dataset.state=c.workspaceDirty?'dirty':'saved';

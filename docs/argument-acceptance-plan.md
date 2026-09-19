@@ -4,6 +4,8 @@ Prepared for the September 21–25, 2026 work described in [the weekly plan](nex
 
 This is the checklist for the forthcoming Argument workflow, not a report that it is implemented or tested. Existing coverage below was identified by reading the tests; no tests were run as part of preparing this document. Baseline execution and release results belong in the deployment and preparation records.
 
+Implementation note (September 19 UTC): this original acceptance specification has now been exercised through the new reasoning model, API/database and two-account browser checks. It remains a specification, not a blanket claim that every manual usability criterion has passed. See [the updated owner checklist](user-testing-checklist.md) and [deployment status](deployment-status.md) for current results and limits.
+
 ## What success looks like
 
 Two people can explain, question and challenge reasoning within one shared Comparison, follow exactly what each contribution addresses, and return later without losing the discussion or its history. Creating reasoning does not change either person's worldview map.

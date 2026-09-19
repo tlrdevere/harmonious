@@ -11,7 +11,7 @@ const check=(condition,message,status=400)=>{if(!condition)throw new AccountErro
 const equal=(a,b)=>stableJSON(a)===stableJSON(b);
 export function fullAccountWorkspace(snapshot){
   const get=kind=>snapshot.records.filter(r=>r.kind===kind).map(r=>accountClone(r.value));
-  return {schemaVersion:2,participants:get('profile'),maps:get('map'),ideas:get('idea'),endorsements:get('endorsement'),comparisons:get('comparison'),comparisonThreads:get('comparison_thread'),argumentNodes:get('argument_node'),argumentEdges:get('argument_edge'),discussions:get('discussion'),definitions:get('definition')};
+  return {schemaVersion:3,participants:get('profile'),maps:get('map'),ideas:get('idea'),endorsements:get('endorsement'),comparisons:get('comparison'),comparisonThreads:get('comparison_thread'),argumentNodes:get('argument_node'),argumentEdges:get('argument_edge'),discussions:get('discussion'),definitions:get('definition')};
 }
 export function initialAccountChanges(actor){
   const now=new Date().toISOString(),map={id:newId('map'),name:'My worldview',person:actor.name,ownerId:actor.id,mapType:'personal',visibility:'private',revision:1,nodes:exampleMap().filter(n=>n.parent===null),relations:[],updatedAt:now};
@@ -68,7 +68,7 @@ export function projectAccountWorkspace(snapshot,actorId){
   const visibleProposals=new Set(comparisons.map(p=>p.id)),argumentNodes=full.argumentNodes.filter(n=>visibleProposals.has(n.proposalId)),argumentEdges=full.argumentEdges.filter(e=>visibleProposals.has(e.proposalId));
   const sharedThreads=new Set(comparisonThreads.filter(t=>t.participants.includes(actorId)&&[t.aMapId,t.bMapId].every(id=>visibleIds.has(id))).map(t=>t.id));
   const discussions=full.discussions.filter(r=>r.kind==='context'?visibleIds.has(r.target.mapId):sharedThreads.has(r.comparisonId));
-  const workspace={schemaVersion:2,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
+  const workspace={schemaVersion:3,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
   if(maps.length)validateWorkspace(workspace);
   const accessibleRevisions=snapshot.records.filter(r=>r.kind==='comparison'&&comparisons.some(c=>c.id===r.id)||r.kind==='comparison_thread'&&comparisonThreads.some(c=>c.id===r.id));
   return {workspace,ownedKeys:[...ownKeys],revisions:Object.fromEntries([...owned,...accessibleRevisions].map(r=>[accountKey(r.kind,r.id),r.revision]))};
@@ -193,5 +193,21 @@ export function validateAccountChanges(snapshot,actorId,input){
     if(e.status==='superseded')check(input.some(c=>c.kind==='endorsement'&&c.value.replacesId===e.id&&c.value.status==='active'),'A replacement co-sign is missing.');
   }
   validateWorkspace(candidate);
-  return input.map(c=>({...c,value:accountClone(c.value)}));
+  return orderAccountChanges(input.map(c=>({...c,value:accountClone(c.value)})));
+}
+
+// The database checks each discussion target when its row is written. Keep
+// dependencies before dependants even when a client submits a reversed chain.
+export function orderAccountChanges(changes){
+  const discussions=new Map(changes.filter(change=>change.kind==='discussion').map(change=>[change.id,change])),done=new Set(),ordered=[];
+  for(const start of discussions.values()){
+    const path=new Set(),stack=[{change:start,expanded:false}];
+    while(stack.length){
+      const step=stack.pop(),id=step.change.id;if(done.has(id))continue;
+      if(step.expanded){path.delete(id);done.add(id);ordered.push(step.change);continue;}
+      check(!path.has(id),'Conversation targets cannot form a cycle.');path.add(id);stack.push({...step,expanded:true});
+      for(const target of [step.change.value.other,step.change.value.target])if(['entry','inference'].includes(target?.type)&&discussions.has(target.entryId))stack.push({change:discussions.get(target.entryId),expanded:false});
+    }
+  }
+  return [...changes.filter(change=>change.kind!=='discussion'),...ordered];
 }
