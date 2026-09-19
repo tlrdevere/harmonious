@@ -25,8 +25,8 @@ response=await request(allCapabilities,changes);assert.equal(response.status,200
 const persisted=await store.snapshot();response=await request(allCapabilities,changes);assert.equal(response.status,200);assert.equal((await response.json()).replayed,true);assert.deepEqual(await store.snapshot(),persisted,'A lost response retry does not create another use of the position');
 for(const actor of [alice,bob]){response=await request(oldCapabilities,undefined,actor);assert.equal(response.status,409);assert.equal((await response.json()).requiredCapability,PREMISE_CAPABILITY);}
 response=await request(allCapabilities,undefined,bob);assert.equal(response.status,200);const shared=(await response.json()).workspace;assert.equal(shared.schemaVersion,5);assert.deepEqual(shared.discussions.find(r=>r.id===reason.id).premise,premise,'The other participant receives the exact reviewed reference');
-for(const version of [2,3,4,5]){
-  const portable=structuredClone(shared),authored=structuredClone(portable.discussions);portable.schemaVersion=version;validateWorkspace(portable);assert.equal(portable.schemaVersion,5);assert.deepEqual(portable.discussions,authored,'Envelope upgrade retains referenced wording and history');
+for(const version of [2,3,4,5,6]){
+  const portable=structuredClone(shared),authored=structuredClone(portable.discussions);portable.schemaVersion=version;validateWorkspace(portable);assert.equal(portable.schemaVersion,6);assert.deepEqual(portable.discussions,authored,'Envelope upgrade retains referenced wording and history');
 }
 assert(requiresPremiseCapability([{history:[{premise:{mapId:'older-map'}}]}]),'Older reference history still requires the new reader');
 assert(!requiresPremiseCapability([{kind:'argument',action:'reason',body:'Written reason',history:[]}]),'Written reasons retain their previous compatibility');

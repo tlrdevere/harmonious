@@ -1,5 +1,6 @@
 import {isReason,isChallenge} from './discussion.mjs';
 import {comparisonHealth} from './workspace.mjs';
+import {isDisagreementPoint,isReflectionOutcome} from './reflection.mjs';
 
 const libraryTimestamp=value=>{const time=typeof value==='string'?Date.parse(value):NaN;return Number.isFinite(time)?time:0;};
 const libraryNameOrder=(a,b)=>String(a||'').localeCompare(String(b||''),'en',{sensitivity:'base',numeric:true});
@@ -18,8 +19,9 @@ export function libraryComparisonSummary(workspace,thread){
   const title=maps.map(map=>map?.name||'Unavailable source map').join(' / ');
   let activity=0;for(const record of [thread,...discussions,...proposals,...earlier])activity=Math.max(activity,libraryTimestamp(record.createdAt),libraryTimestamp(record.updatedAt));
   const counts={relationships:active.filter(r=>r.kind==='relationship').length,inquiries:active.filter(r=>['inquiry','counterpart','adoption'].includes(r.kind)).length,reasons:active.filter(isReason).length,challenges:active.filter(isChallenge).length,earlierJudgments:proposals.length,earlierReasoning:earlier.filter(r=>r.status==='active').length,sourceReviews:proposals.filter(p=>comparisonHealth(workspace,p).needsReview).length};
+  const points=active.filter(isDisagreementPoint);counts.disagreementPoints=points.length;counts.outcomes=active.filter(r=>isReflectionOutcome(r)&&points.some(p=>p.id===r.target.entryId)).length;
   const labels=[];
-  for(const [key,singular,plural]of [['relationships','relationship','relationships'],['inquiries','question or request','questions & requests'],['reasons','reason','reasons'],['challenges','challenge','challenges'],['earlierJudgments','earlier judgment','earlier judgments'],['earlierReasoning','earlier reasoning item','earlier reasoning items']])if(counts[key])labels.push(`${counts[key]} ${counts[key]===1?singular:plural}`);
+  for(const [key,singular,plural]of [['relationships','relationship','relationships'],['inquiries','question or request','questions & requests'],['reasons','reason','reasons'],['challenges','challenge','challenges'],['disagreementPoints','point of disagreement','points of disagreement'],['outcomes','individual outcome','individual outcomes'],['earlierJudgments','earlier judgment','earlier judgments'],['earlierReasoning','earlier reasoning item','earlier reasoning items']])if(counts[key])labels.push(`${counts[key]} ${counts[key]===1?singular:plural}`);
   if(counts.sourceReviews)labels.push(`${counts.sourceReviews} need source review`);
   return {thread,title,activity,counts,description:labels.join(' · ')||(discussions.length||earlier.length?'Conversation history available':'No contributions yet')};
 }

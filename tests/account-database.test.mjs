@@ -12,6 +12,7 @@ import {exerciseReasoning} from './reasoning.test.mjs';
 import {exerciseReasoningDatabaseBoundary} from './reasoning-api.test.mjs';
 import {exerciseAdoptionFulfillment,exerciseAdoptionDatabaseBoundary} from './adoption-fulfillment.test.mjs';
 import {exercisePremiseDatabaseBoundary} from './premise-database.test.mjs';
+import {exerciseReflectionDatabaseBoundary} from './reflection-database.test.mjs';
 
 const db=new PGlite();
 await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key); insert into auth.users(id) values('${alice.id}'),('${bob.id}');`);
@@ -24,6 +25,7 @@ await db.exec(await readFile('supabase/migrations/20260912045603_definitions_lib
 await db.exec(await readFile('supabase/migrations/20260919032433_comparison_reasoning.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260919042425_adoption_fulfillment.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260919060236_existing_node_reasons.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260919062604_comparison_reflections.sql','utf8'));
 assert((await db.query("select prosecdef from pg_proc where proname in ('harmonious_snapshot','harmonious_commit')")).rows.every(row=>!row.prosecdef),'Application RPCs must not elevate the caller\'s privileges');
 await db.exec('set role service_role');
 const store={
@@ -39,6 +41,7 @@ await exerciseCounterparts(store);
 const adoptionFixtures=await exerciseAdoptionFulfillment(store);
 await exerciseAdoptionDatabaseBoundary(store,adoptionFixtures);
 await exercisePremiseDatabaseBoundary(store);
+await exerciseReflectionDatabaseBoundary(store);
 const definitionSnapshot=await store.snapshot(),definitionRecord=definitionSnapshot.records.find(r=>r.kind==='definition');
 const forgedDefinition=structuredClone(definitionRecord.value);forgedDefinition.versions[0].body='Overwritten past';
 await assert.rejects(()=>store.commit(definitionRecord.ownerId,definitionSnapshot.revision,[{kind:'definition',id:forgedDefinition.id,expectedRevision:definitionRecord.revision,value:forgedDefinition}]),/history cannot change/);

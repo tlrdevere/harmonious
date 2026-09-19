@@ -4,6 +4,23 @@ Updated September 19, 2026 (UTC).
 
 ## Current release
 
+Attached disagreement points, individual outcomes and the Compare inquiry preset deployed September 19, 2026 at **06:33:16 UTC** (2:33 a.m. in New York).
+
+- Worker version: `a6e61277-4a79-4d3d-9d43-945d42ea78ef`, serving **100%** of traffic. Deployment: `5b493cfb-5d40-47d0-b6f6-8f0e0b157f90`.
+- In **Argument**, **Mark point of disagreement** attaches an authored description to an ordinary source node, source-map edge, reason, Argument response or Supports connection. Category is optional. Small attachment counts, folded-source access and the existing search keep notes discoverable without adding graph cards or edges.
+- **Record my outcome** gives each participant one current personal assessment per point, with an optional label and next step. Outcomes remain separately attributed; edits retain history. They do not change either map, claim mutual agreement, or change challenge resolution. Compare excludes these Argument controls and indicators.
+- **Compare → Ask → What would change your mind?** is an editable preset using the existing ordinary question record and response flow. Changing presets preserves custom text; silence has no automatic meaning.
+- Staged saves preserve drafts through mode changes, conflicts and interrupted requests. Uncertain retries keep the same identity; subsequent edited text becomes a revision of the acknowledged note. Source changes before or during editing require explicit old/current review. Exact historical wording and status-only withdrawals survive source loss; fresh work requires available sources. Tall popovers reposition when optional detail opens.
+- Portable schema **6** reads versions 1–6. `comparison-reflection-v1` protects current, historical and incoming annotation records from unsupported tabs before reads/writes. Unaffected older clients retain compatible envelopes. Prefer forward fixes after reflections exist rather than a Worker rollback to a pre-capability version.
+- Migration `20260919062604_comparison_reflections` is applied. Supabase CLI 2.117.0 created it as `20260919061401`; the local file was renamed to match the connector's applied version. SQL SHA-256: `3a3061c5d9a8c81379e5888239e4993364c630022099c3b28d654e00a7228b62`. Three new functions are security invoker, with empty search paths and service-only execute grants. The before/after fingerprint is unchanged: 41 records, generation 48, digest `b1a29d265cc2eb8e7d5b49e432f59996`.
+- **45/45 local release checks passed**, including nine browser walkthroughs, disposable two-account/database tests, portable export, production build and asset checks. Report: `build/verification/2026-09-19T06-29-39-475Z-75668/summary.json`. Coverage includes both participants' independent outcomes, actual source/inference targets, immutable history/snapshots, duplicate rejection, whole-batch rollback, retry identity, source review, private projection, search/folds, draft preservation and narrow layouts. Desktop/mobile screenshots were inspected.
+- Public verification confirms all **44 client files** and the homepage match the tested build exactly. Configured sign-in, anonymous account denial, private-configuration denial and response security headers passed. Worker SHA-256: `ea525c5d2261ec9385ab6c0547c8d805642877c71301814bf6f45580a0c805aa`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were preserved. No live test users or records, authentication changes, dependency updates or registry audit were needed. Security advisors remain at the existing baseline: two expected [RLS-without-policy notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) for the service-only store, and the existing [leaked-password-protection notice](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
+**Reload both PCs before testing.** Begin with points and outcomes in the [testing checklist](user-testing-checklist.md), or follow the [current workflow](current-argument-workflow.md). [The feature contract](disagreement-points-outcomes.md) describes attribution and source-review rules. Owner usability acceptance, GitHub synchronization and hosted CI remain outstanding; source is checkpointed locally and this release does not push to GitHub. Compass axes/self-placement, shared-premise display, dragging and pods remain later work.
+
+## Preceding existing-node reason release
+
 Existing worldview nodes used as reasons deployed September 19, 2026 at **06:06:53 UTC** (2:06 a.m. in New York).
 
 - Worker version: `c4fdd1ac-3009-4a9e-a119-354b23e78c58`, serving **100%** of traffic. Deployment: `b7b0f728-538b-419e-91e5-a1623af6b46b`.

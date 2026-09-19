@@ -47,6 +47,15 @@ const questionDraft=projectReasoning(buildReasoningIndex([question]),{anchor,pin
 const foreignDraft=projectReasoning(buildReasoningIndex([question]),{anchor:otherAnchor,pinnedIds:['question']});assert.equal(foreignDraft.entries.length,0,'Draft pinning never moves a contribution into an unrelated source group');
 const relation=record('relation','relationship','agreement',anchor,{other:otherAnchor}),relationView=projectReasoning(buildReasoningIndex([relation]),{anchor:entry('relation'),focusId:'relation'});assert.equal(relationView.focusHidden,false,'A relationship search result focuses its existing source connection');
 
+const point=record('difference-note','reflection','disagreement_point',inference('r'),{layer:'arguments',reflection:{category:'values'}}),outcome=record('personal-outcome','reflection','outcome',entry(point.id),{layer:'arguments',reflection:{result:'more_work',nextStep:'Revisit the tradeoff after the next study.'}}),annotatedIndex=buildReasoningIndex([...records,point,outcome]);
+for(const id of [point.id,outcome.id]){
+  const view=projectReasoning(annotatedIndex,{anchor,focusId:id,pinnedIds:[point.id,outcome.id],revealFocus:true});assert.deepEqual(view.entries.map(r=>r.id),full.entries.map(r=>r.id),'Even focused and pinned annotations stay off the graph');assert.deepEqual(view.links,full.links);assert.deepEqual(view.folds,full.folds,'Annotations do not increase reason/challenge follow-up counts');
+}
+assert.equal(projectReasoning(buildReasoningIndex([point,outcome]),{anchor,focusId:point.id,pinnedIds:[outcome.id]}).entries.length,0);
+assert.equal(searchReasoning(annotatedIndex,{query:'values'}).results[0].entry.id,point.id);assert.equal(searchReasoning(annotatedIndex,{query:'tradeoff'}).results[0].entry.id,outcome.id);
+assert.equal(searchReasoning(annotatedIndex,{query:'difference-note'}).results[0].type,'Point of disagreement');assert.equal(searchReasoning(annotatedIndex,{query:'personal-outcome'}).results[0].targetType,'Point of disagreement');
+assert.equal(searchReasoning(annotatedIndex,{filter:'open'}).results.length,searchReasoning(index,{filter:'open'}).results.length,'Personal reflection never opens or resolves a challenge');
+
 const states=new ReasoningViewState(),state=states.get('alice','comparison',anchor);state.collapsed.add(reasoningTargetKey(entry('r')));state.focusId='r';state.camera={x:12,y:20,z:.8};
 assert.equal(states.get('alice','comparison',anchor),state);const another=states.get('alice','another-comparison',otherAnchor);another.focusId='other';
 states.prune('alice','comparison',new Set(['r']));assert.equal(states.get('alice','another-comparison',otherAnchor),another,'Revisiting another comparison preserves its personal view');

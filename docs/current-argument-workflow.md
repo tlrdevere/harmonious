@@ -41,6 +41,16 @@ Open a challenge and choose **Respond**. A response can include a reference link
 
 The recipient can **Accept challenge** or **Maintain position**, with an explanation. Only the person who made the challenge can **Mark resolved** or **Reopen challenge**. Acceptance does not close the challenge automatically, and resolution does not change the maps' agreement/disagreement relationship. Reasons themselves have no challenge-resolution controls.
 
+## Locate a disagreement and record your assessment
+
+In **Argument**, select an ordinary source node, source-map connection, reason, Argument response, or **Supports** connection. Choose **Mark point of disagreement**, explain where you think the difference lies, and optionally choose Facts, Reasoning, Values, or Other. The point is attached to that source, with a small count when detail is closed. It does not add another canvas card or connection.
+
+Open a point and choose **Record my outcome**. Write your assessment; optionally add **Changed my position**, **More work needed**, or **Difference understood**, and a next step. Each person has one current outcome per point and can edit their own assessment with earlier wording retained. Your partner records a separate outcome. Neither person's note changes a source map, records mutual agreement, or resolves a challenge.
+
+**Find in argument** includes points, outcomes and next steps. Opening a result reveals its source and attached note. Compare does not show these Argument annotations. In **Compare → Ask**, **What would change your mind?** is an editable question preset; it uses the ordinary inquiry and response flow, without interpreting silence.
+
+See [disagreement points and outcomes](disagreement-points-outcomes.md) for the saved-data and source-review rules. [Deployment status](deployment-status.md) identifies when this increment is live.
+
 ## Read the argument on the map
 
 **Argument** displays reason, challenge, and response cards attached to the selected source. Names and ownership colors identify authors. Its **↳** and **!** indicators distinguish reasons and challenges; **Compare** shows question/request indicators. Earlier questions can remain readable as context for an argument, without showing unrelated inquiries throughout Argument.

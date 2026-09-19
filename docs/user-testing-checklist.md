@@ -1,5 +1,19 @@
 # Harmonious: what to check on your next visit
 
+## Points of disagreement and personal outcomes
+
+Reload both accounts after the release in [deployment status](deployment-status.md). Use a disposable Comparison.
+
+- [ ] In **Argument**, select a statement and choose **Mark point of disagreement**. Save a short description, optionally choosing a category. Close it: a small attached count should remain, without a new graph card or connection.
+- [ ] Repeat on a source-map edge, a reason, an Argument response and its **Supports** connection. Each point should identify the actual item it addresses, including when its branch is folded.
+- [ ] Open a point and choose **Record my outcome**. Write an assessment and optional next step. Refresh the other account, then record a different assessment there. Both should appear separately with their authors; maps, relationships and challenge resolution should remain unchanged.
+- [ ] Edit your own outcome and inspect earlier wording. Your partner should have no edit control for it. Returning to the point should offer **Edit my outcome**, not create a second current outcome for you.
+- [ ] Search **Find in argument** for wording in a point, outcome or next step. Showing the result should open the attached note at its real source and preserve zoom.
+- [ ] Start a note, switch to Compare, then return. The draft should be preserved, with no critique controls or Argument note counts appearing in Compare. Replacing its target should ask before discarding it.
+- [ ] Change the source while the other account has a draft open. Saving should retain the draft and require review of the changed source. Removed sources should remain readable through history while preventing fresh contributions.
+- [ ] In **Compare → Ask**, select **What would change your mind?**, customize it and save. It should behave as a normal question. Changing presets should not overwrite custom text.
+- [ ] Repeat note and outcome forms in a narrow window. Check that the title, text, optional details, save button and close control remain reachable without overlapping the canvas toolbar.
+
 ## Use an existing node as a reason
 
 Reload both accounts after the release in [deployment status](deployment-status.md). Use disposable maps for source edits or removal.

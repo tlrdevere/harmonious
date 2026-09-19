@@ -6,13 +6,14 @@ import {nodeWording,selectionContext,scopeNodeIds,endorsementEntryHealth} from '
 import {accountKey,accountClone,stableJSON} from '../dist/account-model.mjs';
 import {validateArgumentEdit} from '../dist/argument.mjs';
 import {validateAdoptionBatch} from '../dist/adoption-fulfillment.mjs';
+import {validateReflections,isReflectionOutcome} from '../dist/reflection.mjs';
 
 export class AccountError extends Error{constructor(message,status=400){super(message);this.status=status;}}
 const check=(condition,message,status=400)=>{if(!condition)throw new AccountError(message,status);};
 const equal=(a,b)=>stableJSON(a)===stableJSON(b);
 export function fullAccountWorkspace(snapshot){
   const get=kind=>snapshot.records.filter(r=>r.kind===kind).map(r=>accountClone(r.value));
-  return {schemaVersion:5,participants:get('profile'),maps:get('map'),ideas:get('idea'),endorsements:get('endorsement'),comparisons:get('comparison'),comparisonThreads:get('comparison_thread'),argumentNodes:get('argument_node'),argumentEdges:get('argument_edge'),discussions:get('discussion'),definitions:get('definition')};
+  return {schemaVersion:6,participants:get('profile'),maps:get('map'),ideas:get('idea'),endorsements:get('endorsement'),comparisons:get('comparison'),comparisonThreads:get('comparison_thread'),argumentNodes:get('argument_node'),argumentEdges:get('argument_edge'),discussions:get('discussion'),definitions:get('definition')};
 }
 export function initialAccountChanges(actor){
   const now=new Date().toISOString(),map={id:newId('map'),name:'My worldview',person:actor.name,ownerId:actor.id,mapType:'personal',visibility:'private',revision:1,nodes:exampleMap().filter(n=>n.parent===null),relations:[],updatedAt:now};
@@ -69,7 +70,7 @@ export function projectAccountWorkspace(snapshot,actorId){
   const visibleProposals=new Set(comparisons.map(p=>p.id)),argumentNodes=full.argumentNodes.filter(n=>visibleProposals.has(n.proposalId)),argumentEdges=full.argumentEdges.filter(e=>visibleProposals.has(e.proposalId));
   const sharedThreads=new Set(comparisonThreads.filter(t=>t.participants.includes(actorId)&&[t.aMapId,t.bMapId].every(id=>visibleIds.has(id))).map(t=>t.id));
   const discussions=full.discussions.filter(r=>r.kind==='context'?visibleIds.has(r.target.mapId):sharedThreads.has(r.comparisonId));
-  const workspace={schemaVersion:5,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
+  const workspace={schemaVersion:6,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
   if(maps.length)validateWorkspace(workspace);
   const accessibleRevisions=snapshot.records.filter(r=>r.kind==='comparison'&&comparisons.some(c=>c.id===r.id)||r.kind==='comparison_thread'&&comparisonThreads.some(c=>c.id===r.id));
   return {workspace,ownedKeys:[...ownKeys],revisions:Object.fromEntries([...owned,...accessibleRevisions].map(r=>[accountKey(r.kind,r.id),r.revision]))};
@@ -113,6 +114,8 @@ export function validateAccountChanges(snapshot,actorId,input){
     records.set(key,{kind,id,ownerId:existing?.ownerId||actorId,revision:(existing?.revision||0)+1,value:accountClone(value)});
   }
   const candidate=fullAccountWorkspace({records:[...records.values()]});
+  for(const {value} of input.filter(c=>c.kind==='discussion'&&isReflectionOutcome(c.value)&&c.value.status==='active'))check(candidate.discussions.filter(r=>isReflectionOutcome(r)&&r.status==='active'&&r.authorId===value.authorId&&r.target?.entryId===value.target?.entryId).length===1,'You already have an outcome here. Reopen the point to edit your existing assessment.',409);
+  try{validateReflections(candidate);}catch(error){throw new AccountError(error.message);}
   const latestVersions=visibleVersionIndex(candidate,actorId);
   check(candidate.participants.some(p=>p.id===actorId),'Account profile is missing.');
   for(const change of input){

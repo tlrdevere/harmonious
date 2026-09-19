@@ -6,7 +6,7 @@ const clone=value=>JSON.parse(JSON.stringify(value));
 // Existing workspaces gain shared identities without changing old comparison judgments.
 const oldA=createMap('First','A',true),oldB=createMap('Second','B',true),legacy={schemaVersion:1,maps:[oldA,oldB],comparisons:[]};
 const oldComparison=recordComparison(legacy,{aMapId:oldA.id,bMapId:oldB.id,aNodeId:'a211',bNodeId:'a211',questionStatus:'matched',question:'Which step comes first?',answerStatus:'aligned',notes:''});legacy.comparisons.push(oldComparison);
-const oldSnapshot=clone(oldComparison);validateWorkspace(legacy);assert.equal(legacy.schemaVersion,5);assert.deepEqual(legacy.comparisons[0],oldSnapshot);assert(!comparisonHealth(legacy,oldComparison).needsReview);
+const oldSnapshot=clone(oldComparison);validateWorkspace(legacy);assert.equal(legacy.schemaVersion,6);assert.deepEqual(legacy.comparisons[0],oldSnapshot);assert(!comparisonHealth(legacy,oldComparison).needsReview);
 
 const w=initialWorkspace(),[a,b,ref]=w.maps,source=ref.nodes.find(n=>n.kind==='position'),originalCount=w.endorsements.length;
 assert.equal(ref.mapType,'reference');assert.equal(ref.ownerId,a.ownerId);assert.notEqual(ref.id,a.id);assert.equal(originalCount,0,'Authorship and copied content do not fabricate endorsements');

@@ -1,5 +1,6 @@
 import {stableJSON} from './account-model.mjs';
 import {isReason,isChallenge} from './discussion.mjs';
+import {isReflection,isReflectionOutcome} from './reflection.mjs';
 
 // Direction and record type do not multiply the visible edge. Saved meanings
 // remain separate records, grouped behind one connection on the canvas.
@@ -34,13 +35,13 @@ export function challengeState(records,entry){
 export function conversationGroups(records){
   const groups=new Map();
   for(const r of records){
-    if(r.status!=='active'||['relationship','correspondence','context'].includes(r.kind))continue;
+    if(r.status!=='active'||['relationship','correspondence','context'].includes(r.kind)||isReflectionOutcome(r))continue;
     const target=conversationAnchor(records,r);if(!target)continue;
     const key=stableJSON(target);if(!groups.has(key))groups.set(key,{key,target,entries:[],questions:0,reasons:0,challenges:0,openChallenges:0});
     const g=groups.get(key);g.entries.push(r);
     if(isReason(r))g.reasons++;
     else if(isChallenge(r)){g.challenges++;if(challengeState(records,r)==='Open')g.openChallenges++;}
-    else if(r.kind!=='reply')g.questions++;
+    else if(r.kind!=='reply'&&!isReflection(r))g.questions++;
   }
   return [...groups.values()];
 }

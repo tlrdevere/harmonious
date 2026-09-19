@@ -4,14 +4,17 @@ import {graphEdges} from './model.mjs';
 import {stableJSON} from './account-model.mjs';
 import {validateAdoptionRecord,isAdoptionReceipt} from './adoption-fulfillment.mjs';
 import {premiseHealth,validatePremises,validatePremiseEdit} from './premise.mjs';
+import {validateReflections,validateReflectionEdit} from './reflection.mjs';
 
 export const DISCUSSION_LABELS={agreement:'Agreement',disagreement:'Disagreement',counterpart:'Request counterpart',adoption:'Suggest adoption',explain:'Ask for explanation',example:'Ask for an example',evidence:'Ask for evidence',question:'Question',support:'Support',challenge:'General challenge',counterexample:'Counterexample',inference:'Reasoning does not follow',contradiction:'Possible contradiction',fallacy:'Logical fallacy or reasoning error',reply:'Response',resolve:'Resolved by challenger',reopen:'Reopened by challenger',accept:'Accept challenge',maintain:'Maintain position',counterpart_link:'Counterparts',no_position:'No position yet',not_applicable:'Not applicable',close_request:'Close request',reopen_request:'Reopen request',context:'Definitions & standards'};
 DISCUSSION_LABELS.reason='Reason';
 Object.assign(DISCUSSION_LABELS,{adoption_added:'Added to my map',adoption_existing:'Used an existing node',adoption_not_now:'Not now'});
+Object.assign(DISCUSSION_LABELS,{disagreement_point:'Point of disagreement',outcome:'Reflection outcome'});
 export const isReason=r=>r?.kind==='argument'&&r.action==='reason';
 export const isChallenge=r=>r?.kind==='argument'&&!isReason(r);
-export const discussionLayer=r=>r.kind==='relationship'||r.kind==='correspondence'||r.kind==='context'?'map':r.kind==='argument'?'arguments':r.kind==='reply'?r.layer:'inquiries';
+export const discussionLayer=r=>r.kind==='relationship'||r.kind==='correspondence'||r.kind==='context'?'map':['argument','reflection'].includes(r.kind)?'arguments':r.kind==='reply'?r.layer:'inquiries';
 const discussionKinds={correspondence:['counterpart_link'],relationship:['agreement','disagreement'],counterpart:['counterpart'],adoption:['adoption'],inquiry:['explain','example','evidence','question'],argument:['reason','support','challenge','evidence','counterexample','inference','contradiction','fallacy'],reply:['reply','resolve','reopen','accept','maintain','adoption_added','adoption_existing','adoption_not_now',...counterpartResponseActions],context:['context']};
+discussionKinds.reflection=['disagreement_point','outcome'];
 const discussionIdentity=['id','authorId','comparisonId','kind','target','other','createdAt','layer'];
 const discussionEqual=(a,b)=>stableJSON(a)===stableJSON(b);
 export function discussionSource(ws,target){
@@ -39,7 +42,7 @@ export function discussionSourceSnapshot(ws,target,excludeId=null){
   }
   if(target.type==='entry'){
     const entry=ws.discussions.find(r=>r.id===target.entryId);
-    return entry?{target,label:DISCUSSION_LABELS[entry.action],wording:{action:entry.action,body:entry.body,referenceUrl:entry.referenceUrl||'',version:entry.version,status:entry.status,...(entry.premise?{premise:structuredClone(entry.premise)}:{})},definitions:structuredClone(entry.definitionRefs||[])}:null;
+    return entry?{target,label:DISCUSSION_LABELS[entry.action],wording:{action:entry.action,body:entry.body,referenceUrl:entry.referenceUrl||'',version:entry.version,status:entry.status,...(entry.premise?{premise:structuredClone(entry.premise)}:{}),...(entry.reflection?{reflection:structuredClone(entry.reflection)}:{})},definitions:structuredClone(entry.definitionRefs||[])}:null;
   }
   const source=discussionSource(ws,target);if(!source)return null;
   const wording=target.type==='node'?sourceWording(source.item):{kind:source.item.kind||source.item.type||'',from:sourceWording(source.map.nodes.find(n=>n.id===source.item.from)),to:sourceWording(source.map.nodes.find(n=>n.id===source.item.to))};
@@ -103,7 +106,7 @@ export function validateDiscussions(ws){
     }
     for(const id of path)checked.add(id);
   }
-  validatePremises(ws);return ws;
+  validatePremises(ws);validateReflections(ws);return ws;
 }
 export function validateDiscussionEdit(ws,old,r,actor){
   if(r.authorId!==actor)throw Error('Only the author can change this contribution.');
@@ -127,6 +130,7 @@ export function validateDiscussionEdit(ws,old,r,actor){
   const withdrawalFields=({status,version,history,updatedAt,...rest})=>rest;
   const statusOnlyWithdrawal=old&&old.status==='active'&&r.status==='withdrawn'&&r.version===old.version+1&&discussionEqual(withdrawalFields(old),withdrawalFields(r));
   if(statusOnlyWithdrawal&&r.kind!=='context')return;
+  validateReflectionEdit(ws,old,r,actor);
   if(discussionHealth(ws,r).state==='unavailable')throw Error('Choose an available source before continuing this conversation.');
   for(const target of [r.target,r.other].filter(Boolean)){
     if(['entry','inference'].includes(target.type)){
@@ -172,6 +176,7 @@ export function makeDiscussion(ws,input,actor,old=null){
   const r={id:old?.id||(isAdoptionReceipt(input)&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
   if(input.adoption!==undefined)r.adoption=structuredClone(input.adoption);else if(old?.adoption)r.adoption=structuredClone(old.adoption);
   if(input.premise!==undefined)r.premise=structuredClone(input.premise);else if(old?.premise)r.premise=structuredClone(old.premise);
+  if(input.reflection!==undefined)r.reflection=structuredClone(input.reflection);else if(old?.reflection)r.reflection=structuredClone(old.reflection);
   if(input.definitionRefs!==undefined)r.definitionRefs=structuredClone(input.definitionRefs);
   else if(old?.definitionRefs)r.definitionRefs=structuredClone(old.definitionRefs);
   if(old?.sourceSnapshots)r.sourceSnapshots=old.sourceSnapshots;

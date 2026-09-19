@@ -1,5 +1,6 @@
 import {stableJSON} from './account-model.mjs';
 import {isReason,isChallenge} from './discussion.mjs';
+import {isReflection,isDisagreementPoint,isReflectionOutcome,REFLECTION_CATEGORIES,REFLECTION_RESULTS} from './reflection.mjs';
 
 export const reasoningTargetKey=target=>stableJSON(target);
 const entryTarget=id=>({type:'entry',entryId:id});
@@ -39,9 +40,13 @@ export function buildReasoningIndex(records){
 const recordPath=(index,id,stop=null)=>{const path=[],seen=new Set();let r=index.byId.get(id);while(r&&!seen.has(r.id)&&r.id!==stop){seen.add(r.id);path.push(r);r=index.byId.get(index.parentById.get(r.id));}return path;};
 
 export function projectReasoning(index,{anchor,collapsed=new Set(),focusId=null,pinnedIds=[],budget=40,revealFocus=false}={}){
+  // Attached annotations are searchable, but are never graph cards, including
+  // when a restored view or caller passes one as a focused/pinned contribution.
+  if(isReflection(index.byId.get(focusId)))focusId=null;
+  pinnedIds=pinnedIds.filter(id=>!isReflection(index.byId.get(id)));
   const limit=Math.max(3,Math.min(40,Number.isFinite(budget)?Math.floor(budget):40)),anchorKey=reasoningTargetKey(anchor),anchorId=anchor?.type==='entry'?anchor.entryId:null;
   const needed=new Set(),eligible=new Set(),pinned=new Set(),effectiveFolds=new Set(collapsed),revealedFoldKeys=[];
-  const needPath=id=>{let p=index.byId.get(id);const seen=new Set();while(p&&p.id!==anchorId&&!needed.has(p.id)&&!seen.has(p.id)){seen.add(p.id);needed.add(p.id);p=index.byId.get(index.parentById.get(p.id));}};
+  const needPath=id=>{let p=index.byId.get(id);const seen=new Set();while(p&&p.id!==anchorId&&!needed.has(p.id)&&!seen.has(p.id)){seen.add(p.id);if(!isReflection(p))needed.add(p.id);p=index.byId.get(index.parentById.get(p.id));}};
   for(const r of index.ordered){
     if(!ordinary(r)||reasoningTargetKey(index.anchorById.get(r.id))!==anchorKey)continue;
     eligible.add(r.id);needPath(r.id);
@@ -110,9 +115,10 @@ export function searchReasoning(index,{query='',filter='all',authorName=id=>id,l
   for(const entry of index.ordered){
     if(entry.kind==='context'||entry.status!=='active'&&!includeWithdrawn)continue;
     const openChallenge=index.openChallenges.has(entry.id);if(filter==='open'&&!openChallenge)continue;
-    const parent=index.byId.get(entry.target.entryId),targetType=entry.target.type==='inference'?'Reasoning connection':entry.target.type==='node'?'Position':entry.target.type==='edge'?'Map connection':isReason(parent)?'Reason statement':parent?.kind==='reply'?'Response':isChallenge(parent)?'Challenge':['relationship','correspondence'].includes(parent?.kind)?'Relationship':parent?.kind==='inquiry'?'Question':'Contribution';
-    const type=isReason(entry)?'Reason':isChallenge(entry)?'Challenge':entry.kind==='reply'?'Response':entry.kind==='inquiry'?'Question':entry.kind==='relationship'?'Relationship':entry.kind==='correspondence'?'Counterpart link':'Request';
-    const text=[entry.body,entry.targetLabel,authorName(entry.authorId),type,targetType].join(' ').toLocaleLowerCase();if(!words.every(word=>text.includes(word)))continue;
+    const parent=index.byId.get(entry.target.entryId),targetType=entry.target.type==='inference'?'Reasoning connection':entry.target.type==='node'?'Position':entry.target.type==='edge'?'Map connection':isDisagreementPoint(parent)?'Point of disagreement':isReason(parent)?'Reason statement':parent?.kind==='reply'?'Response':isChallenge(parent)?'Challenge':['relationship','correspondence'].includes(parent?.kind)?'Relationship':parent?.kind==='inquiry'?'Question':'Contribution';
+    const type=isDisagreementPoint(entry)?'Point of disagreement':isReflectionOutcome(entry)?'Outcome':isReason(entry)?'Reason':isChallenge(entry)?'Challenge':entry.kind==='reply'?'Response':entry.kind==='inquiry'?'Question':entry.kind==='relationship'?'Relationship':entry.kind==='correspondence'?'Counterpart link':'Request';
+    const metadata=isReflection(entry)?[REFLECTION_CATEGORIES[entry.reflection?.category],REFLECTION_RESULTS[entry.reflection?.result],entry.reflection?.nextStep].filter(Boolean):[];
+    const text=[entry.body,entry.targetLabel,authorName(entry.authorId),type,targetType,...metadata].join(' ').toLocaleLowerCase();if(!words.every(word=>text.includes(word)))continue;
     results.push({entry,type,targetType,anchor:index.anchorById.get(entry.id),openChallenge});
   }
   return {results:results.slice(0,Math.max(1,limit)),total:results.length};
