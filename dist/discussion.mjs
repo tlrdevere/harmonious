@@ -2,13 +2,15 @@ import {counterpartResponseActions,counterpartLinks,sameCounterpartSource} from 
 import {validateDefinitionReferences,canInvokeDefinitions} from './definitions.mjs';
 import {graphEdges} from './model.mjs';
 import {stableJSON} from './account-model.mjs';
+import {validateAdoptionRecord,isAdoptionReceipt} from './adoption-fulfillment.mjs';
 
 export const DISCUSSION_LABELS={agreement:'Agreement',disagreement:'Disagreement',counterpart:'Request counterpart',adoption:'Suggest adoption',explain:'Ask for explanation',example:'Ask for an example',evidence:'Ask for evidence',question:'Question',support:'Support',challenge:'General challenge',counterexample:'Counterexample',inference:'Reasoning does not follow',contradiction:'Possible contradiction',fallacy:'Logical fallacy or reasoning error',reply:'Response',resolve:'Resolved by challenger',reopen:'Reopened by challenger',accept:'Accept challenge',maintain:'Maintain position',counterpart_link:'Counterparts',no_position:'No position yet',not_applicable:'Not applicable',close_request:'Close request',reopen_request:'Reopen request',context:'Definitions & standards'};
 DISCUSSION_LABELS.reason='Reason';
+Object.assign(DISCUSSION_LABELS,{adoption_added:'Added to my map',adoption_existing:'Used an existing node',adoption_not_now:'Not now'});
 export const isReason=r=>r?.kind==='argument'&&r.action==='reason';
 export const isChallenge=r=>r?.kind==='argument'&&!isReason(r);
 export const discussionLayer=r=>r.kind==='relationship'||r.kind==='correspondence'||r.kind==='context'?'map':r.kind==='argument'?'arguments':r.kind==='reply'?r.layer:'inquiries';
-const discussionKinds={correspondence:['counterpart_link'],relationship:['agreement','disagreement'],counterpart:['counterpart'],adoption:['adoption'],inquiry:['explain','example','evidence','question'],argument:['reason','support','challenge','evidence','counterexample','inference','contradiction','fallacy'],reply:['reply','resolve','reopen','accept','maintain',...counterpartResponseActions],context:['context']};
+const discussionKinds={correspondence:['counterpart_link'],relationship:['agreement','disagreement'],counterpart:['counterpart'],adoption:['adoption'],inquiry:['explain','example','evidence','question'],argument:['reason','support','challenge','evidence','counterexample','inference','contradiction','fallacy'],reply:['reply','resolve','reopen','accept','maintain','adoption_added','adoption_existing','adoption_not_now',...counterpartResponseActions],context:['context']};
 const discussionIdentity=['id','authorId','comparisonId','kind','target','other','createdAt','layer'];
 const discussionEqual=(a,b)=>stableJSON(a)===stableJSON(b);
 export function discussionSource(ws,target){
@@ -79,6 +81,7 @@ export function validateDiscussions(ws){
     for(const value of [r.sourceSnapshots,r.reviewedSources])if(value!==undefined&&(!Array.isArray(value)||value.length!==(r.other?2:1)||value.some((s,i)=>!s||!discussionEqual(s.target,i?r.other:r.target)||typeof s.label!=='string'||!s.wording||!Array.isArray(s.definitions))))throw Error('Invalid source history.');
     for(const [i,v]of [...r.history,r].entries())if(v.version!==i+1||discussionIdentity.some(k=>!discussionEqual(v[k],r[k]))||isReason(v)!==isReason(r))throw Error('Contribution history must preserve its identity and reason role.');
     if(isReason(r)&&!['node','entry'].includes(r.target.type))throw Error('Explain your own position, reason, or argument response.');
+    validateAdoptionRecord(ws,null,r,r.authorId,{historical:true});
   }
   // Entry targets form a directed forest. Check iteratively so imported chains
   // cannot overflow the stack or create conversations with no source anchor.
@@ -101,6 +104,7 @@ export function validateDiscussions(ws){
 }
 export function validateDiscussionEdit(ws,old,r,actor){
   if(r.authorId!==actor)throw Error('Only the author can change this contribution.');
+  validateAdoptionRecord(ws,old,r,actor);
   if(old){
     if(isReason(old)!==isReason(r))throw Error('A contribution cannot change its role as a reason.');
     if(discussionIdentity.some(k=>!discussionEqual(old[k],r[k]))||r.history.length<=old.history.length||!discussionEqual(r.history.slice(0,old.version),[...old.history,(({history,...rest})=>rest)(old)]))throw Error('Earlier contributions must remain in history.');
@@ -126,7 +130,10 @@ export function validateDiscussionEdit(ws,old,r,actor){
       if(!parent||parent.id===r.id||parent.comparisonId!==r.comparisonId||parent.status!=='active')throw Error('Choose an available contribution in this comparison.');
       if(target.type==='inference'&&!isReason(parent))throw Error('A reasoning connection must belong to a reason.');
       if(r.kind==='reply'&&r.action!=='reply'){
-        if(counterpartResponseActions.includes(r.action)){
+        if(['adoption_added','adoption_existing','adoption_not_now'].includes(r.action)){
+          if(parent.kind!=='adoption')throw Error('Choose an adoption suggestion.');
+          if(ws.discussions.some(d=>d.id!==r.id&&isAdoptionReceipt(d)&&d.target.entryId===parent.id&&d.authorId===actor))throw Error('This suggestion was already fulfilled.');
+        }else if(counterpartResponseActions.includes(r.action)){
           if(parent.kind!=='counterpart')throw Error('Choose a counterpart request.');
           const source=discussionSource(ws,parent.target),recipient=ws.maps.find(m=>[thread.aMapId,thread.bMapId].includes(m.id)&&m.id!==parent.target.mapId);
           if(['close_request','reopen_request'].includes(r.action)?source?.map.ownerId!==actor:recipient?.ownerId!==actor)throw Error('Only the request author can close it, and only the recipient can give their position.');
@@ -142,6 +149,7 @@ export function validateDiscussionEdit(ws,old,r,actor){
       else if(![thread.aMapId,thread.bMapId].includes(target.mapId))throw Error('The source must belong to this comparison.');
       if(['counterpart','adoption'].includes(r.kind)&&source.map.ownerId!==actor)throw Error('Choose one of your own nodes.');
       if(['counterpart','adoption'].includes(r.kind)&&target.type!=='node')throw Error('Choose one of your own nodes.');
+      if(!old&&r.kind==='adoption'&&(source.item.parent===null||!thread.participants.some(id=>id!==actor)))throw Error('Suggest one ordinary node to another map owner.');
       if(r.kind==='inquiry'&&target.type==='node'&&source.map.ownerId===actor)throw Error('Choose the other person’s node to inquire.');
     }
   }
@@ -155,7 +163,8 @@ export function validateDiscussionEdit(ws,old,r,actor){
 }
 export function makeDiscussion(ws,input,actor,old=null){
   const now=new Date().toISOString(),{history,...prior}=old||{};
-  const r={id:old?.id||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body:input.body?.trim()||'',targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
+  const r={id:old?.id||(isAdoptionReceipt(input)&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body:input.body?.trim()||'',targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
+  if(input.adoption!==undefined)r.adoption=structuredClone(input.adoption);else if(old?.adoption)r.adoption=structuredClone(old.adoption);
   if(input.definitionRefs!==undefined)r.definitionRefs=structuredClone(input.definitionRefs);
   else if(old?.definitionRefs)r.definitionRefs=structuredClone(old.definitionRefs);
   if(old?.sourceSnapshots)r.sourceSnapshots=old.sourceSnapshots;

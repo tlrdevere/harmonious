@@ -1,6 +1,6 @@
 # Harmonious: independent account beta
 
-Status: public signup is deployed at https://harmonious-beta.tlrdevere.workers.dev with Resend email delivery. The owner reported two accounts working. Turnstile and Supabase CAPTCHA are disabled at the owner's request. See [deployment-status.md](deployment-status.md) for the live release and pending local cleanup.
+Status: public signup is deployed at https://harmonious-beta.tlrdevere.workers.dev with Resend email delivery. The owner reported two accounts working. Turnstile and Supabase CAPTCHA are disabled at the owner's request. See [deployment-status.md](deployment-status.md) for the live release and verification evidence.
 
 ## What this build does
 
@@ -12,17 +12,17 @@ Map settings let the owner choose **Only me** or **All beta participants**. Refe
 
 Valid node form edits save after a short pause. Map changes, recorded comparisons, co-signs and withdrawals also save automatically. Unrecorded comparison drafts still need **Record comparison**; incomplete node/connection forms stay on the page and trigger the existing leave warning. A save failure retains local work, shows a message, and offers retry and backup. Another person's activity refreshes about every 30 seconds when the local page has no pending edits or open dialog. **Refresh maps** requests it immediately.
 
-Changing a shared map back to private removes its current contents from other people's views. Copies and endorsement snapshots remain theirs. In the pending local cleanup, the comparison recorder retains their historical comparison; the other participant sees that record only while both sources remain visible to them. Private unpublished wording versions are redacted from other people's responses, even when a later version is shared. An unavailable comparison source has a placeholder with its previously recorded comparison snapshot preserved for its recorder. Symmetric historical access needs an explicit sharing model; see [Argument readiness](argument-readiness.md).
+Changing a shared map back to private removes its current contents from other people's views. Copies and endorsement snapshots remain theirs. For earlier proposal-based records, the comparison recorder retains their historical comparison; the other participant sees that record only while both sources remain visible to them. Private unpublished wording versions are redacted from other people's responses, even when a later version is shared. An unavailable comparison source has a placeholder with its previously recorded comparison snapshot preserved for its recorder. Symmetric historical access needs an explicit sharing model; see [Argument readiness](argument-readiness.md).
 
 ## Services and configuration
 
-The pending local release also requires `20260910212254_overall_comparisons.sql`. It introduces persistent overall Comparisons and links existing proposals to them. Follow the coordinated rollout in [overall Comparisons](overall-comparisons.md); this migration is not yet applied to the live beta.
+Overall Comparisons and later conversation/definition migrations are already applied. [Deployment status](deployment-status.md) is the authoritative migration and Worker-version record; apply only missing migrations in timestamp order. [Overall Comparisons](overall-comparisons.md) retains the original rollout rationale.
 
 Use the project owner’s [Harmonious GitHub repository](https://github.com/tlrdevere/harmonious), approved for public source publication. GitHub and Supabase are connected. Cloudflare can connect to this repository for builds. The original Sites checkout retains its deployment manifest and resources for rollback; this independent checkout does not carry that Site identity.
 
 1. Create/select a Supabase project, then apply `supabase/migrations/20260908233252_harmonious_accounts.sql` once and apply later migrations in timestamp order, including `20260910043435_allow_shared_comparison_judgments.sql`. Apply migrations through the connected project or the Supabase SQL editor. The migrations create the account record store, atomic save RPC, access restrictions, and shared-comparison judgment access. They do not modify existing Sites/D1 data.
 2. Configure an SMTP provider in Supabase Auth so sign-in emails can reach actual testers. The default Supabase sender is limited to project-team email addresses. New free-plan projects also require custom SMTP before changing Auth email templates, following [Supabase’s June 2026 change](https://supabase.com/changelog/46599-changes-to-email-template-customisation-on-free-tier). Set the **Magic Link** email template to `supabase/templates/magic-link.html`, which displays the email OTP. Set the Auth Site URL to the intended Harmonious origin. Keep email rate limits enabled. These are prerequisites for testing email delivery.
-3. Run `npm ci`, `npm test`, `npm run test:accounts`, and `npm run build`. The output is `build/cloudflare/worker.mjs`.
+3. Install locked dependencies with `npm ci --no-audit --no-fund`, then follow [release checks](release-checks.md) to run `node scripts/verify.mjs`. This includes browser, portable, database, production-build and asset checks. The output is `build/cloudflare/worker.mjs`.
 4. In Cloudflare, create/select the Worker named by `wrangler.jsonc` and connect the repository. The build command is `npm run build`, and the deployment command is `npm run deploy`. Set the runtime values below as Worker secrets. Use a dedicated preview Worker/project if production accounts already exist.
 5. Publish the preview and run the acceptance flow below. Publish a second change to confirm the ongoing edit/deploy path before moving testers over. Keep the previous Sites app available until that handoff succeeds.
 

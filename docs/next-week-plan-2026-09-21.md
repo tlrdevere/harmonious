@@ -2,7 +2,7 @@
 
 The main goal is a usable Argument mode inside the shared Comparison: someone can explain a position, another person can challenge the claim or its reasoning, and both can follow the exchange on the map. This is a priority order and an estimated five-day sequence, not a promise that every stretch item will fit.
 
-Progress update (September 19 UTC): the core workflow and automated acceptance checks below have now been implemented ahead of the planned week. See [the current workflow](current-argument-workflow.md), [release status](deployment-status.md), and [remaining priorities](next-work-plan.md). The original sequence is retained for context; hosted CI, finer branch folding and owner usability acceptance remain outstanding.
+Progress update (September 19 UTC): the core workflow and automated acceptance checks below have now been implemented ahead of the planned week. See [the current workflow](current-argument-workflow.md), [release status](deployment-status.md), and [remaining priorities](next-work-plan.md). Personal branch folding, long-chain navigation, controlled adoption and a complete local verification runner are now implemented too. The original sequence is retained for context; hosted CI execution and owner usability acceptance remain outstanding.
 
 ## Original starting point
 

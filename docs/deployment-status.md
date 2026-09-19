@@ -4,6 +4,26 @@ Updated September 19, 2026 (UTC).
 
 ## Current release
 
+Argument folding, on-map search and recipient-controlled adoption deployed September 19, 2026 at **04:25:36 UTC** (12:25 a.m. in New York).
+
+- Worker version: `643ab22e-99ee-42de-a21b-13af900de765`, serving **100%** of traffic. Deployment: `27902cf3-367d-4ca0-ba0f-a94fc74e1bda`.
+- Cards and **Supports** connections have independent personal follow-up folds, with hidden-card and open-challenge counts. Folds preserve the clicked position and zoom, stay independent between users, retain unfinished forms, and survive mode/Comparison changes during the page session.
+- **Find in argument** searches the whole accessible Comparison with All/Open challenges filters. **Show on map**, **Earlier steps**, **Back to selected contribution**, and **Browse all contributions** keep long discussions reachable while drawing at most 40 cards. Omitted ancestors never produce a false support connection. Finding/following preserves zoom; Fit is explicit.
+- Adoption recipients can create an edited independent node under a chosen parent, identify an existing node without altering it, or choose Not now and reconsider later. Counterpart linking and exact invoked-definition imports are optional and initially unchecked. No agreement or co-sign is implied.
+- Adoption saves the node/idea, selected library imports and invocation, optional neutral link, and immutable receipt in one atomic batch. The app confirms saved data before changing the local map. Changed sources require explicit review while keeping the draft; repeated clicks, lost responses and competing tabs do not create duplicate placements. Withdrawn suggestions block new fulfillment but retain existing copies; receipts identify changed or removed destination nodes.
+- Portable schema **4** reads versions 1/2/3. `comparison-adoption-v1` supplements the existing reasoning capability guard. Older clients receive a recovery message before accessing unsupported records. Prefer forward fixes rather than a pre-adoption Worker rollback after these records exist.
+- Migration `20260919042425_adoption_fulfillment` is applied. Supabase CLI 2.117.0 created the source file; it was renamed from `20260919035631` to match the applied connector timestamp. SQL SHA-256: `bf195e9e4687223f1c306469dfe23ecc4c73571c74734558c117c070fe680f50`. It adds validation functions/triggers and extends validation without rewriting saved rows or widening client access. All three added functions are SECURITY INVOKER, use an empty search path, and are executable by the service role only.
+- Database contents before and after migration match exactly: **41 records**, generation **48**, digest `a30e085d12ffc32e1044e1d66c3f1958`. No live test accounts or contributions were created.
+- A fresh isolated dependency install and **35/35 release checks passed**: 26 application/account scripts, portable export, six browser walkthroughs, production build and built-asset checks. Coverage includes 80-step/200-sibling arguments, draft/privacy protection, Unicode definition ordering, direct database forgery rejection and atomic rollback. The database suite passed again after reconciling the migration filename. See [the verification record](release-checks.md).
+- Public verification confirms all **36 client files** and the homepage match the tested bundle exactly. Configured sign-in, anonymous account denial, private-configuration denial and security headers passed.
+- Worker SHA-256: `644a0a94eac296e193b01d3e9f99d34493ae3960ea13f9539c9c12da87dde809`. Main and clean-install builds match. All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were preserved.
+- Playwright **1.62.1** is pinned as a development dependency; prior dependencies remain unchanged. A manual-only, read-only GitHub Actions workflow is prepared without production credentials or deployment steps. Hosted Ubuntu/Chromium has **not** run, and source has not been pushed. No registry vulnerability audit was performed; the [dependency disclosure follow-up](dependency-review.md) remains separate.
+- Security advisors are unchanged: two intentional server-only table notices ([RLS explanation](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)) and the existing Auth password warning ([password guidance](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)). No Auth settings changed.
+
+**Reload both PCs before testing.** Use [the current workflow](current-argument-workflow.md) and [the updated two-account checklist](user-testing-checklist.md). Owner usability acceptance and hosted CI execution remain outstanding. Dragging, pod design, automatic merging and arbitrary reasoning links remain deferred.
+
+## Preceding shared Argument release
+
 Shared Comparison Argument mode deployed September 19, 2026 at 03:26 UTC (September 18 at 11:26 p.m. in New York).
 
 - Worker version: `749a4446-4096-4106-9976-47e8acf7e2a3`, serving 100% of traffic. Deployment: `6aa90a97-943e-4435-a324-f0bf57f1162c`.

@@ -41,7 +41,13 @@ The recipient can **Accept challenge** or **Maintain position**, with an explana
 
 Use **Follow argument**, **Fit argument**, and **Back to source** to navigate. **Collapse argument** closes the expanded group while its source indicators remain. **Inquiries** stays available in the toolbar; **Map** and **Arguments** visibility controls are under **View options**. A collapsed source containing several conversations lets you choose which to open.
 
-The canvas shows up to **40 cards** at once, keeping necessary parent cards with their children. **Show all … contributions** opens the conversation list; it does not expand every card onto the canvas. You can read further responses through their parent conversations. Withdrawn ancestors can remain as clearly labeled historical cards so an active response does not appear to address a different source.
+Use **Hide follow-ups** on a card to fold that statement's branch. The **Supports** marker has its own fold control for challenges to the reasoning connection. Hidden counts remain visible; open challenges have a separate indicator. Folding is personal and preserves zoom and the clicked card's screen position. Your partner's view is independent. Folds survive changing modes and revisiting the Comparison during this page session; reloading may reset them. New responses update the counts without reopening your folds.
+
+**Find in argument** searches the accessible conversation, including responses, across all source groups. Choose **All** or **Open challenges**, then **Show on map**. The result identifies the author and whether it addresses a position, reason, reasoning connection, or response. Typing a search does not discard an unfinished form. Showing a different target uses the normal explicit discard decision when needed.
+
+The canvas shows up to **40 cards** at once, keeping necessary context with the selected contribution. **Browse all … contributions** opens the complete searchable list. For a longer chain, **Earlier steps** navigates through bounded sections; **Back to selected contribution** returns to your result. No line skips omitted parents. Withdrawn ancestors can remain clearly labeled historical cards. Search and Follow pan at the current zoom; only **Fit argument** fits the expanded group.
+
+Folding another branch preserves an unfinished form, including its reference and selected definitions. If a fold would hide that draft's target, the required context stays visible until you finish or discard the form.
 
 Switching between **Compare** and **Argument** preserves the camera, source selection, and current form. Explicit navigation actions such as **Fit argument** change the camera. Save a contribution before reloading; an unfinished form is not a saved contribution.
 
@@ -55,10 +61,19 @@ You can withdraw your own existing response after its parent is withdrawn, witho
 
 Wait for **All changes saved** before closing the page. The other account can use **Refresh** to retrieve saved changes. Earlier proposal-based arguments remain under **View options → Earlier reasoning** where applicable, with their original history.
 
+## Act on an adoption suggestion
+
+Select an ordinary node you own and choose **Suggest adoption**. The other map owner can discuss it using **Respond**, choose **Not now**, **Add to my map**, or **Use an existing node**. Frame headings and comparisons between two maps with the same owner do not offer this suggestion.
+
+**Add to my map** lets the recipient edit the wording and choose any parent in their comparison map. **Link as counterparts** is optional and starts unchecked. Definitions already invoked by the source appear in a collapsed section; each **Copy to my library and use here** choice is also unchecked initially. Only selected, exact shared versions are imported, with origin attribution. Existing-node adoption leaves the selected node's wording and definitions unchanged.
+
+Saving creates the independent copy, selected definition imports, optional neutral link, and receipt together. Neither route records agreement or a co-sign. A failed or interrupted save retains the draft; retrying checks for an existing receipt before attempting another copy. If source wording or invoked definitions changed, review the displayed difference explicitly before saving. Your drafted wording is kept.
+
+Both people can see the recipient's outcome. A fulfilled suggestion offers **Open node**. Its receipt cannot be edited or withdrawn as if that would undo the map action. The recipient can separately edit or remove their own node; the receipt then says **Changed since adding** or **Removed from map**. Withdrawing an unfulfilled suggestion prevents adoption, while a previously saved independent copy remains owned by its recipient.
+
 ## Still outside this version
 
 - Manual card dragging, reusable reasons with several conclusions, and arbitrary graph links.
-- Individual argument-subbranch folding and richer navigation through graphs larger than the display limit. Current expansion operates on the selected source's group.
 - Keeping several unfinished forms across different Comparisons or across a reload. Changing targets or leaving a draft still asks before discarding it.
 - Multiple pinned conversation windows, automatic node merging, live notifications, and pod design.
 

@@ -1,6 +1,6 @@
 # Next features: readable arguments and controlled adoption
 
-Planned September 18, 2026 (New York), following the Argument release at local commit `5ee06d7`. **This document describes proposed work, not live features.** The live behavior is documented in [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md).
+Planned September 18, 2026 (New York), following the Argument release at local commit `5ee06d7`. **Implementation update, September 19 UTC:** the folding, search, controlled adoption and release-check work below is implemented. This document retains the design and acceptance requirements; use the release record for deployment and verification status. Current behavior is documented in [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md).
 
 ## Recommended sequence
 
@@ -11,7 +11,7 @@ Planned September 18, 2026 (New York), following the Argument release at local c
 | 3 | Fulfill an adoption suggestion | Let the recipient deliberately add or identify their own node, with clear authorship and history. |
 | Alongside these | Repeatable release checks and CI preparation | Make the next releases easier to verify without expanding the product interface. |
 
-Build and release the first two together as the next usability increment, then release adoption separately because it changes saved records and writes to a worldview. The owner's [two-account walkthrough](user-testing-checklist.md) can refine labels and spacing; it is not a prerequisite for doing the implementation preparation.
+The planned order separated folding/navigation from adoption because adoption changes saved records. Implementation followed those boundaries; the final rollout combines them after the complete adoption and database checks. The owner's [two-account walkthrough](user-testing-checklist.md) can refine labels and spacing; it is not a prerequisite for doing the implementation preparation.
 
 [Open the clickable design preview](design/argument-next-features.html). It uses invented examples and illustrates the proposed controls; it is not connected to accounts and is not an implementation or a performance test.
 
@@ -105,7 +105,7 @@ Create one repeatable local verification entry point covering application/accoun
 
 Prepare hosted CI using those same checks with read-only repository permissions and disposable data. It should require no production credentials and should not deploy on a push. Browser tests currently require `HARMONIOUS_PLAYWRIGHT` and default to local Edge; provide an explicit portable test-runtime setup and a pinned browser dependency when implementing CI, rather than hard-coding this PC's path. Keep failure screenshots/logs as diagnostic artifacts. Validate a clean checkout before enabling the hosted run; source synchronization to GitHub is a separate step from editing a workflow locally.
 
-Keep the dependency follow-up separate from feature changes. Revisit the existing [software-inventory disclosure preference](dependency-review.md) before another registry audit. This planning pass does not update packages, query advisory services, apply migrations or deploy a site.
+Keep the dependency follow-up separate from feature changes. Revisit the existing [software-inventory disclosure preference](dependency-review.md) before another registry audit. The original planning pass did not change packages or services. Execution adds a pinned Playwright test dependency and prepares CI; release-specific migration and deployment evidence is recorded in deployment-status.md. No new registry audit is included.
 
 ## Ready-to-release checkpoints
 

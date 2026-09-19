@@ -12,7 +12,10 @@ export async function exerciseCounterparts(store){
   let ws=(await view(store,alice)).workspace;const am=ws.maps.find(m=>m.ownerId===alice.id),bm=ws.maps.find(m=>m.ownerId===bob.id);
   const result=await startAccountComparison(store,alice.id,{aMapId:am.id,bMapId:bm.id}),thread=result.comparisonThread;
   const target={type:'node',mapId:am.id,nodeId:an},other={type:'node',mapId:bm.id,nodeId:bn};
-  async function save(actor,input,oldId=null){let r;await edit(store,actor,w=>{const old=w.discussions.find(r=>r.id===oldId);r=makeDiscussion(w,{...input,comparisonId:thread.id},actor.id,old);w.discussions=[...w.discussions.filter(e=>e.id!==r.id),r];});return r;}
+  // These outcomes are deliberately sequential. A fast memory store can create
+  // both in the same millisecond, which would test the ID tie-break instead.
+  let outcomeClock=Date.parse('2026-01-01T00:00:00Z');
+  async function save(actor,input,oldId=null){let r;await edit(store,actor,w=>{const old=w.discussions.find(r=>r.id===oldId);r=makeDiscussion(w,{...input,comparisonId:thread.id},actor.id,old);const time=new Date(outcomeClock+=1000).toISOString();r.createdAt=old?.createdAt||time;r.updatedAt=time;w.discussions=[...w.discussions.filter(e=>e.id!==r.id),r];});return r;}
   const request=await save(alice,{kind:'counterpart',action:'counterpart',target,body:'What is your position?'});
   const reply=(action)=>({kind:'reply',action,target:{type:'entry',entryId:request.id},layer:'inquiries',body:'My explanation'});
   await assert.rejects(()=>save(alice,reply('no_position')),/recipient/);

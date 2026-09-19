@@ -4,15 +4,14 @@
 
 The core Argument workflow from the [weekly plan](next-week-plan-2026-09-21.md) is implemented: reasons and supporting reasons, separate challenges to statements and reasoning connections, responses, attributed outcomes, references and pinned definitions, all within one shared Comparison. Read [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md) for release evidence.
 
-The implementation-ready [next-features plan](next-features-plan.md) expands the earlier priority list. It includes interaction rules, ownership/history decisions, acceptance scenarios and a [clickable design preview](design/argument-next-features.html).
+The [next-features plan](next-features-plan.md) is implemented: personal follow-up folds, on-map search and bounded navigation for long chains, recipient-controlled adoption with optional counterpart links and exact definition imports, plus one aggregate verification runner and a manual CI workflow. [Deployment status](deployment-status.md) records the tested and live versions. The [design preview](design/argument-next-features.html) remains an illustrative mockup.
 
 Next:
 
-1. Add individual follow-up folding with persistent hidden/open-challenge counts and separate controls for statement versus reasoning-connection discussions.
-2. Add on-map search and focused navigation for large arguments, including contributions deeper than the 40-card limit. Ship these two readability improvements together.
-3. Add recipient-controlled adoption fulfillment: create an editable independent node or choose an existing one, optionally link counterparts, and explicitly import invoked definitions when desired. Ship this separately because it changes saved data.
-4. Prepare a complete repeatable verification entry point and hosted CI alongside the features, with disposable data and no automatic production deployment.
-5. Use the owner's [two-account walkthrough](user-testing-checklist.md) to refine the live workflow, and revisit the [dependency disclosure/advisory follow-up](dependency-review.md) separately before another registry audit.
+1. Complete the owner's [two-account walkthrough](user-testing-checklist.md), starting with folding/search and adoption. Gather concrete issues with readability, target identity, source review and controls before adding categories or more panels.
+2. Synchronize the reviewed source to GitHub and run the prepared **Release checks** workflow on that exact revision. The local clean install/verification and hosted CI are distinct; keep automatic deployment disabled. Consider push/PR checks only after the hosted run passes.
+3. Refine automatic placement for real conversations if the walkthrough reveals overlapping cards, hard-to-follow chains or excessive panning. Keep the agreed pause on manual dragging.
+4. Revisit the [dependency disclosure/advisory follow-up](dependency-review.md) separately before another registry audit.
 
 The current workflow preserves source maps, authorship, exact invoked definitions and contribution history. Acceptance does not automatically resolve a challenge or declare agreement by both people. Older proposal-based graphs remain available through **Earlier reasoning**.
 

@@ -45,7 +45,7 @@ export class AccountWorkspace{
     const record=c.record.bind(c);c.record=async()=>{await record();if(accountUI('comparison-error').dataset.state==='success')accountUI('comparison-error').textContent='Judgment recorded. Saving to your account…';};
   }
   async request(path,body,method='POST'){
-    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1',...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
+    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1',...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
     let data;try{data=await response.json();}catch{throw Error('The service could not be reached. Your work is still on this page.');}
     if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;error.code=data.code;if(error.code==='CLIENT_UPDATE_REQUIRED'){this.blocked=true;this.controller.message(error.message);this.status('Update needed · Your work is still on this page');}throw error;}return data;
   }
@@ -122,6 +122,30 @@ export class AccountWorkspace{
       this.blocked=false;c.workspaceDirty=accountChanges(ownedAccountRecords(c.workspace,this.actor.id,this.ownedKeys),this.baseline,this.revisions).length>0;c.message();
     }catch(error){this.blocked=true;c.workspaceDirty=true;c.message(`${error.message} Download a backup to keep your current work.${error.status===401?' Sign in again in a new tab, then retry this save.':''}`);}
     finally{this.saving=false;accountUI('save-workspace').disabled=false;this.status();if(c.workspaceDirty&&!this.blocked)this.schedule();}
+  }
+  // Adoption stays staged until the whole account batch is acknowledged. The
+  // callback can reuse its exact batch after a lost response; it first sees the
+  // latest account, so an already-saved fulfillment is found before retrying.
+  async commitCandidate(prepare){
+    const c=this.controller;await this.save();
+    if(!this.actor||this.loading||this.saving||this.blocked||c.workspaceDirty)throw Error('Finish saving your earlier changes before adding this node.');
+    const actor=this.actor.id,wasInert=document.body.inert;this.loading=true;this.saving=true;document.body.inert=true;this.status('Checking and saving your choice…');
+    try{
+      const current=await this.request('/api/workspace');
+      if(current.actor.id!==actor)throw Error('Another account is signed in. Your draft has been kept; reopen your original account before continuing.');
+      if(this.accept(current)===false)throw Error('Your account needs attention before this choice can be saved.');
+      const prepared=await prepare(c.workspace);
+      const changes=prepared.changes||accountChanges(ownedAccountRecords(prepared.workspace,actor,this.ownedKeys),this.baseline,this.revisions);
+      prepared.changes=changes;
+      if(!changes.length)return prepared;
+      const result=await this.request('/api/workspace',{changes},'PUT');
+      // Merge only acknowledged records into the fresh read, retaining newer
+      // foreign records even when this was an exact retry of an earlier batch.
+      const workspace=accountClone(c.workspace),collections={profile:'participants',map:'maps',idea:'ideas',endorsement:'endorsements',comparison_thread:'comparisonThreads',comparison:'comparisons',argument_node:'argumentNodes',argument_edge:'argumentEdges',discussion:'discussions',definition:'definitions'};
+      const ownedKeys=new Set(this.ownedKeys);
+      for(const change of changes){const records=workspace[collections[change.kind]],index=records.findIndex(r=>r.id===change.id);if(index<0)records.push(accountClone(change.value));else records[index]=accountClone(change.value);ownedKeys.add(accountKey(change.kind,change.id));}
+      this.accept({actor:current.actor,workspace,revisions:{...this.revisions,...result.revisions},ownedKeys:[...ownedKeys]});c.message();return prepared;
+    }finally{document.body.inert=wasInert;this.loading=false;this.saving=false;this.status();}
   }
   async refresh(){
     const c=this.controller;if(!this.actor||this.saving||this.loading||this.blocked||c.workspaceDirty||c.comparisonDirty||c.discussion?.dirty||c.argument?.dirty||c.editor.hasDraft()||document.querySelector('dialog[open]'))return;

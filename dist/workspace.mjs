@@ -17,7 +17,7 @@ export function initialWorkspace(){
   const workspace=upgradeWorkspace({schemaVersion:1,maps:[a,b],comparisons:[],comparisonThreads:[],argumentNodes:[],argumentEdges:[],discussions:[],definitions:[]});
   createOwnedMap(workspace,{name:'Map first — reference',ownerId:a.ownerId,mapType:'reference',fromMapId:a.id});
   createOwnedMap(workspace,{name:'Decision first — reference',ownerId:b.ownerId,mapType:'reference',fromMapId:b.id});
-  workspace.schemaVersion=3;return workspace;
+  workspace.schemaVersion=4;return workspace;
 }
 const comparisonNodeContent=node=>{const {ideaId,ideaVersion,reuseMode,copiedFrom,...content}=node;return JSON.parse(JSON.stringify(content));};
 export function sourceSnapshot(map,nodeId){
@@ -164,7 +164,7 @@ export function recordComparison(workspace,input,existing=null,actorId=null){
   return {...nextBase,comparisonId:thread.id,createdBy,participants,judgments,proposalVersions:versions,aMapId:a.id,bMapId:b.id,...comparisonJudgmentValue(nextBase,primary),aSnapshot:nextBase.aSnapshot,bSnapshot:nextBase.bSnapshot,history:primary.history,createdAt:nextBase.createdAt||now,updatedAt:now};
 }
 export function validateWorkspace(workspace){
-  if(![1,2,3].includes(workspace?.schemaVersion)||!Array.isArray(workspace.maps)||!Array.isArray(workspace.comparisons)||workspace.maps.length<1||workspace.maps.length>100)throw Error('This is not a supported Harmonious workspace.');
+  if(![1,2,3,4].includes(workspace?.schemaVersion)||!Array.isArray(workspace.maps)||!Array.isArray(workspace.comparisons)||workspace.maps.length<1||workspace.maps.length>100)throw Error('This is not a supported Harmonious workspace.');
   const ids=new Set();
   for(const map of workspace.maps){
     if(typeof map.id!=='string'||ids.has(map.id)||typeof map.name!=='string'||!map.name.trim()||typeof map.person!=='string'||!Number.isSafeInteger(map.revision)||map.revision<1||!Array.isArray(map.nodes)||!Array.isArray(map.relations)||map.nodes.length>2000)throw Error('A map contains invalid or duplicate details.');
@@ -219,6 +219,6 @@ export function validateWorkspace(workspace){
     threadIds.add(thread.id);pairs.add(pair);
   }
   for(const proposal of workspace.comparisons)if(!workspace.comparisonThreads.some(thread=>thread.id===proposal.comparisonId&&comparisonPairKey(thread)===comparisonPairKey(proposal)))throw Error('A proposed judgment must belong to its overall comparison.');
-  validateArguments(workspace);validateDefinitions(workspace);validateDiscussions(workspace);workspace.schemaVersion=3;
+  validateArguments(workspace);validateDefinitions(workspace);validateDiscussions(workspace);workspace.schemaVersion=4;
   return workspace;
 }

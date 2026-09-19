@@ -1,6 +1,22 @@
 # Harmonious: what to check on your next visit
 
-## Start here: the current Argument workflow
+## Start here: folding, finding, and adoption
+
+Reload both accounts after the release and use a disposable Comparison. [Deployment status](deployment-status.md) identifies what is live.
+
+- [ ] Fold follow-ups on a reason's card and on its **Supports** marker separately. Each count should describe what it hides. Open challenges should remain discoverable, and the other person's view should remain unchanged.
+- [ ] Add a response from the other account and refresh. Its folded count should increase without opening the branch. Switch modes and revisit the Comparison; folds should remain during the same page session.
+- [ ] Begin a response with text, a reference and selected definitions. Fold a different branch and type into **Find in argument**. Nothing in the draft should be lost. A search result that replaces the draft should ask first.
+- [ ] Search for a saved response and use **Open challenges**. **Show on map** should identify the real target and keep your zoom. In a large argument, try **Earlier steps**, **Back to selected contribution**, and **Fit argument**.
+- [ ] Suggest one of your ordinary nodes for adoption. Only the other map owner should see **Add to my map**, **Use an existing node**, and **Not now**.
+- [ ] As the recipient, choose **Add to my map**, edit its wording and select a parent. Leave **Link as counterparts** unchecked once; select it in another example. Both choices should create your independent node without recording agreement or a co-sign.
+- [ ] When the source uses definitions, expand its definition section. Copy one selected version to your library and leave another unselected. Confirm only the selected version is invoked on your node and that later edits stay separate.
+- [ ] Try **Use an existing node** and confirm its wording and definitions remain unchanged. Try **Not now**, then reconsider the same suggestion.
+- [ ] While the recipient has an adoption draft open, change the source in the author account. Saving should show the old and updated source for explicit review while keeping the recipient's draft.
+- [ ] After fulfillment, use **Open node**, edit the copy, and revisit its receipt. It should say **Changed since adding**. A deleted copy should say **Removed from map**, without another Add button. Withdrawing the original suggestion should not remove a saved copy.
+- [ ] Repeat the search and adoption flows at a narrow window width. Report any unclear labels, overlapping controls, or excessive scrolling.
+
+## The current Argument workflow
 
 Use a different signed-in account on each PC or browser profile. Reload after the update is deployed, use disposable test maps, and wait for **All changes saved** before refreshing the other account. See [the current Argument guide](current-argument-workflow.md) for the intended behavior and remaining limits.
 
@@ -15,7 +31,7 @@ Use a different signed-in account on each PC or browser profile. Reload after th
 - [ ] Type an unfinished reason, switch **Compare → Argument → Compare**, and check that its text and selected definitions remain. The mode switch should preserve the camera and selection. Trying to leave the draft should ask before discarding it. Save before reloading: unfinished forms do not survive a reload.
 - [ ] Edit a reason that has been challenged, then edit its source position. Check **Source wording & history** from the other account. Original wording must remain intact; a connection challenge should retain both original endpoints and indicate relevant source changes.
 - [ ] Withdraw a reason with a response or challenge beneath it. The active descendants should remain reachable through a labeled historical parent. The other author should still be able to withdraw their own child contribution; adding or rewriting contributions against unavailable sources should fail.
-- [ ] On a busy test argument, confirm that no more than 40 cards appear at once and that displayed children keep their necessary parents. **Show all … contributions** opens a list for the rest; responses remain reachable through their conversations. Repeat normal navigation at a narrow window width and with the keyboard.
+- [ ] On a busy test argument, confirm that no more than 40 cards appear at once and that displayed children keep their necessary parents. **Browse all … contributions** opens the searchable list; use **Show on map** and **Earlier steps** to reach the rest. Repeat normal navigation at a narrow window width and with the keyboard.
 - [ ] Make one source map private, then refresh the other account. The inaccessible conversation, references, invoked definitions, and any open contribution window should disappear there. Restore sharing when finished.
 - [ ] After both accounts report **All changes saved**, reopen the Comparison and verify the chain, authors, outcomes, and histories. Existing proposal-based work should still open through **View options → Earlier reasoning** where available.
 
@@ -151,6 +167,6 @@ Dragging nodes and rearranging maps are deliberately deferred.
 - Does the layout help you follow an argument, or do the placement and number of expanded cards get in the way?
 - Is agreement prominent enough, and does **Needs review** explain the next step clearly?
 
-The current Argument mode has automatic positioning and authored challenge outcomes. Individual card dragging, finer subbranch folding, arbitrary graph links, and merged agreement cards remain deferred. Pod design is also deferred. The separate Ground/Evidence/Value graph is the earlier compatibility view.
+The current Argument mode has automatic positioning and authored challenge outcomes. Individual card dragging, arbitrary graph links, and merged agreement cards remain deferred. Pod design is also deferred. The separate Ground/Evidence/Value graph is the earlier compatibility view.
 
 If something fails, note the account label (A or B), map/proposal name, the action you took, what you expected, and what happened. A screenshot and the visible error text are useful. Do not share sign-in codes or private keys.
