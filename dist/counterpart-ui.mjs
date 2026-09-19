@@ -18,10 +18,10 @@ export class CounterpartUI{
       const map=this.canvas.states[p.side].map,source=discussionSource(this.c.workspace,p.target),request=this.requests(p.target).at(-1);
       if(!source)continue;
       const box=cpEl('section','','counterpart-placeholder discussion-drawing');box.dataset.identity=this.canvas.identity(p.side);box.setAttribute('aria-label',`Counterpart spot for ${source.label}`);
-      box.append(cpEl('strong','No counterpart linked'),cpEl('p',`${this.d.name(map.ownerId)}’s map`),cpButton(map.ownerId===this.d.actor()?'Add your counterpart':request?'View counterpart request':'Request counterpart',()=>this.show(p.target)));
+      box.append(cpEl('strong','No counterpart linked'),cpEl('p',`${this.d.name(map.ownerId)}’s map`));if(this.d.mode()==='compare')box.append(cpButton(map.ownerId===this.d.actor()?'Add your counterpart':request?'View counterpart request':'Request counterpart',()=>this.show(p.target)));
       this.canvas.world.append(box);this.markers.push({box,p});
     }
-    for(const request of this.d.entries().filter(r=>r.kind==='counterpart')){
+    for(const request of this.d.entries().filter(r=>r.kind==='counterpart'&&this.d.mode()==='compare')){
       const state=counterpartRequestState(this.c.workspace,request);if(['Awaiting counterpart','Counterpart linked'].includes(state))continue;
       const side=['a','b'].find(s=>this.canvas.states[s].map?.id===request.target.mapId),card=side&&this.canvas.cards.get(comparisonNodeKey(side,request.target.nodeId));
       if(card){const b=cpButton(state,()=>this.d.open(request.id));b.className='counterpart-status discussion-drawing';card.querySelector('.node-bottom').append(b);}
@@ -36,7 +36,7 @@ export class CounterpartUI{
   }
   show(target){
     if(!this.d.canLeave())return;const source=discussionSource(this.c.workspace,target),map=this.otherMap(target);if(!source||!map)return;
-    this.d.target=target;this.d.shell('Find a counterpart');this.d.host.append(cpEl('p',`For “${source.label}” in ${map.name}. Linking counterparts does not record agreement or disagreement.`));
+    this.d.activateMode('compare');this.d.target=target;this.d.shell('Find a counterpart');this.d.host.append(cpEl('p',`For “${source.label}” in ${map.name}. Linking counterparts does not record agreement or disagreement.`));
     const links=this.links(target);for(const link of links)this.d.host.append(cpButton('Show linked counterpart',()=>this.focus(link)));
     if(map.ownerId===this.d.actor())this.d.actionGroup('Your map',[cpButton('Create counterpart',()=>this.form(target,true)),cpButton('Choose existing node',()=>this.form(target,false))]);
     const request=this.requests(target).at(-1);
@@ -54,7 +54,7 @@ export class CounterpartUI{
   }
   form(target,create){
     if(!this.d.canLeave()||!this.c.editor.beforeLeave())return;this.c.captureActive();const source=discussionSource(this.c.workspace,target),map=this.otherMap(target);if(!source||map?.ownerId!==this.d.actor())return;
-    this.d.target=target;this.d.shell(create?'Create counterpart':'Choose existing node');
+    this.d.activateMode('compare');this.d.target=target;this.d.shell(create?'Create counterpart':'Choose existing node');
     this.d.host.append(cpEl('p',`Your counterpart to “${source.label}”. This links comparable material without deciding agreement.`));
     const form=cpEl('form'),pick=cpEl('select');pick.id='counterpart-node';pick.required=true;
     const path=n=>{const parts=[n.title],seen=new Set([n.id]);while(n.parent){n=map.nodes.find(p=>p.id===n.parent);if(!n||seen.has(n.id))break;seen.add(n.id);parts.unshift(n.title);}return parts.join(' › ');};

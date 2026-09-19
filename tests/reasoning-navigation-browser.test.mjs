@@ -16,7 +16,7 @@ const store=memoryStore(),sourceIds={};
 for(const actor of [alice,bob]){
   await seedActor(store,actor);await edit(store,actor,ws=>{
     const map=ws.maps.find(m=>m.ownerId===actor.id);map.visibility='shared';map.name=actor.name+' navigation map';
-    for(const title of actor===alice?['Evening meeting','Deep reasoning source','Broad discussion source']:['Daytime options'])sourceIds[title]=addNode(ws,actor,title).id;
+    for(const title of actor===alice?['Evening meeting','Deep reasoning source','Broad discussion source','Context source']:['Daytime options'])sourceIds[title]=addNode(ws,actor,title).id;
     if(actor===alice)ws.definitions.push(makeDefinition(ws,{type:'standard',title:'Participation standard',body:'Account for members who have not replied.'},alice.id));
   });
 }
@@ -38,6 +38,12 @@ const response=await save(alice,{kind:'reply',action:'reply',layer:'arguments',t
 const deepChallenge=await save(bob,{kind:'argument',action:'challenge',target:entry(deep.at(-1)),body:'Deep challenge: explain the final step.'});
 const deepResponse=await save(alice,{kind:'reply',action:'reply',layer:'arguments',target:entry(deepChallenge),body:'Deep response visibility target: here is the final explanation.'});
 const boundaryChallenge=await save(bob,{kind:'argument',action:'inference',target:inference(deep[78]),body:'Boundary inference target: why does step 79 support step 78?'});
+const unrelatedQuestion=await save(bob,{kind:'inquiry',action:'question',target:source('Context source'),body:'Unrelated inquiry for Compare only.'});
+const contextQuestion=await save(bob,{kind:'inquiry',action:'question',target:source('Context source'),body:'Necessary context question: what is the assumption?'});
+const contextAnswer=await save(alice,{kind:'reply',action:'reply',layer:'inquiries',target:entry(contextQuestion),body:'Necessary context answer: the assumption is voluntary participation.'});
+const contextChallenge=await save(bob,{kind:'argument',action:'challenge',target:entry(contextAnswer),body:'Context answer challenge: participation may not be voluntary.'});
+const argumentQuestion=await save(alice,{kind:'inquiry',action:'question',target:entry(contextChallenge),body:'Earlier argument clarification: which participants?'});
+const argumentAnswer=await save(bob,{kind:'reply',action:'reply',layer:'inquiries',target:entry(argumentQuestion),body:'Earlier argument clarification response: members with other commitments.'});
 const originalMaps=JSON.stringify((await view(store,alice)).workspace.maps);
 const server=createServer(async(req,res)=>{
   try{
@@ -74,7 +80,14 @@ try{
     await row.getByRole('button',{name:'Show on map',exact:true}).click();
   };
   await a.goto(origin);await a.getByRole('button',{name:'Comparisons',exact:true}).click();await a.getByRole('button',{name:'Open comparison',exact:true}).click();
-  const comparisonURL=a.url();await expand(a);await a.locator('#reasoning-argument-mode').click();await close(a);await show(a,reason.body);
+  const comparisonURL=a.url();await expand(a);
+  assert.equal(await a.locator('.discussion-rail .reasons,.discussion-rail .challenges,.reasoning-card').count(),0,'Compare never displays saved reasoning or challenge controls.');
+  await a.getByRole('button',{name:'Conversations',exact:true}).click();assert(!(await pop(a).innerText()).includes(contextChallenge.body));assert(!(await pop(a).innerText()).includes(argumentQuestion.body));await close(a);
+  await a.locator('#reasoning-argument-mode').click();await close(a);await a.getByRole('button',{name:'Find in argument',exact:true}).click();
+  await search(a).getByRole('searchbox',{name:'Search argument'}).fill(unrelatedQuestion.body);assert.equal(await search(a).locator('.reasoning-search-result').count(),0,'Unrelated inquiries stay out of Argument search.');
+  await search(a).getByRole('searchbox',{name:'Search argument'}).fill(contextQuestion.body);assert.equal(await search(a).locator('.reasoning-search-result').count(),1,'An actual inquiry ancestor remains searchable context.');
+  await search(a).getByRole('searchbox',{name:'Search argument'}).fill(argumentQuestion.body);await search(a).getByRole('button',{name:'Show on map',exact:true}).click();assert.equal(await a.locator('#reasoning-argument-mode').getAttribute('aria-pressed'),'true');await card(a,argumentQuestion).locator('.reasoning-main').click();assert.match(await pop(a).innerText(),/members with other commitments/,'Older inquiries and replies attached to arguments stay together in Argument.');await close(a);
+  await show(a,reason.body);
   await a.getByRole('button',{name:'Fit argument',exact:true}).click();
   assert(await card(a,child).count());assert(await card(a,statement).count());assert(await card(a,inferChallenge).count());
   const before=await card(a,reason).boundingBox(),beforeZoom=await zoom(a);
@@ -127,7 +140,7 @@ try{
   assert.equal(await card(a,wide[199]).count(),1);assert((await a.locator('.reasoning-card').count())<=40);assert(await a.getByRole('button',{name:/^Browse all.*contributions/}).count(),'A capped branch offers an accurately labeled complete list.');
   await a.screenshot({path:'build/design-review/reasoning-find-wide.png',fullPage:true});
   await a.getByRole('button',{name:'Find in argument',exact:true}).click();await search(a).getByRole('searchbox',{name:'Search argument'}).fill('');await search(a).getByRole('button',{name:'Open challenges',exact:true}).click();
-  assert.equal(await search(a).locator('.reasoning-search-result').count(),4,'Open-challenge filtering works across source groups.');
+  assert.equal(await search(a).locator('.reasoning-search-result').count(),5,'Open-challenge filtering works across source groups.');
   await a.setViewportSize({width:390,height:844});assert.equal(await a.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);const box=await search(a).boundingBox();assert(box.x>=0&&box.x+box.width<=391);
   await a.screenshot({path:'build/design-review/reasoning-find-mobile.png',fullPage:true});await search(a).getByRole('button',{name:'Close',exact:true}).click();
   assert.equal(JSON.stringify((await view(store,alice)).workspace.maps),originalMaps,'Display navigation never edits the source maps.');

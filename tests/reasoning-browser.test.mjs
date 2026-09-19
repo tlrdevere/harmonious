@@ -127,14 +127,14 @@ try{
   await a.locator('#start-comparison').click();await a.locator('#workspace-message').filter({hasText:'Comparison saved'}).waitFor();
   const comparisonURL=a.url();await expand(a);
   assert.equal((await view(store,alice)).workspace.comparisons.length,0,'Reasoning needs no earlier proposal or relationship.');
-  await node(a,claim);await action(a,'Explain my reasoning');
+  await node(a,claim);assert.equal(await pop(a).getByRole('button',{name:'Explain my reasoning',exact:true}).count(),0,'Compare has no reason composer');await a.locator('#reasoning-argument-mode').click();assert.equal(await pop(a).getByRole('button',{name:'Ask',exact:true}).count(),0);assert.equal(await a.locator('.counterpart-placeholder button,.counterpart-status').count(),0,'Argument retains neutral counterpart geometry without request controls');await action(a,'Explain my reasoning');
   await a.locator('#discussion-body').fill(reasonText);
   await a.locator('#discussion-reference').fill('https://example.org/meeting-notes');
   await pop(a).getByText('Definitions & standards (optional)',{exact:true}).click();
   await pop(a).locator('.definition-choice').filter({hasText:'Inclusive scheduling'}).locator('input[type=checkbox]').check();
   const beforeSave=await a.locator('#compare-canvas .comparison-world').getAttribute('style');
   const beforeCamera=await camera(a);
-  await a.locator('#reasoning-argument-mode').click();await a.locator('#reasoning-compare-mode').click();
+  await a.locator('#reasoning-compare-mode').click();assert.equal(await pop(a).isVisible(),false,'A parked reason form is not rendered in Compare');assert.equal(await a.locator('.reasoning-card,.discussion-rail .reasons,.discussion-rail .challenges').count(),0);await a.locator('#reasoning-argument-mode').click();
   assert.equal(await a.locator('#discussion-body').inputValue(),reasonText,'Changing focus mode preserves an unfinished reason.');
   assert.equal(await a.locator('#discussion-reference').inputValue(),'https://example.org/meeting-notes');
   assert.equal(await pop(a).locator('.definition-choice').filter({hasText:'Inclusive scheduling'}).locator('input[type=checkbox]').isChecked(),true);

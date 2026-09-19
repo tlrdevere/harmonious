@@ -1,5 +1,6 @@
-import {comparisonPairKey,comparisonConsensus,comparisonHealth,comparisonProposalVersions} from './workspace.mjs';
+import {comparisonPairKey,comparisonConsensus,comparisonProposalVersions} from './workspace.mjs';
 import {DefinitionsUI} from './definitions-ui.mjs';
+import {libraryMapOrder,libraryComparisonOrder} from './library-summary.mjs';
 const libUI=id=>document.getElementById(id);
 const libEl=(tag,text='',className='')=>{const el=document.createElement(tag);el.textContent=text;el.className=className;return el;};
 const libButton=(text,action,className='')=>{const button=libEl('button',text,className);button.type='button';button.onclick=action;return button;};
@@ -49,19 +50,17 @@ export class LibraryUI{
     for(const button of libUI('library-sections').children)button.setAttribute('aria-current',String(button.className===`library-section-${this.section}`));
     const host=libUI('library-results');host.replaceChildren();const ws=this.c.workspace;
     if(this.section==='definitions')this.definitions.render(host,this.query);
-    if(this.section==='maps')for(const map of this.ownedMaps()){
+    if(this.section==='maps')for(const map of libraryMapOrder(this.ownedMaps())){
       if(!this.matches(`${map.name} ${this.name(map)}`))continue;
       const updated=map.updatedAt?new Date(map.updatedAt).toLocaleDateString():'';
       host.append(this.card(map.name,`${this.name(map)} · ${map.visibility==='shared'?'Shared with beta participants':'Private'}${updated?' · Updated '+updated:''}`,()=>this.openMap(map.id),'Open map'));
     }
     if(this.section==='comparisons'){
-      const start=this.card('Start a comparison','Choose one of your maps and another accessible map. Browse shared maps in the source picker.',()=>this.createComparison(),'Choose maps');host.append(start);
-      for(const thread of [...ws.comparisonThreads].reverse()){
-        const title=`${this.c.mapName(thread.aMapId)} / ${this.c.mapName(thread.bMapId)}`,maps=ws.maps.filter(m=>[thread.aMapId,thread.bMapId].includes(m.id));
+      if(!this.query)host.append(this.card('Start a comparison','Choose one of your maps and another accessible map. Browse shared maps in the source picker.',()=>this.createComparison(),'Choose maps'));
+      for(const {thread,title,description}of libraryComparisonOrder(ws)){
+        const maps=ws.maps.filter(m=>[thread.aMapId,thread.bMapId].includes(m.id));
         if(!this.matches(title+' '+maps.map(m=>this.name(m)).join(' ')))continue;
-        const contributions=(ws.discussions||[]).filter(r=>r.comparisonId===thread.id&&r.status==='active');
-        const proposals=ws.comparisons.filter(p=>p.comparisonId===thread.id),agreed=proposals.filter(p=>comparisonConsensus(ws,p).state==='agreed').length,review=proposals.filter(p=>comparisonHealth(ws,p).needsReview).length,reasons=ws.argumentNodes.filter(n=>n.comparisonId===thread.id&&n.status==='active').length+contributions.filter(r=>r.kind==='argument').length;
-        host.append(this.card(title,`${contributions.filter(r=>r.kind==='relationship').length} relationships · ${contributions.filter(r=>['inquiry','counterpart','adoption'].includes(r.kind)).length} inquiries · ${reasons} reasons${proposals.length?' · '+proposals.length+' earlier judgments':''}${review?' · '+review+' need source review':''}`,()=>{if(this.c.showMode('compare'))this.c.openComparisonPair(comparisonPairKey(thread));},'Open comparison'));
+        host.append(this.card(title,description,()=>{if(this.c.showMode('compare'))this.c.openComparisonPair(comparisonPairKey(thread));},'Open comparison'));
       }
     }
     if(this.section==='pods')for(const map of ws.maps.filter(m=>!m.unavailable)){

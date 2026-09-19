@@ -2,6 +2,8 @@
 
 Planned September 18, 2026 (New York), following the Argument release at local commit `5ee06d7`. **Implementation update, September 19 UTC:** the folding, search, controlled adoption and release-check work below is implemented. This document retains the design and acceptance requirements; use the release record for deployment and verification status. Current behavior is documented in [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md).
 
+**Later UI clarification:** inquiries and adoption belong in Compare; reasons, challenges, fallacy objections and contests belong in Argument. [The interaction and sorting rules](compare-argument-ui-rules.md) supersede any earlier mixed-mode menu or broad search scope described below or in the historical preview.
+
 ## Recommended sequence
 
 | Order | Deliverable | What it improves |

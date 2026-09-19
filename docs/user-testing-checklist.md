@@ -1,6 +1,21 @@
 # Harmonious: what to check on your next visit
 
-## Start here: connections and personal confidence
+## Start here: Compare, Argument, and finding saved work
+
+Reload both accounts after the release listed in [deployment status](deployment-status.md).
+
+- [ ] In **Compare**, select another person's node or source-map connection. **Ask** should offer explanations, examples, evidence and a free question. No Challenge, fallacy, supporting-reason or contest form should appear there, including through **Conversations**, grouped edges or old saved contributions.
+- [ ] Record agreement/disagreement in Compare and request a missing counterpart. Existing counterparts should still suppress a new request. Own-node adoption suggestions belong here too.
+- [ ] Switch to **Argument** on the same source. Source selection and zoom should stay steady; source-specific reasons/challenges should be available. Fresh Ask, counterpart and adoption actions should not crowd this mode.
+- [ ] Challenge a statement and its **Supports** connection separately. Write the objection first, then optionally expand **Type of challenge (optional)** and choose **Logical fallacy or reasoning error**. A relationship's **Contest agreement/disagreement** belongs in this mode.
+- [ ] Type a question in Compare, switch to Argument, then return. Repeat with an Argument draft. Each draft should be hidden in the other mode and restored intact on return; selecting a replacement target must still ask before discarding.
+- [ ] Open earlier saved work. An argument reached through a contextual link should switch to Argument. An earlier inquiry needed to understand it should remain readable; unrelated inquiries and adoption receipts should not fill **Find in argument**.
+- [ ] Review **Map Library**. Recently edited maps should appear first. Reply in an older Comparison, save and refresh: that Comparison should move ahead of less active work. Cards should count reasons and challenges separately and omit empty count categories.
+- [ ] Search the Library for nonexistent wording. It should show a clear empty result; the creation card should not masquerade as a match. Clear the search to restore the normal list.
+
+The [interaction and sorting rules](compare-argument-ui-rules.md) explain the defaults and keep the compass, premise reuse and further outcome tools distinct from already implemented behavior.
+
+## Connections and personal confidence
 
 Reload both accounts. [Deployment status](deployment-status.md) identifies whether this update is live.
 
@@ -35,14 +50,14 @@ Reload both accounts after the release and use a disposable Comparison. [Deploym
 Use a different signed-in account on each PC or browser profile. Reload after the update is deployed, use disposable test maps, and wait for **All changes saved** before refreshing the other account. See [the current Argument guide](current-argument-workflow.md) for the intended behavior and remaining limits.
 
 - [ ] Open the same Comparison from both accounts. **Compare** and **Argument** should be modes in its toolbar, without requiring a proposal or shared question.
-- [ ] As account A, select your own ordinary source node and choose **Explain my reasoning**. Add a reason with an optional reference link. Confirm account B sees the saved reason, its author, and its **Supports** connection after refreshing. Neither original worldview should acquire a new node.
+- [ ] As account A, switch to **Argument**, select your own ordinary source node and choose **Explain my reasoning**. Add a reason with an optional reference link. Confirm account B sees the saved reason, its author, and its **Supports** connection after refreshing. Neither original worldview should acquire a new node.
 - [ ] Open your reason and choose **Add supporting reason**. Follow the two-step chain back to the source. Reasons should have their own **↳** count, not increase the **!** challenge count.
 - [ ] As account B, try three distinct actions: **Challenge** the original source node, **Challenge reason** on its reason card, and **Challenge reasoning** through the **Supports** connection. Each contribution should identify the correct target; the last should let you inspect both the reason and conclusion.
 - [ ] As account A, **Respond** to a challenge, include a reference link, and add a supporting reason to your response. As B, challenge that response. Use parent links and **Back to source** to retrace the exchange.
 - [ ] Choose **Accept challenge** or **Maintain position** as the recipient. The challenge should remain open until its author chooses **Mark resolved**. Reopen it as that author. None of these actions should change agreement/disagreement between the source nodes automatically.
 - [ ] Invoke a library definition or standard on a reason, challenge, and Argument response. Read the exact selected version through the definition icon from the other account. Edit the library entry; existing contributions must keep their chosen version, and the other account must not see uninvoked wording.
-- [ ] Use **Follow argument**, **Fit argument**, **Collapse argument**, and the source indicators. Hide Arguments through **View options**, and collapse a source-map branch. Its conversation counts should remain discoverable. If several source conversations share one collapsed indicator, confirm you can choose among them.
-- [ ] Type an unfinished reason, switch **Compare → Argument → Compare**, and check that its text and selected definitions remain. The mode switch should preserve the camera and selection. Trying to leave the draft should ask before discarding it. Save before reloading: unfinished forms do not survive a reload.
+- [ ] Use **Follow argument**, **Fit argument**, **Collapse argument**, and the source indicators. Collapse a source-map branch. Its argument counts should remain discoverable in Argument, while Compare shows only its relevant inquiries. If several source conversations share one collapsed indicator, confirm you can choose among them.
+- [ ] Type an unfinished reason, switch **Argument → Compare → Argument**, and check that its text and selected definitions are restored after being hidden in Compare. The mode switch should preserve the camera and selection. Trying to leave the draft should ask before discarding it. Save before reloading: unfinished forms do not survive a reload.
 - [ ] Edit a reason that has been challenged, then edit its source position. Check **Source wording & history** from the other account. Original wording must remain intact; a connection challenge should retain both original endpoints and indicate relevant source changes.
 - [ ] Withdraw a reason with a response or challenge beneath it. The active descendants should remain reachable through a labeled historical parent. The other author should still be able to withdraw their own child contribution; adding or rewriting contributions against unavailable sources should fail.
 - [ ] On a busy test argument, confirm that no more than 40 cards appear at once and that displayed children keep their necessary parents. **Browse all … contributions** opens the searchable list; use **Show on map** and **Earlier steps** to reach the rest. Repeat normal navigation at a narrow window width and with the keyboard.

@@ -4,6 +4,8 @@ Prepared September 18, 2026. This is an implementation design, not a claim that 
 
 Implementation note (September 19 UTC): the core design below is now implemented. The sections describing the earlier starting point are retained as design history. See [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md) for delivered behavior and release evidence.
 
+**Later UI clarification:** Compare provides inquiries and information requests; Argument provides reasoning and critique, including fallacy objections. They share the same saved Comparison. [The interaction and sorting rules](compare-argument-ui-rules.md) supersede earlier designs exposing both sets of actions in Compare.
+
 ## Decision
 
 Extend the existing Comparison conversation records (`discussions`) into the current Argument mode. A **reason** is an authored, versioned contribution that supports one source position or an earlier contribution. Its support connection is derived from its immutable target. A challenge can target the reason's wording or that specific support connection.

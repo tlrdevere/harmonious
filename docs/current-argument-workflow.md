@@ -2,6 +2,8 @@
 
 **Compare** and **Argument** are two modes of the same Comparison. Both people use the same saved conversation and source maps. You can begin without recording agreement, defining a shared question, or creating a proposal.
 
+Use **Compare** to understand and relate maps: ask for explanations, examples, evidence or a specific answer; record relationships; and request a missing counterpart or suggest adoption. Use **Argument** to explain reasoning, critique a statement or inference, point out a logical fallacy, and contest a relationship. The modes keep these actions and conversation indicators separate. See the [interaction and sorting rules](compare-argument-ui-rules.md) for the intended boundaries and next-feature design.
+
 This guide describes the new workflow. [Deployment status](deployment-status.md) identifies the version available on the live site. [The testing checklist](user-testing-checklist.md) provides a two-account walkthrough.
 
 ## Explain your position
@@ -9,7 +11,7 @@ This guide describes the new workflow. [Deployment status](deployment-status.md)
 On an ordinary **Position** node you own, **My confidence** lets you record an optional score from 0 to 100. An assessed node shows a small percentage in Maps and Compare; selecting your own badge opens the same control. The other person can read your score but cannot edit it. **Not assessed** clears the score; it is different from zero. Confidence belongs to your own position and does not change its wording version or record agreement. Independent adopted copies start unassessed. This control is not currently offered on the separate reason/challenge/response cards.
 
 1. Open a Comparison from **Map Library → Comparisons & arguments**.
-2. Select an ordinary node on your own map and choose **Explain my reasoning**. The three frame headings are not positions to explain.
+2. Switch to **Argument**, select an ordinary node on your own map and choose **Explain my reasoning**. The three frame headings are not positions to explain.
 3. Write your reason and choose **Add reason**. You can include an optional reference link and explain its relevance in the text.
 4. Open your saved reason and choose **Add supporting reason** to explain it further. The same action is available on your own Argument responses.
 
@@ -17,7 +19,7 @@ Each reason supports one particular position or contribution. A position can hav
 
 ## Challenge the statement or the connection
 
-The other person can address three different things:
+In **Argument**, the other person can address three different things:
 
 | What you want to question | Action |
 | --- | --- |
@@ -27,9 +29,9 @@ The other person can address three different things:
 
 The connection window shows both the reason and its conclusion. Its challenge remains attached to that connection. This is different from challenging a parent–child connection in a source map, which remains available through that map edge.
 
-Write the problem in your own words. Optional choices include **General challenge**, **Reasoning does not follow**, **Counterexample**, and **Logical fallacy or reasoning error**. These labels express the contributor's judgment; they do not establish that the other person is wrong.
+Write the problem in your own words. Expand **Type of challenge (optional)** if a classification helps: **General challenge**, **Reasoning does not follow**, **Counterexample**, or **Logical fallacy or reasoning error**. Name and explain a specific fallacy in the text. These labels express the contributor's judgment; they do not establish that the other person is wrong.
 
-Questions remain available through **Ask**, including requests for explanation, examples, evidence, or a specific question. To contest a recorded agreement or disagreement, open that relationship and use **Contest agreement** or **Contest disagreement**.
+Questions belong in **Compare → Ask**, including requests for explanation, examples, evidence, or a specific question. Asking for evidence requests information; challenging the adequacy of that evidence belongs in Argument. To contest a recorded agreement or disagreement, open that relationship in **Argument** and use **Contest agreement** or **Contest disagreement**.
 
 ## Respond and record an outcome
 
@@ -39,19 +41,19 @@ The recipient can **Accept challenge** or **Maintain position**, with an explana
 
 ## Read the argument on the map
 
-**Argument** displays reason, challenge, and response cards attached to the selected source. Names and ownership colors identify authors. The source's **↳**, **?**, and **!** indicators distinguish reasons, questions, and challenges.
+**Argument** displays reason, challenge, and response cards attached to the selected source. Names and ownership colors identify authors. Its **↳** and **!** indicators distinguish reasons and challenges; **Compare** shows question/request indicators. Earlier questions can remain readable as context for an argument, without showing unrelated inquiries throughout Argument.
 
-Use **Follow argument**, **Fit argument**, and **Back to source** to navigate. **Collapse argument** closes the expanded group while its source indicators remain. **Inquiries** stays available in the toolbar; **Map** and **Arguments** visibility controls are under **View options**. A collapsed source containing several conversations lets you choose which to open.
+Use **Follow argument**, **Fit argument**, and **Back to source** to navigate. **Collapse argument** closes the expanded group while its source indicators remain. Inquiries belong to Compare; reasoning and challenges belong to Argument. Visibility options cannot enable critiques in Compare. A collapsed source containing several conversations lets you choose which to open within its mode.
 
 Use **Hide follow-ups** on a card to fold that statement's branch. The **Supports** marker has its own fold control for challenges to the reasoning connection. Hidden counts remain visible; open challenges have a separate indicator. Folding is personal and preserves zoom and the clicked card's screen position. Your partner's view is independent. Folds survive changing modes and revisiting the Comparison during this page session; reloading may reset them. New responses update the counts without reopening your folds.
 
-**Find in argument** searches the accessible conversation, including responses, across all source groups. Choose **All** or **Open challenges**, then **Show on map**. The result identifies the author and whether it addresses a position, reason, reasoning connection, or response. Typing a search does not discard an unfinished form. Showing a different target uses the normal explicit discard decision when needed.
+**Find in argument** searches accessible argument contributions, responses and their necessary context across all source groups. Unrelated inquiries and adoption receipts stay in Compare. Choose **All** or **Open challenges**, then **Show on map**. Results prioritize recent matching activity; this does not rearrange the graph. The result identifies the author and whether it addresses a position, reason, reasoning connection, or response. Typing a search does not discard an unfinished form. Showing a different target uses the normal explicit discard decision when needed.
 
 The canvas shows up to **40 cards** at once, keeping necessary context with the selected contribution. **Browse all … contributions** opens the complete searchable list. For a longer chain, **Earlier steps** navigates through bounded sections; **Back to selected contribution** returns to your result. No line skips omitted parents. Withdrawn ancestors can remain clearly labeled historical cards. Search and Follow pan at the current zoom; only **Fit argument** fits the expanded group.
 
 Folding another branch preserves an unfinished form, including its reference and selected definitions. If a fold would hide that draft's target, the required context stays visible until you finish or discard the form.
 
-Switching between **Compare** and **Argument** preserves the camera, source selection, and current form. Explicit navigation actions such as **Fit argument** change the camera. Save a contribution before reloading; an unfinished form is not a saved contribution.
+Switching between **Compare** and **Argument** preserves the camera and source selection. An unfinished form is parked and hidden in the other mode, then restored when you return. Choosing a different target still requires the normal explicit discard decision. Explicit navigation actions such as **Fit argument** change the camera. Save a contribution before reloading; an unfinished form is not a saved contribution.
 
 ## Definitions, history, and privacy
 
@@ -65,7 +67,7 @@ Wait for **All changes saved** before closing the page. The other account can us
 
 ## Act on an adoption suggestion
 
-Select an ordinary node you own and choose **Suggest adoption**. The other map owner can discuss it using **Respond**, choose **Not now**, **Add to my map**, or **Use an existing node**. Frame headings and comparisons between two maps with the same owner do not offer this suggestion.
+In **Compare**, select an ordinary node you own and choose **Suggest adoption**. The other map owner can discuss it using **Respond**, choose **Not now**, **Add to my map**, or **Use an existing node**. Frame headings and comparisons between two maps with the same owner do not offer this suggestion.
 
 **Add to my map** lets the recipient edit the wording and choose any parent in their comparison map. **Link as counterparts** is optional and starts unchecked. Definitions already invoked by the source appear in a collapsed section; each **Copy to my library and use here** choice is also unchecked initially. Only selected, exact shared versions are imported, with origin attribution. Existing-node adoption leaves the selected node's wording and definitions unchanged.
 

@@ -4,6 +4,22 @@ Updated September 19, 2026 (UTC).
 
 ## Current release
 
+Compare/Argument mode separation and Library cleanup deployed September 19, 2026 at **05:23:03 UTC** (1:23 a.m. in New York).
+
+- Worker version: `8b001a6e-6aaa-4f73-81b5-4d92710f00cc`, serving **100%** of traffic. Deployment: `f42be255-533b-4509-8ec5-300304d52ed4`.
+- **Compare** provides questions, information requests, counterpart/adoption actions and agreement/disagreement recording. **Argument** provides reasons, statement/connection challenges, relationship contests and attributed outcomes. Menus, source indicators, grouped conversations and display controls now respect this boundary. Existing saved work remains accessible in its appropriate mode, with necessary earlier inquiry context preserved.
+- Challenge forms begin with the author's explanation. **Type of challenge (optional)** is collapsed by default and retains General challenge, Reasoning does not follow, Counterexample, and Logical fallacy or reasoning error. These are authored assessments, not automatic verdicts.
+- Mode switches preserve source selection and camera. Untouched and edited forms are hidden while in the other mode and restored on return; explicitly closed forms do not reappear. Selecting another target retains the explicit discard guard. Counterpart placeholders retain their geometry in Argument without request/add controls.
+- My maps sort by latest update. Comparisons sort by actual accessible saved conversation activity, including responses. Reasons and challenges are counted separately; empty categories are omitted, earlier work is labelled separately, and an unmatched search shows a real empty result. Conversation indexes prioritize recent activity; follow-ups remain chronological. Argument search includes argument work and necessary ancestors, excluding unrelated inquiries; graph structure is unchanged.
+- **39/39 local release checks passed**, including all seven browser walkthroughs, disposable account/database checks, portable export, production build and built-asset checks. Report: `build/verification/2026-09-19T05-19-52-332Z-69084/summary.json`. New regressions cover mode-specific absence/presence, parked drafts, optional challenge classification, earlier inquiry/argument ancestry, search scope and Library ordering/counts. Desktop and narrow screenshots were inspected.
+- Public verification confirms all **40 client files** and the homepage exactly match the tested build. Configured sign-in, anonymous account denial, private-configuration denial and security headers passed. Worker SHA-256: `45001a356b7d4a1ea6391641c2451484684b2dc50d559b5a4a287f1eed59d155`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were preserved. No database migration, live test data, authentication change, dependency-version change or registry audit was required.
+- [Interaction and sorting rules](compare-argument-ui-rules.md) now document the current boundary and the next-feature design. Compass self-placement, existing-node premise reuse, a new change-of-mind inquiry preset and overall disagreement outcomes remain **planned**, not part of this deployment.
+
+**Reload both PCs before testing.** Start with the mode-separation section in the [testing checklist](user-testing-checklist.md), or read [the current workflow](current-argument-workflow.md). Owner usability acceptance, GitHub synchronization and hosted CI remain outstanding. Source is checkpointed locally; the release does not push to GitHub.
+
+## Preceding routing and confidence release
+
 Comparison routing and personal confidence deployed September 19, 2026 at **04:58:57 UTC** (12:58 a.m. in New York).
 
 - Worker version: `95def18b-53e2-4526-95db-dfadc4beb417`, serving **100%** of traffic. Deployment: `450e6945-29e9-45d7-ab94-23c46276c7ca`.
