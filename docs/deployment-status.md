@@ -13,7 +13,7 @@ Single comparison edges and linked-counterpart request cleanup deployed Septembe
 - All 21 application/account scripts, all three browser walkthroughs, portable export, build and whitespace checks passed. New coverage reproduces structural-plus-illustrative duplicates, counterpart-plus-agreement duplicates, conflicting judgments, collapsed endpoints and hidden request actions.
 - Public verification confirms all 30 client files and the homepage match the tested release; sign-in, account gates, private configuration denial and security headers passed.
 - Local Worker SHA-256: `3196ee7c89970551a3e2f9cf5aeb9a8c2b60cda870c0fbfc23276bfa1b8502ef`. All eight encrypted bindings and compatibility date `2026-09-08` were preserved. No schema migration, package change or live test data was required.
-- Reload both PCs. Source remains in the local working tree, not committed or pushed.
+- Reload both PCs. Source was subsequently checkpointed locally as `94a8033` during [Argument preparation](argument-preparation-status.md); it has not been pushed. Preparation did not change the live release.
 
 ## Preceding counterpart release
 

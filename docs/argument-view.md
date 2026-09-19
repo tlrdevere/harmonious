@@ -1,5 +1,7 @@
 # Initial Argument view
 
+This document describes the earlier proposal-based implementation retained for compatibility. The current on-map extension is specified in [Argument integration design](argument-integration-design.md), with [preparation and baseline results](argument-preparation-status.md). Its new workflow does not require a proposal or co-sign.
+
 Implemented and deployed September 10, 2026; now included as a mode within Comparisons in the Library release. Two-session browser checks pass with isolated test accounts; the owner's real-account acceptance remains pending. See [deployment status](deployment-status.md).
 
 ## User workflow
