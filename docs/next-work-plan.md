@@ -4,13 +4,15 @@
 
 The core Argument workflow from the [weekly plan](next-week-plan-2026-09-21.md) is implemented: reasons and supporting reasons, separate challenges to statements and reasoning connections, responses, attributed outcomes, references and pinned definitions, all within one shared Comparison. Read [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md) for release evidence.
 
+The implementation-ready [next-features plan](next-features-plan.md) expands the earlier priority list. It includes interaction rules, ownership/history decisions, acceptance scenarios and a [clickable design preview](design/argument-next-features.html).
+
 Next:
 
-1. Complete the owner's two-account walkthrough in [the checklist](user-testing-checklist.md), especially whether the distinction between challenging a statement and challenging its reasoning is clear.
-2. Refine dense-map navigation from that feedback. Current automatic placement routes lines around cards and expands one source group, with a 40-card limit that preserves ancestors and offers list access to the rest. Individual subbranch folding and easier navigation through larger arguments are still useful follow-ups.
-3. Add repeatable CI around the existing application, account, database, browser, export and build checks. The local release checks are repeatable; a hosted CI workflow has not yet been configured.
-4. Add recipient-controlled adoption fulfillment when appropriate. The existing suggestion must not silently copy or edit another person's worldview.
-5. Revisit the tracked [development dependency advisories](dependency-review.md) in a separate tested update. Remind the owner about software-inventory disclosure before another registry audit; this release changed no dependencies and performed no new registry lookup.
+1. Add individual follow-up folding with persistent hidden/open-challenge counts and separate controls for statement versus reasoning-connection discussions.
+2. Add on-map search and focused navigation for large arguments, including contributions deeper than the 40-card limit. Ship these two readability improvements together.
+3. Add recipient-controlled adoption fulfillment: create an editable independent node or choose an existing one, optionally link counterparts, and explicitly import invoked definitions when desired. Ship this separately because it changes saved data.
+4. Prepare a complete repeatable verification entry point and hosted CI alongside the features, with disposable data and no automatic production deployment.
+5. Use the owner's [two-account walkthrough](user-testing-checklist.md) to refine the live workflow, and revisit the [dependency disclosure/advisory follow-up](dependency-review.md) separately before another registry audit.
 
 The current workflow preserves source maps, authorship, exact invoked definitions and contribution history. Acceptance does not automatically resolve a challenge or declare agreement by both people. Older proposal-based graphs remain available through **Earlier reasoning**.
 
