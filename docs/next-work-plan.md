@@ -2,13 +2,15 @@
 
 ## Current priorities — September 19, 2026 (UTC)
 
+The [latest review and next steps](review-and-next-steps-2026-09-19.md) now leads this plan: fix five confirmed UI/search/labeling issues, test a complete two-person exchange, improve the existing points/outcomes overview, and build searchable map discovery before adding optional Compass placement. The reviewed release already includes existing-node reasons, attached disagreement points, independent personal outcomes and the editable change-of-mind inquiry preset. Compass axis wording remains a product decision.
+
 The core Argument workflow from the [weekly plan](next-week-plan-2026-09-21.md) is implemented: reasons and supporting reasons, separate challenges to statements and reasoning connections, responses, attributed outcomes, references and pinned definitions, all within one shared Comparison. Read [the current workflow](current-argument-workflow.md) and [deployment status](deployment-status.md) for release evidence.
 
 The [next-features plan](next-features-plan.md) is implemented: personal follow-up folds, on-map search and bounded navigation for long chains, recipient-controlled adoption with optional counterpart links and exact definition imports, plus one aggregate verification runner and a manual CI workflow. [Deployment status](deployment-status.md) records the tested and live versions. The [design preview](design/argument-next-features.html) remains an illustrative mockup.
 
 Next:
 
-1. Complete the owner's [two-account walkthrough](user-testing-checklist.md), starting with folding/search and adoption. Gather concrete issues with readability, target identity, source review and controls before adding categories or more panels.
+1. Complete the stabilization work in the [latest review](review-and-next-steps-2026-09-19.md), then the owner's [two-account walkthrough](user-testing-checklist.md), including points/outcomes as well as folding/search and adoption. Gather concrete issues with readability, target identity, source review and controls before adding categories or more panels.
 2. Synchronize the reviewed source to GitHub and run the prepared **Release checks** workflow on that exact revision. The local clean install/verification and hosted CI are distinct; keep automatic deployment disabled. Consider push/PR checks only after the hosted run passes.
 3. Refine automatic placement for real conversations if the walkthrough reveals overlapping cards, hard-to-follow chains or excessive panning. Keep the agreed pause on manual dragging.
 4. Revisit the [dependency disclosure/advisory follow-up](dependency-review.md) separately before another registry audit.
