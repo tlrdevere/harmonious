@@ -2,6 +2,7 @@ import { roots, exampleMap, exampleRelations } from './data.mjs';
 import { validateGraph, graphEdges } from './model.mjs';
 import {upgradeWorkspace,validateAdoptionData,createOwnedMap} from './adoption.mjs';
 import {stableJSON} from './account-model.mjs';
+import {validConfidence,confidenceNeutralSnapshot} from './confidence.mjs';
 import {validateDefinitions} from './definitions.mjs';
 import {validateDiscussions} from './discussion.mjs';
 import {validateArguments} from './argument.mjs';
@@ -110,7 +111,7 @@ export function comparisonConsensus(workspace,record){
   if(participants.length===1)return {state:'single',label:'Your comparison'};
   if(!complete)return {state:'pending',label:'Awaiting the other person'};
   if(judgments.some(j=>j.proposalRevision!==comparisonProposalVersions(record).at(-1).revision))return {state:'review',label:'Proposal review needed'};
-  if(comparisonHealth(workspace,record).needsReview||judgments.some(j=>j.sourceReviewRequired||['a','b'].some(side=>stableJSON(j[`${side}Snapshot`])!==stableJSON(record[`${side}Snapshot`]))))return {state:'review',label:'Source review needed'};
+  if(comparisonHealth(workspace,record).needsReview||judgments.some(j=>j.sourceReviewRequired||['a','b'].some(side=>stableJSON(confidenceNeutralSnapshot(j[`${side}Snapshot`]))!==stableJSON(confidenceNeutralSnapshot(record[`${side}Snapshot`])))))return {state:'review',label:'Source review needed'};
   const decisions=new Set(judgments.filter(j=>participants.includes(j.actorId)).map(j=>JSON.stringify([j.questionStatus,j.answerStatus||'',j.question.trim().replace(/\s+/g,' ')])));
   return decisions.size===1?{state:'agreed',label:'Both agree'}:{state:'disputed',label:'Judgments differ'};
 }
@@ -118,7 +119,7 @@ export function comparisonHealth(workspace,record){
   const changed=[],missing=[];
   for(const side of ['a','b']){const map=workspace.maps.find(m=>m.id===record[`${side}MapId`]);if(!map){missing.push(side);continue;}
     const current=sourceSnapshot(map,record[`${side}NodeId`]);if(current===null){missing.push(side);continue;}
-    if(stableJSON(current)!==stableJSON(record[`${side}Snapshot`]))changed.push(side);
+    if(stableJSON(confidenceNeutralSnapshot(current))!==stableJSON(confidenceNeutralSnapshot(record[`${side}Snapshot`])))changed.push(side);
   }
   return {changed,missing,needsReview:!!(changed.length||missing.length)};
 }
@@ -169,7 +170,7 @@ export function validateWorkspace(workspace){
   for(const map of workspace.maps){
     if(typeof map.id!=='string'||ids.has(map.id)||typeof map.name!=='string'||!map.name.trim()||typeof map.person!=='string'||!Number.isSafeInteger(map.revision)||map.revision<1||!Array.isArray(map.nodes)||!Array.isArray(map.relations)||map.nodes.length>2000)throw Error('A map contains invalid or duplicate details.');
     ids.add(map.id);
-    for(const n of map.nodes)if(typeof n.id!=='string'||typeof n.title!=='string'||typeof n.summary!=='string'||typeof n.details!=='string'||(n.parent!==null&&typeof n.parent!=='string')||(n.parent===null&&n.kind!=='frame')||(n.confidence!==null&&(!Number.isFinite(n.confidence)||n.confidence<0||n.confidence>100)))throw Error('A map contains an invalid node.');
+    for(const n of map.nodes)if(typeof n.id!=='string'||typeof n.title!=='string'||typeof n.summary!=='string'||typeof n.details!=='string'||(n.parent!==null&&typeof n.parent!=='string')||(n.parent===null&&n.kind!=='frame')||!validConfidence(n.confidence))throw Error('A map contains an invalid node.');
     validateGraph(map.nodes,roots,map.relations);
   }
   const comparisons=new Set();

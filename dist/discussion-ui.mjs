@@ -1,10 +1,13 @@
 import {CounterpartUI} from './counterpart-ui.mjs';
 import {AdoptionUI} from './adoption-ui.mjs';
+import {confidenceForm} from './confidence-ui.mjs';
+import {setNodeConfidence} from './confidence.mjs';
 import {isAdoptionReceipt} from './adoption-fulfillment.mjs';
 import {ReasoningUI} from './reasoning-ui.mjs';
 import {makeDiscussion,discussionLayer,discussionSource,discussionTargetLabel,discussionHealth,DISCUSSION_LABELS,isReason,isChallenge,canExplainReasoning} from './discussion.mjs';
 import {comparisonPairKey,validateWorkspace} from './workspace.mjs';
 import {comparisonNodeKey,visibleComparisonEndpoint} from './comparison-layout.mjs';
+import {routeComparisonConnection} from './comparison-routing.mjs';
 import {graphEdges,STRUCTURAL_TYPES,RELATION_TYPES} from './model.mjs';
 import {CARD_W,CARD_H,connectorRoute} from './layout.mjs';
 import {stableJSON} from './account-model.mjs';
@@ -19,6 +22,8 @@ export class DiscussionUI{
   constructor(c){
     this.c=c;this.canvas=c.canvas;this.layers={map:true,inquiries:true,arguments:true};this.target=null;this.dirty=false;
     this.groupTarget=null;this.counterparts=new CounterpartUI(this);this.adoption=new AdoptionUI(this);
+    this.canvas.options.canSetConfidence=(map,node)=>map.ownerId===this.actor()&&node.kind==='position';
+    this.canvas.options.onConfidence=(side,id)=>{if(!this.canLeave())return;this.c.selectSource(side,id);this.confidence();};
     this.canvas.options.afterBuild=()=>this.draw();this.canvas.options.afterGeometry=()=>this.position();this.canvas.options.afterCamera=()=>this.positionPopover();
     this.host=discussEl('section','','discussion-popover');this.host.hidden=true;this.host.setAttribute('aria-label','On-map conversation');this.canvas.surface.append(this.host);
     for(const event of ['pointerdown','wheel'])this.host.addEventListener(event,e=>e.stopPropagation());
@@ -79,6 +84,16 @@ export class DiscussionUI{
   actionGroup(title,buttons){if(!buttons.length)return;const section=discussEl('section','','discussion-action-group'),actions=discussEl('div','','discussion-actions');section.append(discussEl('h3',title));actions.append(...buttons);section.append(actions);this.host.append(section);}
   selectNode(side,id){if(!this.canLeave())return;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
   selectTarget(target){if(!this.canLeave())return;this.target=target;this.returnFocus=document.activeElement;this.actions();}
+  confidence(){
+    if(!this.canLeave())return;const target=this.target,source=discussionSource(this.c.workspace,target);
+    if(target?.type!=='node'||source?.map.ownerId!==this.actor()||source.item.kind!=='position')return;
+    this.shell('My confidence');this.host.append(confidenceForm(source.item,{cancel:()=>{this.dirty=false;this.actions();},save:value=>{
+      if(!this.c.editor.flushDraft())throw Error('Resolve the unfinished map edit before saving confidence.');this.c.captureActive();
+      const map=this.c.workspace.maps.find(m=>m.id===target.mapId);setNodeConfidence(this.c.workspace,target,this.actor(),value);
+      if(this.c.activeMapId===map.id){this.c.baseline=JSON.stringify({nodes:map.nodes,relations:map.relations});this.c.editor.updateConfidence(target.nodeId,value);}
+      this.dirty=false;this.c.markDirty();this.c.renderComparison();this.actions();
+    }}));this.positionPopover();
+  }
   actions(){
     if(this.target?.type==='inference'){this.reasoning.openInference(this.target.entryId);return;}
     if(!this.target)return;const ws=this.c.workspace,source=discussionSource(ws,this.target),own=source?.map.ownerId===this.actor();this.shell(discussionTargetLabel(ws,this.target));
@@ -89,6 +104,7 @@ export class DiscussionUI{
       this.host.append(discussButton('Clear other selection',()=>{const side=this.c.sides.a.mapId===this.target.mapId?'b':'a';this.c.sides[side].nodeId=null;discussUI(`compare-node-${side}`).value='';this.c.canvas.pick(side,null);this.actions();},'discussion-text-action'));
     }
     const understand=[],respond=[],collaborate=[];
+    if(this.target.type==='node'&&own&&source.item.kind==='position')this.actionGroup('My position',[discussButton('My confidence',()=>this.confidence())]);
     if(canExplainReasoning(ws,this.target,this.actor()))respond.push(discussButton('Explain my reasoning',()=>this.compose('argument','reason')));
     if(source){
       const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(this.target));
@@ -238,7 +254,7 @@ export class DiscussionUI{
   point(target,visited=new Set()){
     if(!target)return null;
     if(target.type==='inference'){const p=this.reasoning?.inferences.get(target.entryId);if(p)return p;const r=this.c.workspace.discussions.find(e=>e.id===target.entryId);if(!r||visited.has(r.id))return null;visited.add(r.id);return this.point(r.target,visited);}
-    if(target.type==='connection'){const a=this.point(target.a,visited),b=this.point(target.b,visited);return a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:null;}
+    if(target.type==='connection'){const routed=this.connectionPositions?.get(target.key);if(routed)return routed;const a=this.point(target.a,visited),b=this.point(target.b,visited);return a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:null;}
     while(target.type==='entry'){if(this.reasoning?.positions.has(target.entryId))return this.reasoning.positions.get(target.entryId);if(this.entryPositions?.has(target.entryId))return this.entryPositions.get(target.entryId);if(visited.has(target.entryId))return null;visited.add(target.entryId);const r=this.c.workspace.discussions?.find(e=>e.id===target.entryId);if(!r)return null;if(['relationship','correspondence'].includes(r.kind)){const p=this.point(r.target,visited),q=this.point(r.other,visited);return p&&q?{x:(p.x+q.x)/2,y:(p.y+q.y)/2}:p;}target=r.target;if(target.type==='inference')return this.point(target,visited);}
     const side=['a','b'].find(s=>this.canvas.states[s].map?.id===target.mapId);if(!side)return null;
     if(target.type==='edge'){const rendered=this.items?.find(i=>i.type==='edge'&&i.targets?.some(t=>t.edgeId===target.edgeId&&t.mapId===target.mapId));if(rendered?.path.getAttribute('d')){const p=rendered.path.getPointAtLength(rendered.path.getTotalLength()/2);return {x:p.x,y:p.y};}const source=discussionSource(this.c.workspace,target);if(!source)return null;const a=this.point({type:'node',mapId:target.mapId,nodeId:source.item.from}),b=this.point({type:'node',mapId:target.mapId,nodeId:source.item.to});return a&&b?{x:(a.x+b.x)/2,y:(a.y+b.y)/2}:a||b;}
@@ -281,8 +297,12 @@ export class DiscussionUI{
       if(judgments.length>1&&!mixed&&actualPairs.size===1)label=`${DISCUSSION_LABELS[r.action]} · ${judgments.length} judgments`;
       if(records.some(e=>groups.some(g=>g.target.entryId===e.id&&g.openChallenges)))label+=' · Contested';
       if(records.some(e=>!e.legacy&&discussionHealth(this.c.workspace,e).state==='changed'))label+=' · Review source';
-      const path=canvas.svgElement('path',{class:`discussion-relationship ${action}`,fill:'none'});path.dataset.nodePair=connection.key;svg.append(path);this.items.push({type:'edge',a:r.target,b:r.other,path});
-      const anchor={type:'connection',a:r.target,b:r.other};this.badge(label,anchor,()=>this.openConnection(connection,label,anchor),label,action);
+      const path=canvas.svgElement('path',{class:`discussion-relationship ${action}`,fill:'none'});path.dataset.nodePair=connection.key;
+      const anchor={type:'connection',a:r.target,b:r.other,key:connection.key},open=()=>this.openConnection(connection,label,anchor);
+      const hit=canvas.svgElement('path',{class:'discussion-edge-hit discussion-relationship-hit',fill:'none',tabindex:'0',role:'button','aria-label':`Select ${label}`});
+      hit.onclick=open;hit.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();open();}};
+      const edge={type:'edge',a:r.target,b:r.other,path,hit,connection:anchor};svg.append(path,hit);this.items.push(edge);
+      this.badge(label,anchor,open,label,action);edge.badge=this.items.at(-1);edge.badge.edge=edge;
       this.items.at(-1).aliases=records.filter(e=>!e.legacy).map(e=>e.id);for(const e of records)this.connectionKeys.set(e.id,connection.key);
     }
     // Collapse at the source. Hidden layers retain their counts and are still discoverable.
@@ -315,13 +335,27 @@ export class DiscussionUI{
   }
   badge(text,target,action,aria,style=''){const b=discussButton(text,action,`discussion-badge discussion-drawing ${style}`);b.setAttribute('aria-label',aria);b.title=aria;if(target.type==='entry')b.dataset.entry=target.entryId;this.canvas.world.append(b);this.items.push({type:'badge',target,b});}
   position(){
-    if(!this.items)return;this.entryPositions=new Map();const occupied=[...this.canvas.positions.values(),...(this.canvas.layout.placeholders||[])].map(p=>({x:p.x,y:p.y,w:CARD_W,h:CARD_H}));
+    if(!this.items)return;this.entryPositions=new Map();this.connectionPositions=new Map();const routeBounds=[],occupied=[...this.canvas.positions.values(),...(this.canvas.layout.placeholders||[])].map(p=>({x:p.x,y:p.y,w:CARD_W,h:CARD_H}));
     const overlaps=(x,y,w,h)=>occupied.some(r=>x<r.x+r.w+12&&x+w+12>r.x&&y<r.y+r.h+12&&y+h+12>r.y);
     for(const item of this.items){
-      if(item.type==='edge'){const a=this.point(item.a),b=this.point(item.b);item.path.style.display=a&&b?'':'none';if(!a||!b)continue;const offset=item.path.classList.contains('discussion-relationship')?CARD_H/2:0;const d=item.branch?.path.getAttribute('d')||(offset?`M ${a.x} ${a.y-offset} Q ${(a.x+b.x)/2} ${Math.min(a.y,b.y)-offset-55} ${b.x} ${b.y-offset}`:connectorRoute({x:a.x-CARD_W/2,y:a.y-CARD_H/2},{x:b.x-CARD_W/2,y:b.y-CARD_H/2},null).d);item.path.setAttribute('d',d);item.hit?.setAttribute('d',d);}
-      else {const p=this.point(item.target);const el=item.b;el.hidden=!p;if(!p)continue;const w=el.offsetWidth,h=el.offsetHeight;let x=p.x-w/2,y=p.y-CARD_H/2-h-18;if(item.target.type==='edge'){x=p.x+8;y=p.y-h/2;}else if(el.classList.contains('discussion-rail')){x=p.x+(p.w||0)/2+8;y=p.y-h/2;}while(overlaps(x,y,w,h))y-=h+12;occupied.push({x,y,w,h});if(el.classList.contains('discussion-badge'))for(const id of item.aliases||(item.target.type==='entry'?[item.target.entryId]:[]))this.entryPositions.set(id,{x:x+w/2,y:y+h/2,w,h});el.style.transform=`translate(${x}px,${y}px)`;}
+      if(item.type==='edge'){
+        const a=this.point(item.a),b=this.point(item.b);item.path.style.display=a&&b?'':'none';if(item.hit)item.hit.style.display=a&&b?'':'none';if(!a||!b){item.route=null;continue;}
+        let d;
+        if(item.connection){
+          const label=item.badge.b;label.hidden=false;
+          item.route=routeComparisonConnection(a,b,occupied.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h})),{w:label.offsetWidth,h:label.offsetHeight});d=item.route.d;
+          if(item.route.label)this.connectionPositions.set(item.connection.key,item.route.label);
+          routeBounds.push(...item.route.points.map(p=>({...p,w:0,h:0})));
+        }else d=item.branch?.path.getAttribute('d')||connectorRoute({x:a.x-CARD_W/2,y:a.y-CARD_H/2},{x:b.x-CARD_W/2,y:b.y-CARD_H/2},null).d;
+        item.path.setAttribute('d',d);item.hit?.setAttribute('d',d);
+      }else {
+        const p=item.edge?item.edge.route?.label:this.point(item.target),el=item.b;el.hidden=!p;if(!p)continue;
+        const w=el.offsetWidth,h=el.offsetHeight;let x=p.x-w/2,y=item.edge?p.y-h/2:p.y-CARD_H/2-h-18;
+        if(!item.edge){if(item.target.type==='edge'){x=p.x+8;y=p.y-h/2;}else if(el.classList.contains('discussion-rail')){x=p.x+(p.w||0)/2+8;y=p.y-h/2;}while(overlaps(x,y,w,h))y-=h+12;}
+        occupied.push({x,y,w,h});if(el.classList.contains('discussion-badge'))for(const id of item.aliases||(item.target.type==='entry'?[item.target.entryId]:[]))this.entryPositions.set(id,{x:x+w/2,y:y+h/2,w,h});el.style.transform=`translate(${x}px,${y}px)`;
+      }
     }
-    if(occupied.length){const x=Math.min(0,...occupied.map(r=>r.x)),y=Math.min(0,...occupied.map(r=>r.y));this.canvas.layout.bounds={x,y,width:Math.max(...occupied.map(r=>r.x+r.w))+32-x,height:Math.max(...occupied.map(r=>r.y+r.h))+32-y};}
+    if(occupied.length){const visible=[...occupied,...routeBounds],x=Math.min(0,...visible.map(r=>r.x)),y=Math.min(0,...visible.map(r=>r.y));this.canvas.layout.bounds={x,y,width:Math.max(...visible.map(r=>r.x+r.w))+32-x,height:Math.max(...visible.map(r=>r.y+r.h))+32-y};}
     this.counterparts.position();this.reasoning.position();this.positionPopover();
   }
   positionPopover(){

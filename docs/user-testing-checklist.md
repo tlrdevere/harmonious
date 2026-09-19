@@ -1,6 +1,20 @@
 # Harmonious: what to check on your next visit
 
-## Start here: folding, finding, and adoption
+## Start here: connections and personal confidence
+
+Reload both accounts. [Deployment status](deployment-status.md) identifies whether this update is live.
+
+- [ ] Revisit the comparison from the screenshot. Expand a branch on one map and leave the other folded. Connections should meet card boundaries without crossing the cards' faces, and their labels should stay on the line.
+- [ ] Open a relationship by its label, by clicking its line, and with the keyboard. Its saved meanings and authorship should still be accessible. A displayed node pair should still have only one visible edge.
+- [ ] Select one of your own Position nodes in Maps and choose **My confidence**. Save 73%, reopen the normal editor, save an unrelated text edit, and confirm 73% remains.
+- [ ] In Compare, change your own confidence using its small percentage badge. Wait for **All changes saved**, then refresh the other account. It should see your score with your authorship, without an edit action for it.
+- [ ] Set a score to zero, then choose **Not assessed**. Zero should display as 0%; unassessed should have no score badge. Frame headings, topics and questions should not offer confidence.
+- [ ] Change confidence without editing the position. Existing comparison relationships and reasoning should not acquire a source-wording warning, and neither user's other scores should change.
+- [ ] Try the confidence form at a narrow width and check that entering a value, backing out and revisiting the map behave clearly.
+
+The optional compass is currently a [design preview](design/map-discovery-compass.html), not connected to live accounts. The broader [process review](process-design-review-2026-09-19.md) separates next features from deferred decisions.
+
+## Folding, finding, and adoption
 
 Reload both accounts after the release and use a disposable Comparison. [Deployment status](deployment-status.md) identifies what is live.
 

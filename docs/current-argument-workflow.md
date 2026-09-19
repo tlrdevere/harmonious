@@ -6,6 +6,8 @@ This guide describes the new workflow. [Deployment status](deployment-status.md)
 
 ## Explain your position
 
+On an ordinary **Position** node you own, **My confidence** lets you record an optional score from 0 to 100. An assessed node shows a small percentage in Maps and Compare; selecting your own badge opens the same control. The other person can read your score but cannot edit it. **Not assessed** clears the score; it is different from zero. Confidence belongs to your own position and does not change its wording version or record agreement. Independent adopted copies start unassessed. This control is not currently offered on the separate reason/challenge/response cards.
+
 1. Open a Comparison from **Map Library → Comparisons & arguments**.
 2. Select an ordinary node on your own map and choose **Explain my reasoning**. The three frame headings are not positions to explain.
 3. Write your reason and choose **Add reason**. You can include an optional reference link and explain its relevance in the text.

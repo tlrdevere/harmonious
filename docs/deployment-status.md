@@ -4,6 +4,21 @@ Updated September 19, 2026 (UTC).
 
 ## Current release
 
+Comparison routing and personal confidence deployed September 19, 2026 at **04:58:57 UTC** (12:58 a.m. in New York).
+
+- Worker version: `95def18b-53e2-4526-95db-dfadc4beb417`, serving **100%** of traffic. Deployment: `450e6945-29e9-45d7-ab94-23c46276c7ca`.
+- Comparison relationships now attach to suitable card boundaries and route around visible cards and counterpart placeholders. This fixes the top-to-top curve crossing a card after asymmetric branch collapse. Labels sit on a clear part of the actual route; lines retain mouse and keyboard access. One visible edge per displayed node pair and all saved meanings are preserved. No node dragging or automatic reparenting was introduced.
+- Owners can use **My confidence** on Position nodes in Maps and Compare. A quiet percentage badge shows the author's score; the owner can edit it directly, and the other participant sees it read-only. The numeric editor preserves arbitrary valid values such as 73% and 64.5%; zero remains distinct from **Not assessed**. Frame headings, topics, questions and separate argument cards are not assigned scores.
+- Confidence stays personal metadata. Confidence-only changes preserve wording identity/version and no longer mark legacy comparison wording stale; saved historical snapshots remain intact. Fixed a stale hidden-editor path that could revert a Compare score after Refresh, and preserved unrelated inspector edits when cancelling a confidence draft.
+- **38/38 local release checks passed**, including seven browser walkthroughs, disposable account/database checks, portable export, production build and built-asset checks. Report: `build/verification/2026-09-19T04-54-59-120Z-81660/summary.json`. New coverage checks card-boundary geometry, asymmetric collapse, real pointer/keyboard access, score ownership, arbitrary-value persistence and in-app refresh/save behavior. Desktop and narrow screenshots were inspected.
+- Public verification confirms all **39 client files** and the homepage match the tested build exactly. Sign-in configuration, anonymous account denial, private-configuration denial and security headers passed. Worker SHA-256: `baedd6607f6b5f45c72b0a80455a6d4da21a00a458ff4fc7d7a47f44240e4182`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were preserved. No database migration, live test data, authentication change, dependency-version change or registry audit was required.
+- Completed the [process-design review](process-design-review-2026-09-19.md) and a [compass discovery design preview](design/map-discovery-compass.html). The compass is **not a live feature**: examples are fictional, axes are provisional, and placements remain in the demo browser session. Actual discovery self-placement awaits final axis wording and implementation.
+
+**Reload both PCs before testing.** The [testing checklist](user-testing-checklist.md) starts with the routing and confidence changes. Owner usability acceptance, GitHub synchronization and hosted CI remain outstanding. The next Argument design priority is reusing existing worldview positions as reasons; pod design and manual dragging remain deferred.
+
+## Preceding Argument navigation and adoption release
+
 Argument folding, on-map search and recipient-controlled adoption deployed September 19, 2026 at **04:25:36 UTC** (12:25 a.m. in New York).
 
 - Worker version: `643ab22e-99ee-42de-a21b-13af900de765`, serving **100%** of traffic. Deployment: `27902cf3-367d-4ca0-ba0f-a94fc74e1bda`.

@@ -8,12 +8,14 @@ css=(root/'dist/style.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/library.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/reasoning.css').read_text(encoding='utf-8')
 parts=[]
-for name in ['account-model.mjs','layout.mjs','model.mjs','data.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','discussion.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','reasoning-view.mjs','reasoning-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','compare-canvas.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-ui.mjs','node-actions.mjs','account-ui.mjs','workspace-ui.mjs','app.mjs']:
+for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mjs','model.mjs','data.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','discussion.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','comparison-routing.mjs','reasoning-view.mjs','reasoning-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','compare-canvas.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-ui.mjs','node-actions.mjs','account-ui.mjs','workspace-ui.mjs','app.mjs']:
     code=(root/'dist'/name).read_text(encoding='utf-8')
     code=re.sub(r'^import .*?;\n','',code,flags=re.M)
     code=re.sub(r'^export ','',code,flags=re.M)
     if name=='reasoning-layout.mjs':
         code='const routeReasoningConnection=(()=>{\n'+code+'\nreturn routeReasoningConnection;})();'
+    if name=='comparison-routing.mjs':
+        code='const routeComparisonConnection=(()=>{\n'+code+'\nreturn routeComparisonConnection;})();'
     if name=='reasoning-view.mjs':
         names='buildReasoningIndex,projectReasoning,searchReasoning,reasoningTargetKey,ReasoningViewState'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'

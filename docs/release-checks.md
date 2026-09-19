@@ -50,6 +50,8 @@ Generated portable files in `review/` and the production bundle in `build/cloudf
 
 ## Verified isolated install — 2026-09-19
 
+The subsequent routing/confidence release also passed the complete runner: **38/38** checks using the same installed runtimes, including the new confidence model/browser checks and comparison routing tests. Its report is `build/verification/2026-09-19T04-54-59-120Z-81660/summary.json`; its built Worker SHA-256 is `baedd6607f6b5f45c72b0a80455a6d4da21a00a458ff4fc7d7a47f44240e4182`. This was a working-tree verification, not another clean-install or hosted CI run. Seven browser walkthroughs passed; the public post-deployment check matched all 39 client files and the homepage. No package versions changed or registry audit ran.
+
 A fresh dependency installation and the complete **35-check** runner passed in `review/ci-clean/`. That directory contained 134 tracked or explicitly reviewed new source files copied from the working tree, without existing dependencies, generated artifacts, Git metadata, environment files or production credentials. It is an isolated working-tree snapshot, not a hosted checkout.
 
 The official npm 11.6.2 archive was checked against its registry SHA-512 integrity value. `npm ci --no-audit --no-fund` installed 57 Windows packages with normal installation scripts, including successful esbuild/workerd checks. Empty npm credential configuration and a restricted set of inherited environment variables kept the run independent of the developer's application configuration. The lockfile was unchanged, and no vulnerability audit ran.

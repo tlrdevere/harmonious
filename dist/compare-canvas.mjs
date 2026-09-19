@@ -1,6 +1,7 @@
 import {CARD_W,CARD_H,connectorRoute,edgeEndpoints} from './layout.mjs';
 import {roots} from './data.mjs';
 import {NODE_KINDS,revealPath} from './model.mjs';
+import {confidenceBadge} from './confidence-ui.mjs';
 import {QUESTION_STATUSES,ANSWER_STATUSES} from './workspace.mjs';
 import {comparisonNodeKey,layoutComparison,visibleComparisonEndpoint,comparisonRecordEnds} from './comparison-layout.mjs';
 
@@ -96,6 +97,7 @@ export class ComparisonCanvas{
         const main=document.createElement('button');main.type='button';main.className='node-main';main.setAttribute('aria-label',`Select ${node.title} from ${state.map.name} by ${owner}`);main.setAttribute('aria-pressed',String(state.selected===id));
         const title=document.createElement('div');title.className='node-title';title.textContent=node.title;const summary=document.createElement('div');summary.className='node-summary';summary.textContent=node.summary;main.append(title,summary);main.onclick=()=>this.onSelect(side,id);
         const bottom=document.createElement('div');bottom.className='node-bottom';const meta=document.createElement('span');meta.className='node-meta';meta.textContent=owner;meta.title=`${state.map.name} by ${owner}`;bottom.append(meta);
+        const confidence=confidenceBadge(node,owner,this.options.canSetConfidence?.(state.map,node)?()=>this.options.onConfidence?.(side,id):null);if(confidence)bottom.append(confidence);
         if(kids.length){const toggle=document.createElement('button');toggle.className='toggle';toggle.type='button';toggle.textContent=`${state.expanded.has(id)?'−':'＋'} ${kids.length}`;toggle.setAttribute('aria-label',`${state.expanded.has(id)?'Collapse':'Expand'} ${node.title} in map ${side.toUpperCase()}`);toggle.setAttribute('aria-expanded',String(state.expanded.has(id)));toggle.onclick=()=>{state.expanded.has(id)?state.expanded.delete(id):state.expanded.add(id);this.reflow({anchor:comparisonNodeKey(side,id)});};bottom.append(toggle);}
         if(this.options.single){meta.textContent=this.options.nodeMeta?.(node)||(node.parent===null?'Frame':NODE_KINDS[node.kind].label);card.classList.toggle('pod-context',!!node.podContext);main.setAttribute('aria-label',`Select ${node.title}`);}
         card.append(main,bottom);this.world.append(card);this.cards.set(comparisonNodeKey(side,id),card);

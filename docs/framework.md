@@ -1,6 +1,6 @@
 # Harmonious
 
-> Historical framework text follows. As of September 10, 2026, a web beta with accounts, radial maps and shared comparison judgments exists. The owner wants a separate Argument view built directly over Compare; it is not implemented yet. Pod design remains undecided. See [deployment status](deployment-status.md) and [Argument readiness](argument-readiness.md) for current implementation and priorities. Statements below about a facilitator-only prototype or what is not built describe the earlier framework stage.
+> Historical framework text follows. As of September 19, 2026, the web beta includes accounts, personal maps, shared Comparisons, and Compare/Argument modes with on-map reasoning, challenges, responses, navigation and recipient-controlled adoption. Pod design remains undecided. See [deployment status](deployment-status.md), [the current Argument workflow](current-argument-workflow.md), and [the process-design review](process-design-review-2026-09-19.md) for current implementation and gaps. Statements below about a facilitator-only prototype or what is not built describe the earlier framework stage.
 
 **Harmonious is an open framework and prototype process for mapping, comparing, and reconciling worldviews.**
 

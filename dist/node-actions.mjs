@@ -1,3 +1,4 @@
+import {confidenceForm} from './confidence-ui.mjs';
 export class NodeActions{
   constructor(viewport,actions){
     this.viewport=viewport;this.actions=actions;this.node=null;this.detail=null;
@@ -10,6 +11,9 @@ export class NodeActions{
   hide(){this.host.hidden=true;this.node=null;this.detail=null;}
   render(){
     const n=this.node;this.host.replaceChildren();if(!n)return;
+    if(this.detail==='confidence'){
+      this.host.append(confidenceForm(n,{save:value=>this.actions.saveConfidence(value),input:(value,valid)=>this.actions.draftConfidence(value,valid),cancel:()=>{this.actions.cancelConfidence();this.show(n);}}));return;
+    }
     if(this.detail==='child'){
       const title=document.createElement('strong');title.textContent=`Add beneath “${n.title}”`;
       const label=document.createElement('label');label.textContent='Child type';const select=document.createElement('select');select.id='on-map-child-kind';label.htmlFor=select.id;
@@ -17,6 +21,7 @@ export class NodeActions{
       this.host.append(title,label,select,this.button('Create child',()=>this.actions.addChild(select.value)),this.button('Back',()=>this.show(n)));return;
     }
     this.host.append(this.button('Edit',()=>this.actions.edit()),this.button('Add child',()=>this.show(n,'child')),this.button('Connect',()=>this.actions.connect()));
+    if(n.kind==='position'&&n.parent!==null&&this.actions.canSetConfidence?.())this.host.append(this.button('My confidence',()=>this.actions.confidence(n.id)));
     if(this.actions.definitions)this.host.append(this.button('Definitions & standards',()=>this.actions.definitions(n.id)));
     if(n.parent!==null)this.host.append(this.button('Compare',()=>this.actions.compare(n.id)));
     if(this.actions.canArgue(n.id))this.host.append(this.button('Add reasoning',()=>this.actions.argue(n.id)));
