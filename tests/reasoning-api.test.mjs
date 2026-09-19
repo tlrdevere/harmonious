@@ -76,7 +76,7 @@ async function exerciseReasoningAPI(){
   let written;const commit=store.commit;store.commit=(actor,generation,changes)=>{written=changes;return commit(actor,generation,changes);};
   response=await request({changes:reversed},true);assert.equal(response.status,200);assert.deepEqual(written.filter(c=>c.kind==='discussion').map(c=>c.id),[parent.id,child.id]);
   response=await request(undefined,true);assert.equal(response.status,200);const data=await response.json();assert.equal(data.workspace.schemaVersion,3);assert(data.workspace.discussions.some(r=>r.id===child.id));
-  const portable=structuredClone(data.workspace);portable.schemaVersion=2;const authored=structuredClone(portable.discussions);validateWorkspace(portable);assert.equal(portable.schemaVersion,4);assert.deepEqual(portable.discussions,authored,'Upgrading the envelope does not rewrite authored records');
+  const portable=structuredClone(data.workspace);portable.schemaVersion=2;const authored=structuredClone(portable.discussions);validateWorkspace(portable);assert.equal(portable.schemaVersion,5);assert.deepEqual(portable.discussions,authored,'Upgrading the envelope does not rewrite authored records');
   response=await request();assert.equal(response.status,409);const error=await response.json();assert.equal(error.code,'CLIENT_UPDATE_REQUIRED');assert(!JSON.stringify(error).includes(parent.body));
   const snapshot=await store.snapshot();response=await request({changes:[{kind:'map',id:a.id,expectedRevision:data.revisions[accountKey('map',a.id)],value:{...data.workspace.maps.find(m=>m.id===a.id),name:'Stale edit'}}]});assert.equal(response.status,409);assert.deepEqual(await store.snapshot(),snapshot);
   const bobBefore=(await view(store,bob)).workspace;

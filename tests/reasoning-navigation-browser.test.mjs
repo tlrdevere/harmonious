@@ -114,6 +114,9 @@ try{
   await pop(a).getByText('Definitions & standards (optional)',{exact:true}).click();await pop(a).locator('.definition-choice input[type=checkbox]').check();
   await fold(a,reason,'reasoning connection').press('Enter');
   assert.equal(await card(a,response).count(),1,'A fold cannot hide the required context of an unfinished composer.');
+  const toolsAreClear=()=>{const form=document.querySelector('.discussion-popover').getBoundingClientRect(),tools=document.querySelector('.reasoning-tools').getBoundingClientRect();return form.right<=tools.left||form.left>=tools.right||form.bottom<=tools.top||form.top>=tools.bottom;};
+  assert(await a.evaluate(toolsAreClear),'The expanded reason form leaves the full argument toolbar unobstructed.');await a.screenshot({path:'build/design-review/reasoning-draft-toolbar-desktop.png',fullPage:true});
+  await a.setViewportSize({width:390,height:844});await a.waitForFunction(toolsAreClear);await a.getByRole('button',{name:'Find in argument',exact:true}).click();await search(a).getByRole('button',{name:'Close',exact:true}).click();assert.equal(await a.locator('#discussion-body').inputValue(),'A private unfinished explanation.');await a.screenshot({path:'build/design-review/reasoning-draft-toolbar-mobile.png',fullPage:true});await a.setViewportSize({width:1440,height:1000});await a.waitForFunction(toolsAreClear);
   await a.getByRole('button',{name:'Find in argument',exact:true}).click();await search(a).getByRole('searchbox',{name:'Search argument'}).fill('Deep response visibility target');
   assert.equal(await a.locator('#discussion-body').inputValue(),'A private unfinished explanation.','Typing in search preserves the current composer.');
   a.once('dialog',d=>d.dismiss());await search(a).getByRole('button',{name:'Show on map',exact:true}).click();

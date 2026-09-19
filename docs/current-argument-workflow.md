@@ -12,10 +12,12 @@ On an ordinary **Position** node you own, **My confidence** lets you record an o
 
 1. Open a Comparison from **Map Library → Comparisons & arguments**.
 2. Switch to **Argument**, select an ordinary node on your own map and choose **Explain my reasoning**. The three frame headings are not positions to explain.
-3. Write your reason and choose **Add reason**. You can include an optional reference link and explain its relevance in the text.
+3. Choose **Write a reason** or **Use one of my nodes**. A written reason can include an optional reference link and explain its relevance in the text. The node picker searches your participating map's positions within the same frame; inspect the wording and destination, then save.
 4. Open your saved reason and choose **Add supporting reason** to explain it further. The same action is available on your own Argument responses.
 
-Each reason supports one particular position or contribution. A position can have several reasons. Creating reasoning does not add or change nodes in either original worldview.
+Each reason supports one particular position or contribution. A position can have several reasons. The same existing position can be used under different conclusions, with a separate reviewed reference for each use. Creating reasoning does not add, move or change nodes in either original worldview. A node cannot support itself, and circular or duplicate uses are rejected.
+
+An existing-node reason retains the wording and invoked definitions used when saved. Later source edits do not silently update it. Open the reason and use **Review used node** to inspect changes and explicitly use the current wording; earlier versions remain readable. Confidence-only changes do not require a wording review. If the source is removed or moved outside the eligible frame, the saved wording remains historical and the reason can be withdrawn. See [existing-node reasons](existing-node-reasons.md) for the scope and review rules.
 
 ## Challenge the statement or the connection
 
@@ -77,7 +79,7 @@ Both people can see the recipient's outcome. A fulfilled suggestion offers **Ope
 
 ## Still outside this version
 
-- Manual card dragging, reusable reasons with several conclusions, and arbitrary graph links.
+- Manual card dragging, one shared reason card with several Supports connections, and arbitrary graph links. Existing positions can already be referenced in separate reason cards under different conclusions.
 - Keeping several unfinished forms across different Comparisons or across a reload. Changing targets or leaving a draft still asks before discarding it.
 - Multiple pinned conversation windows, automatic node merging, live notifications, and pod design.
 

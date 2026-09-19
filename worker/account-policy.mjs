@@ -12,7 +12,7 @@ const check=(condition,message,status=400)=>{if(!condition)throw new AccountErro
 const equal=(a,b)=>stableJSON(a)===stableJSON(b);
 export function fullAccountWorkspace(snapshot){
   const get=kind=>snapshot.records.filter(r=>r.kind===kind).map(r=>accountClone(r.value));
-  return {schemaVersion:4,participants:get('profile'),maps:get('map'),ideas:get('idea'),endorsements:get('endorsement'),comparisons:get('comparison'),comparisonThreads:get('comparison_thread'),argumentNodes:get('argument_node'),argumentEdges:get('argument_edge'),discussions:get('discussion'),definitions:get('definition')};
+  return {schemaVersion:5,participants:get('profile'),maps:get('map'),ideas:get('idea'),endorsements:get('endorsement'),comparisons:get('comparison'),comparisonThreads:get('comparison_thread'),argumentNodes:get('argument_node'),argumentEdges:get('argument_edge'),discussions:get('discussion'),definitions:get('definition')};
 }
 export function initialAccountChanges(actor){
   const now=new Date().toISOString(),map={id:newId('map'),name:'My worldview',person:actor.name,ownerId:actor.id,mapType:'personal',visibility:'private',revision:1,nodes:exampleMap().filter(n=>n.parent===null),relations:[],updatedAt:now};
@@ -69,7 +69,7 @@ export function projectAccountWorkspace(snapshot,actorId){
   const visibleProposals=new Set(comparisons.map(p=>p.id)),argumentNodes=full.argumentNodes.filter(n=>visibleProposals.has(n.proposalId)),argumentEdges=full.argumentEdges.filter(e=>visibleProposals.has(e.proposalId));
   const sharedThreads=new Set(comparisonThreads.filter(t=>t.participants.includes(actorId)&&[t.aMapId,t.bMapId].every(id=>visibleIds.has(id))).map(t=>t.id));
   const discussions=full.discussions.filter(r=>r.kind==='context'?visibleIds.has(r.target.mapId):sharedThreads.has(r.comparisonId));
-  const workspace={schemaVersion:4,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
+  const workspace={schemaVersion:5,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
   if(maps.length)validateWorkspace(workspace);
   const accessibleRevisions=snapshot.records.filter(r=>r.kind==='comparison'&&comparisons.some(c=>c.id===r.id)||r.kind==='comparison_thread'&&comparisonThreads.some(c=>c.id===r.id));
   return {workspace,ownedKeys:[...ownKeys],revisions:Object.fromEntries([...owned,...accessibleRevisions].map(r=>[accountKey(r.kind,r.id),r.revision]))};

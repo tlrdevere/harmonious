@@ -48,6 +48,16 @@ Each invocation writes a separate `build/verification/<timestamp>-<process>/` di
 
 Generated portable files in `review/` and the production bundle in `build/cloudflare/` are refreshed by verification. They are local artifacts, not a deployment. Keep the tested source revision, verification report, and any later deployment evidence together in the release record. A local pass does not establish that a hosted workflow or a live two-account walkthrough passed.
 
+## Existing-node reasons — 2026-09-19
+
+The final source passed **42/42** checks using the existing installed runtimes, including all eight browser walkthroughs and the renamed applied migration. Report: `build/verification/2026-09-19T06-03-43-931Z-73864/summary.json`. Worker SHA-256: `ed0af889d51582ff85b6fe43d7f554e5caf44291f2b4070e3a66255291a4cc1f`. Public verification matched all 42 client files and the homepage after deployment.
+
+New model/API/browser/database coverage checks exact pinned source wording and definitions, ownership and frame scope, immutable history and explicit refresh, source deletion and unavailable ancestors, private projections, old-client recovery, lost acknowledgments, duplicate/circular support, and imported title spacing. Browser tests exercise two disposable accounts, preserved drafts and real mouse access on desktop/narrow layouts.
+
+The initial aggregate run found a tall reason form covering **Find in argument**. The measured placement fix reserves the toolbar's actual wrapped area; pointer tests now pass without forced clicks. A later title-preservation correction and migration filename reconciliation were included in the final complete run. Earlier reports remain as diagnostics, not the release evidence.
+
+The migration's direct PostgreSQL suite also passed independently. Live verification checked service-only invoker permissions and unchanged data fingerprints/advisors; it did not create production test records or sign in as either owner account. No dependency versions changed, installation or registry audit ran, or hosted CI executed.
+
 ## Verified isolated install — 2026-09-19
 
 The subsequent Compare/Argument mode separation and Library cleanup passed the complete runner: **39/39** checks, with all seven browser walkthroughs. Report: `build/verification/2026-09-19T05-19-52-332Z-69084/summary.json`; Worker SHA-256: `45001a356b7d4a1ea6391641c2451484684b2dc50d559b5a4a287f1eed59d155`. New checks cover distinct summary counts, deterministic activity ordering, empty search results, mode-specific controls, parked pristine/edited drafts, and argument search with preserved necessary inquiry ancestors. Final desktop/narrow screenshots were inspected. Public verification matched all 40 client files and the homepage after deployment. This was a working-tree verification using existing runtimes; no new install, dependency version change, registry audit or hosted CI run occurred.

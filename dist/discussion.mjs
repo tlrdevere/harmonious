@@ -3,6 +3,7 @@ import {validateDefinitionReferences,canInvokeDefinitions} from './definitions.m
 import {graphEdges} from './model.mjs';
 import {stableJSON} from './account-model.mjs';
 import {validateAdoptionRecord,isAdoptionReceipt} from './adoption-fulfillment.mjs';
+import {premiseHealth,validatePremises,validatePremiseEdit} from './premise.mjs';
 
 export const DISCUSSION_LABELS={agreement:'Agreement',disagreement:'Disagreement',counterpart:'Request counterpart',adoption:'Suggest adoption',explain:'Ask for explanation',example:'Ask for an example',evidence:'Ask for evidence',question:'Question',support:'Support',challenge:'General challenge',counterexample:'Counterexample',inference:'Reasoning does not follow',contradiction:'Possible contradiction',fallacy:'Logical fallacy or reasoning error',reply:'Response',resolve:'Resolved by challenger',reopen:'Reopened by challenger',accept:'Accept challenge',maintain:'Maintain position',counterpart_link:'Counterparts',no_position:'No position yet',not_applicable:'Not applicable',close_request:'Close request',reopen_request:'Reopen request',context:'Definitions & standards'};
 DISCUSSION_LABELS.reason='Reason';
@@ -38,7 +39,7 @@ export function discussionSourceSnapshot(ws,target,excludeId=null){
   }
   if(target.type==='entry'){
     const entry=ws.discussions.find(r=>r.id===target.entryId);
-    return entry?{target,label:DISCUSSION_LABELS[entry.action],wording:{action:entry.action,body:entry.body,referenceUrl:entry.referenceUrl||'',version:entry.version,status:entry.status},definitions:structuredClone(entry.definitionRefs||[])}:null;
+    return entry?{target,label:DISCUSSION_LABELS[entry.action],wording:{action:entry.action,body:entry.body,referenceUrl:entry.referenceUrl||'',version:entry.version,status:entry.status,...(entry.premise?{premise:structuredClone(entry.premise)}:{})},definitions:structuredClone(entry.definitionRefs||[])}:null;
   }
   const source=discussionSource(ws,target);if(!source)return null;
   const wording=target.type==='node'?sourceWording(source.item):{kind:source.item.kind||source.item.type||'',from:sourceWording(source.map.nodes.find(n=>n.id===source.item.from)),to:sourceWording(source.map.nodes.find(n=>n.id===source.item.to))};
@@ -49,18 +50,20 @@ export const discussionSnapshots=(ws,r)=>[r.target,r.other].filter(Boolean).map(
 const snapshotUnavailable=s=>!s||s.wording.status==='withdrawn'||s.target.type==='inference'&&(!s.wording.reason||!s.wording.conclusion||s.wording.reason.wording.status==='withdrawn'||s.wording.conclusion.wording.status==='withdrawn');
 export function discussionHealth(ws,r){
   const current=discussionSnapshots(ws,r),baseline=r.reviewedSources||r.sourceSnapshots;
-  let missing=current.some(snapshotUnavailable),upstreamChanged=false;
+  const premise=premiseHealth(ws,r);
+  let missing=current.some(snapshotUnavailable)||premise.state==='unavailable',upstreamChanged=false;
   const byId=new Map(ws.discussions.map(entry=>[entry.id,entry])),seen=new Set([r.id]);let target=r.target;
   while(['entry','inference'].includes(target?.type)){
     const parent=byId.get(target.entryId);if(!parent||seen.has(parent.id)){missing=true;break;}seen.add(parent.id);
     const snapshots=discussionSnapshots(ws,parent),prior=parent.reviewedSources||parent.sourceSnapshots;
-    if(parent.status==='withdrawn'||snapshots.some(snapshotUnavailable))missing=true;
-    if(prior&&!discussionEqual(snapshots,prior))upstreamChanged=true;
+    const parentPremise=premiseHealth(ws,parent);
+    if(parent.status==='withdrawn'||snapshots.some(snapshotUnavailable)||parentPremise.state==='unavailable')missing=true;
+    if(prior&&!discussionEqual(snapshots,prior)||parentPremise.state==='changed')upstreamChanged=true;
     target=parent.target;
   }
   if(missing)return {state:'unavailable',label:'Source unavailable or withdrawn',needsReview:true,current};
   if(!baseline)return {state:'unrecorded',label:'Earlier source wording not captured',needsReview:true,current};
-  const changed=!discussionEqual(current,baseline)||upstreamChanged;
+  const changed=!discussionEqual(current,baseline)||upstreamChanged||premise.state==='changed';
   return {state:changed?'changed':'current',label:changed?'Source changed · review needed':'Sources reviewed',needsReview:changed,current,upstreamChanged};
 }
 function validReference(url){if(!url)return true;try{return typeof url==='string'&&url.length<=2000&&['http:','https:'].includes(new URL(url).protocol);}catch{return false;}}
@@ -100,11 +103,12 @@ export function validateDiscussions(ws){
     }
     for(const id of path)checked.add(id);
   }
-  return ws;
+  validatePremises(ws);return ws;
 }
 export function validateDiscussionEdit(ws,old,r,actor){
   if(r.authorId!==actor)throw Error('Only the author can change this contribution.');
   validateAdoptionRecord(ws,old,r,actor);
+  validatePremiseEdit(ws,old,r,actor);
   if(old){
     if(isReason(old)!==isReason(r))throw Error('A contribution cannot change its role as a reason.');
     if(discussionIdentity.some(k=>!discussionEqual(old[k],r[k]))||r.history.length<=old.history.length||!discussionEqual(r.history.slice(0,old.version),[...old.history,(({history,...rest})=>rest)(old)]))throw Error('Earlier contributions must remain in history.');
@@ -163,8 +167,11 @@ export function validateDiscussionEdit(ws,old,r,actor){
 }
 export function makeDiscussion(ws,input,actor,old=null){
   const now=new Date().toISOString(),{history,...prior}=old||{};
-  const r={id:old?.id||(isAdoptionReceipt(input)&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body:input.body?.trim()||'',targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
+  // Referenced titles retain exact saved wording, including imported spacing.
+  const body=isReason(input)&&(input.premise!==undefined||old?.premise!==undefined)?input.body??'':input.body?.trim()||'';
+  const r={id:old?.id||(isAdoptionReceipt(input)&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
   if(input.adoption!==undefined)r.adoption=structuredClone(input.adoption);else if(old?.adoption)r.adoption=structuredClone(old.adoption);
+  if(input.premise!==undefined)r.premise=structuredClone(input.premise);else if(old?.premise)r.premise=structuredClone(old.premise);
   if(input.definitionRefs!==undefined)r.definitionRefs=structuredClone(input.definitionRefs);
   else if(old?.definitionRefs)r.definitionRefs=structuredClone(old.definitionRefs);
   if(old?.sourceSnapshots)r.sourceSnapshots=old.sourceSnapshots;

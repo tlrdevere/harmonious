@@ -1,5 +1,20 @@
 # Harmonious: what to check on your next visit
 
+## Use an existing node as a reason
+
+Reload both accounts after the release in [deployment status](deployment-status.md). Use disposable maps for source edits or removal.
+
+- [ ] In **Argument**, select your own Position and choose **Explain my reasoning → Use one of my nodes**. Search for another position in that frame. Results should identify the parent path, show the conclusion being supported and let you inspect the source wording before saving.
+- [ ] Save, wait for **All changes saved**, then refresh the other account. It should see an **Existing node** reason with your wording and authorship. Your source map should have no duplicate, moved node or new structural connection.
+- [ ] As the other person, challenge the reason's statement and its **Supports** connection separately. Inspect the invoked definitions and optional source reference. You should not be able to edit the author's reason or see unused library entries.
+- [ ] Use the same source position for a different conclusion. Both uses should remain separate and readable. Reusing it twice under the same conclusion, supporting itself or creating a circular chain should be prevented.
+- [ ] Edit the source wording. Its existing reason should retain the earlier wording and indicate the change. Open **Review used node**, compare versions and explicitly update it. Earlier reason and challenge history should still show what was addressed then. A confidence-only change should not trigger this review.
+- [ ] Begin a node-selection draft, switch to Compare, then return to Argument. The selection should be retained without showing the reason composer in Compare. Repeat at a narrow window width.
+- [ ] Explain your own response to the other person's claim using a node from your own map in the matching frame. Other frames, other owned maps and the other person's nodes should not appear in the picker.
+- [ ] Remove a disposable source node. The old reason should retain its historical wording and let its author withdraw it; it should not offer to update from a nonexistent source. Making a participating map private should remove the other person's access to that Comparison and its referenced wording.
+
+The [existing-node workflow](existing-node-reasons.md) describes review, retry and privacy boundaries. A source can be reused in separate reason cards; a single shared card with several Supports connections remains future work.
+
 ## Start here: Compare, Argument, and finding saved work
 
 Reload both accounts after the release listed in [deployment status](deployment-status.md).
@@ -13,7 +28,7 @@ Reload both accounts after the release listed in [deployment status](deployment-
 - [ ] Review **Map Library**. Recently edited maps should appear first. Reply in an older Comparison, save and refresh: that Comparison should move ahead of less active work. Cards should count reasons and challenges separately and omit empty count categories.
 - [ ] Search the Library for nonexistent wording. It should show a clear empty result; the creation card should not masquerade as a match. Clear the search to restore the normal list.
 
-The [interaction and sorting rules](compare-argument-ui-rules.md) explain the defaults and keep the compass, premise reuse and further outcome tools distinct from already implemented behavior.
+The [interaction and sorting rules](compare-argument-ui-rules.md) explain the defaults and keep the compass and further outcome tools distinct from already implemented behavior.
 
 ## Connections and personal confidence
 

@@ -1,5 +1,6 @@
 import {CounterpartUI} from './counterpart-ui.mjs';
 import {AdoptionUI} from './adoption-ui.mjs';
+import {PremiseUI} from './premise-ui.mjs';
 import {confidenceForm} from './confidence-ui.mjs';
 import {setNodeConfidence} from './confidence.mjs';
 import {isAdoptionReceipt} from './adoption-fulfillment.mjs';
@@ -21,7 +22,7 @@ const contributionLabel=r=>r.kind==='argument'&&r.action==='evidence'?'Evidence'
 export class DiscussionUI{
   constructor(c){
     this.c=c;this.canvas=c.canvas;this.layers={map:true,inquiries:true,arguments:true};this.target=null;this.dirty=false;
-    this.groupTarget=null;this.counterparts=new CounterpartUI(this);this.adoption=new AdoptionUI(this);
+    this.groupTarget=null;this.counterparts=new CounterpartUI(this);this.adoption=new AdoptionUI(this);this.premises=new PremiseUI(this);
     this.canvas.options.canSetConfidence=(map,node)=>map.ownerId===this.actor()&&node.kind==='position';
     this.canvas.options.onConfidence=(side,id)=>{if(!this.canLeave())return;this.c.selectSource(side,id);this.confidence();};
     this.canvas.options.afterBuild=()=>this.draw();this.canvas.options.afterGeometry=()=>this.position();this.canvas.options.afterCamera=()=>this.positionPopover();
@@ -140,6 +141,7 @@ export class DiscussionUI{
     this.actionGroup('Understand',understand);this.actionGroup('Respond',respond);this.actionGroup('Collaborate',collaborate);this.positionPopover();
   }
   compose(kind,action,old=null,extra={}){
+    if(old?.premise){this.premises.review(old);return;}
     if(!this.canLeave())return;this.groupTarget=null;const target=old?.target||this.target,{title,...saveExtra}=extra;this.target=target;this.activateMode(this.entryMode({...old,...saveExtra,kind,action,target}));this.editingContributionId=old?.id||null;this.shell(old?'Edit contribution':title||contributionLabel({kind,action}));
     const reasoning=kind==='argument'&&action==='reason',argumentReply=kind==='reply'&&(old?.layer||saveExtra.layer)==='arguments';
     const form=discussEl('form'),fieldLabel=kind==='context'?'Author’s definitions and standards':kind==='inquiry'?'Your question':reasoning?'Your reason':kind==='argument'?'Your challenge':['counterpart','adoption'].includes(kind)?'Optional note':'Description';const label=discussEl('label',fieldLabel);label.htmlFor='discussion-body';
@@ -155,11 +157,12 @@ export class DiscussionUI{
     const reference=discussEl('input');reference.type='url';reference.id='discussion-reference';reference.maxLength=2000;reference.placeholder='https://';reference.value=old?.referenceUrl||'';
     if(kind==='counterpart'){const thread=this.thread(),other=this.c.workspace.maps.find(m=>[thread?.aMapId,thread?.bMapId].includes(m.id)&&m.id!==target.mapId);form.append(discussEl('p',`Request to ${this.name(other?.ownerId)} to add a corresponding node.`,'field-help'));}
     if(kind==='adoption'){const thread=this.thread(),other=this.c.workspace.maps.find(m=>[thread?.aMapId,thread?.bMapId].includes(m.id)&&m.id!==target.mapId);form.append(discussEl('p',`Suggestion to ${this.name(other?.ownerId)} to consider this node for their map.`,'field-help'));}
-    form.append(label,body);if(kind==='argument'&&!reasoning){const type=discussEl('details','','challenge-type');type.append(discussEl('summary','Type of challenge (optional)'),select);form.append(type);}if(old?.referenceUrl||reasoning||argumentReply){const refLabel=discussEl('label','Reference link (optional)');refLabel.htmlFor=reference.id;form.append(refLabel,reference);}
+    let referenceLabel=null;form.append(label,body);if(kind==='argument'&&!reasoning){const type=discussEl('details','','challenge-type');type.append(discussEl('summary','Type of challenge (optional)'),select);form.append(type);}if(old?.referenceUrl||reasoning||argumentReply){referenceLabel=discussEl('label','Reference link (optional)');referenceLabel.htmlFor=reference.id;form.append(referenceLabel,reference);}
     const readDefinitions=kind==='argument'||argumentReply?this.reasoning.definitionChoices(form,old):null;
     const submitLabels={inquiry:'Send question',argument:'Add challenge',counterpart:'Send request',adoption:'Send suggestion',relationship:'Record relationship',reply:'Post response',context:'Save definition'};
     const submit=discussEl('button',old?'Save changes':reasoning?'Add reason':['resolve','reopen','accept','maintain','no_position','not_applicable','close_request','reopen_request'].includes(action)?DISCUSSION_LABELS[action]:submitLabels[kind]||'Save','primary');submit.type='submit';form.append(submit);this.host.append(form);
-    form.onsubmit=e=>{e.preventDefault();this.save({...old,...saveExtra,kind,action:options?select.value:action,target,body:body.value,referenceUrl:reference.value,...(readDefinitions?{definitionRefs:readDefinitions()}: {})},old);};this.draw();this.positionPopover();body.focus({preventScroll:true});
+    const premisePicker=reasoning?this.premises.attach(form,{body,label,reference,referenceLabel,definitions:form.querySelector('.reasoning-definition-choices'),submit,target,old}):null;
+    form.onsubmit=e=>{e.preventDefault();if(premisePicker?.active()){premisePicker.save();return;}this.save({...old,...saveExtra,kind,action:options?select.value:action,target,body:body.value,referenceUrl:reference.value,...(readDefinitions?{definitionRefs:readDefinitions()}: {})},old);};this.draw();this.positionPopover();body.focus({preventScroll:true});
   }
   async save(input,old=null){
     if(this.saving)return;this.saving=true;this.host.inert=true;
@@ -181,9 +184,10 @@ export class DiscussionUI{
     if(r.target.type==='entry'){const parent=this.c.workspace.discussions.find(p=>p.id===r.target.entryId);if(parent)this.host.append(discussButton(this.entryMode(parent)===this.mode()?`Responding to: ${contributionLabel(parent)} by ${this.name(parent.authorId)}`:`Open parent in ${this.entryMode(parent)==='argument'?'Argument':'Compare'}`,()=>this.open(parent.id,{mode:this.entryMode(parent)}),'discussion-parent-link'));}
     if(isChallenge(r))this.host.append(discussEl('p',challengeState(this.entries(),r),'discussion-state'));
     const byline=r.kind==='relationship'?`Recorded by ${this.name(r.authorId)} · Source: ${r.targetLabel}`:`${this.name(r.authorId)} · Source: ${r.targetLabel}`;
-    this.host.append(discussEl('p',byline,'discussion-byline'),discussEl('p',r.body|| (r.kind==='relationship'?'Relationship recorded.':r.kind==='adoption'?'Please consider adopting this node.':'Please add a corresponding node.'),'discussion-body'));
+    this.host.append(discussEl('p',byline,'discussion-byline'));if(!r.premise)this.host.append(discussEl('p',r.body|| (r.kind==='relationship'?'Relationship recorded.':r.kind==='adoption'?'Please consider adopting this node.':'Please add a corresponding node.'),'discussion-body'));
+    if(r.premise)this.premises.render(r);
     if(r.referenceUrl){const link=discussEl('a','Open evidence / reference');link.href=r.referenceUrl;link.target='_blank';link.rel='noopener noreferrer';this.host.append(link);}
-    if(r.definitionRefs?.length)this.host.append(discussButton('View invoked definitions & standards',()=>this.reasoning.showDefinitions(r)));
+    if(this.reasoning.hasDefinitions(r))this.host.append(discussButton('View invoked definitions & standards',()=>this.reasoning.showDefinitions(r)));
     if(discussionLayer(r)==='arguments'){this.host.append(discussButton('Follow argument',()=>this.reasoning.follow({type:'entry',entryId:r.id})),discussButton('Back to source',()=>{this.reasoning.anchor=anchor;this.reasoning.back();}));}
     const health=discussionHealth(this.c.workspace,r);
     if(['changed','unavailable'].includes(health.state))this.host.append(discussEl('p',health.label,'review-warning'));
@@ -211,7 +215,7 @@ export class DiscussionUI{
         this.actionGroup('Respond',buttons);
       }
     }
-    if(recordMode===this.mode()&&r.authorId===this.actor()&&!isAdoptionReceipt(r))this.actionGroup('Manage',[discussButton('Edit',()=>r.kind==='context'&&r.definitionRefs?this.c.library.definitions.choose(r.target):this.compose(r.kind,r.action,r)),discussButton('Withdraw',()=>{if(confirm('Withdraw your contribution? Its history will remain saved.'))this.save({...r,status:'withdrawn'},r);})]);
+    if(recordMode===this.mode()&&r.authorId===this.actor()&&!isAdoptionReceipt(r))this.actionGroup('Manage',[discussButton(r.premise?'Review used node':'Edit',()=>r.kind==='context'&&r.definitionRefs?this.c.library.definitions.choose(r.target):this.compose(r.kind,r.action,r)),discussButton('Withdraw',()=>{if(confirm('Withdraw your contribution? Its history will remain saved.'))this.save({...r,status:'withdrawn'},r);})]);
     if(r.history.length){const details=discussEl('details');details.append(discussEl('summary','Earlier wording'));for(const v of r.history)details.append(discussEl('p',`${DISCUSSION_LABELS[v.action]} · ${v.body||'No description'}`));this.host.append(details);}
     this.draw();this.positionPopover();
   }
@@ -220,10 +224,10 @@ export class DiscussionUI{
     const renderSnapshot=(s,depth=0)=>{const article=discussEl('article');article.append(discussEl('strong',s?.label||'Unavailable source'));if(!s||depth>3)return article;const wording=s.wording||{};
       for(const key of ['reason','conclusion'])if(wording[key]){article.append(discussEl('h4',key==='reason'?'Reason':'Conclusion'),renderSnapshot(wording[key],depth+1));}
       for(const value of [wording.from,wording.to].filter(Boolean))article.append(discussEl('p',[value.title,value.summary,value.details,value.body].filter(Boolean).join('\n'),'discussion-body'));
-      const text=[wording.title,wording.summary,wording.details,wording.body].filter(Boolean).join('\n');if(text)article.append(discussEl('p',text,'discussion-body'));for(const d of s.definitions||[])article.append(discussEl('p',`Definitions / standards: ${d.title||''} ${d.body}`,'discussion-body'));return article;};
+      const text=[wording.title,wording.summary,wording.details,wording.premise?null:wording.body].filter(Boolean).join('\n');if(text)article.append(discussEl('p',text,'discussion-body'));if(wording.premise)article.append(this.premises.wording(wording.premise,'Used position'));for(const d of s.definitions||[])article.append(discussEl('p',`Definitions / standards: ${d.title||''} ${d.body}`,'discussion-body'));return article;};
     const add=(title,snapshots)=>{details.append(discussEl('strong',title));if(!snapshots){details.append(discussEl('p','Not captured for this earlier contribution.'));return;}for(const s of snapshots)details.append(renderSnapshot(s));};
     add('Originally discussed',r.sourceSnapshots);if(r.reviewedSources)add('Last reviewed',r.reviewedSources);if(health.needsReview)add('Current source',health.current);
-    if(r.authorId===this.actor()&&health.state==='changed'&&!isAdoptionReceipt(r))details.append(discussButton('Confirm current source wording',()=>this.save({...r,reviewSources:true},r)));
+    if(r.authorId===this.actor()&&health.state==='changed'&&!isAdoptionReceipt(r)&&(!r.premise||stableJSON(health.current)!==stableJSON(r.reviewedSources||r.sourceSnapshots)))details.append(discussButton(r.premise?'Confirm current conclusion wording':'Confirm current source wording',()=>this.save({...r,reviewSources:true},r)));
     this.host.append(details);
   }
   openContexts(target){
@@ -392,6 +396,13 @@ export class DiscussionUI{
       x=left;y=bottom+10;
       if(y+this.host.offsetHeight>surface.clientHeight-12){x=right+12;y=top;if(x+width>surface.clientWidth-12)x=left-width-12;}
     }
-    this.host.style.left=Math.max(12,Math.min(surface.clientWidth-width-12,x))+'px';this.host.style.top=Math.max(12,Math.min(surface.clientHeight-this.host.offsetHeight-12,y))+'px';
+    x=Math.max(12,Math.min(surface.clientWidth-width-12,x));
+    // Tall source previews and expanded definition choices must not cover the
+    // argument navigation. Measure its wrapped height instead of stacking it
+    // over the form, and keep the remaining form area independently scrollable.
+    const tools=this.reasoning?.tools;let minY=12;
+    if(tools&&!tools.hidden&&x<tools.offsetLeft+tools.offsetWidth+8&&x+width>tools.offsetLeft-8)minY=Math.max(minY,tools.offsetTop+tools.offsetHeight+10);
+    this.host.style.maxHeight=Math.max(80,surface.clientHeight-minY-12)+'px';
+    this.host.style.left=x+'px';this.host.style.top=Math.max(minY,Math.min(surface.clientHeight-this.host.offsetHeight-12,y))+'px';
   }
 }
