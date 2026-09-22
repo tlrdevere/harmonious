@@ -69,7 +69,17 @@ export function projectAccountWorkspace(snapshot,actorId){
   });
   const visibleProposals=new Set(comparisons.map(p=>p.id)),argumentNodes=full.argumentNodes.filter(n=>visibleProposals.has(n.proposalId)),argumentEdges=full.argumentEdges.filter(e=>visibleProposals.has(e.proposalId));
   const sharedThreads=new Set(comparisonThreads.filter(t=>t.participants.includes(actorId)&&[t.aMapId,t.bMapId].every(id=>visibleIds.has(id))).map(t=>t.id));
-  const discussions=full.discussions.filter(r=>r.kind==='context'?visibleIds.has(r.target.mapId):sharedThreads.has(r.comparisonId));
+  let discussions=full.discussions.filter(r=>r.kind==='context'?visibleIds.has(r.target.mapId):sharedThreads.has(r.comparisonId));
+  // References may point beyond the comparison. If a cited map stops being
+  // shared, neither a saved snapshot nor a descendant response may disclose it.
+  const referenceVisible=(value,participants)=>{
+    if(!value||typeof value!=='object')return true;
+    if(value.interaction?.reference){const map=full.maps.find(m=>m.id===value.interaction.reference.target.mapId);if(!map||!participants.every(id=>map.ownerId===id||map.visibility==='shared'))return false;}
+    return Object.values(value).every(child=>referenceVisible(child,participants));
+  };
+  const hidden=new Set(discussions.filter(r=>!referenceVisible(r,full.comparisonThreads.find(t=>t.id===r.comparisonId)?.participants||[actorId])).map(r=>r.id));
+  let changed=true;while(changed){changed=false;for(const r of discussions)if(!hidden.has(r.id)&&[r.target,r.other].some(t=>t?.entryId&&hidden.has(t.entryId))){hidden.add(r.id);changed=true;}}
+  discussions=discussions.filter(r=>!hidden.has(r.id));
   const workspace={schemaVersion:6,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
   if(maps.length)validateWorkspace(workspace);
   const accessibleRevisions=snapshot.records.filter(r=>r.kind==='comparison'&&comparisons.some(c=>c.id===r.id)||r.kind==='comparison_thread'&&comparisonThreads.some(c=>c.id===r.id));

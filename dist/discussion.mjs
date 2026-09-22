@@ -5,16 +5,20 @@ import {stableJSON} from './account-model.mjs';
 import {validateAdoptionRecord,isAdoptionReceipt} from './adoption-fulfillment.mjs';
 import {premiseHealth,validatePremises,validatePremiseEdit} from './premise.mjs';
 import {validateReflections,validateReflectionEdit} from './reflection.mjs';
+import {INTERACTION_ACTIONS,interactionHealth,makeInteraction,validateInteractionRecord,validateInteractionEdit} from './interaction-grammar.mjs';
 
 export const DISCUSSION_LABELS={agreement:'Agreement',disagreement:'Disagreement',counterpart:'Request counterpart',adoption:'Suggest adoption',explain:'Ask for explanation',example:'Ask for an example',evidence:'Ask for evidence',question:'Question',support:'Support',challenge:'General challenge',counterexample:'Counterexample',inference:'Reasoning does not follow',contradiction:'Possible contradiction',fallacy:'Logical fallacy or reasoning error',reply:'Response',resolve:'Resolved by challenger',reopen:'Reopened by challenger',accept:'Accept challenge',maintain:'Maintain position',counterpart_link:'Counterparts',no_position:'No position yet',not_applicable:'Not applicable',close_request:'Close request',reopen_request:'Reopen request',context:'Definitions & standards'};
 DISCUSSION_LABELS.reason='Reason';
 Object.assign(DISCUSSION_LABELS,{adoption_added:'Added to my map',adoption_existing:'Used an existing node',adoption_not_now:'Not now'});
 Object.assign(DISCUSSION_LABELS,{disagreement_point:'Point of disagreement',outcome:'Reflection outcome'});
+for(const [action,label] of Object.values(INTERACTION_ACTIONS).flat())DISCUSSION_LABELS[action]=label;
+DISCUSSION_LABELS.respond='Response';
 export const isReason=r=>r?.kind==='argument'&&r.action==='reason';
 export const isChallenge=r=>r?.kind==='argument'&&!isReason(r);
-export const discussionLayer=r=>r.kind==='relationship'||r.kind==='correspondence'||r.kind==='context'?'map':['argument','reflection'].includes(r.kind)?'arguments':r.kind==='reply'?r.layer:'inquiries';
+export const discussionLayer=r=>r.kind==='interaction'?({compare:'map',inquiry:'inquiries',argument:'arguments'}[r.interaction?.mode]||'inquiries'):r.kind==='relationship'||r.kind==='correspondence'||r.kind==='context'?'map':['argument','reflection'].includes(r.kind)?'arguments':r.kind==='reply'?r.layer:'inquiries';
 const discussionKinds={correspondence:['counterpart_link'],relationship:['agreement','disagreement'],counterpart:['counterpart'],adoption:['adoption'],inquiry:['explain','example','evidence','question'],argument:['reason','support','challenge','evidence','counterexample','inference','contradiction','fallacy'],reply:['reply','resolve','reopen','accept','maintain','adoption_added','adoption_existing','adoption_not_now',...counterpartResponseActions],context:['context']};
 discussionKinds.reflection=['disagreement_point','outcome'];
+discussionKinds.interaction=[...Object.values(INTERACTION_ACTIONS).flat().map(([id])=>id),'respond'];
 const discussionIdentity=['id','authorId','comparisonId','kind','target','other','createdAt','layer'];
 const discussionEqual=(a,b)=>stableJSON(a)===stableJSON(b);
 export function discussionSource(ws,target){
@@ -42,10 +46,10 @@ export function discussionSourceSnapshot(ws,target,excludeId=null){
   }
   if(target.type==='entry'){
     const entry=ws.discussions.find(r=>r.id===target.entryId);
-    return entry?{target,label:DISCUSSION_LABELS[entry.action],wording:{action:entry.action,body:entry.body,referenceUrl:entry.referenceUrl||'',version:entry.version,status:entry.status,...(entry.premise?{premise:structuredClone(entry.premise)}:{}),...(entry.reflection?{reflection:structuredClone(entry.reflection)}:{})},definitions:structuredClone(entry.definitionRefs||[])}:null;
+    return entry?{target,label:DISCUSSION_LABELS[entry.action],wording:{action:entry.action,body:entry.body,referenceUrl:entry.referenceUrl||'',version:entry.version,status:entry.status,...(entry.premise?{premise:structuredClone(entry.premise)}:{}),...(entry.reflection?{reflection:structuredClone(entry.reflection)}:{}),...(entry.interaction?{interaction:structuredClone(entry.interaction)}:{})},definitions:structuredClone(entry.definitionRefs||[])}:null;
   }
   const source=discussionSource(ws,target);if(!source)return null;
-  const wording=target.type==='node'?sourceWording(source.item):{kind:source.item.kind||source.item.type||'',from:sourceWording(source.map.nodes.find(n=>n.id===source.item.from)),to:sourceWording(source.map.nodes.find(n=>n.id===source.item.to))};
+  const wording=target.type==='node'?sourceWording(source.item):{kind:source.item.kind||source.item.type||'',from:sourceWording(source.map.nodes.find(n=>n.id===source.item.from)),to:sourceWording(source.map.nodes.find(n=>n.id===source.item.to)),...(source.item.note?{note:source.item.note}:{})};
   const definitions=ws.discussions.filter(r=>r.id!==excludeId&&r.kind==='context'&&r.status==='active'&&discussionEqual(r.target,target)).map(r=>({id:r.id,authorId:r.authorId,body:r.body,version:r.version})).sort((a,b)=>a.id.localeCompare(b.id));
   return {target,label:source.label,wording,definitions};
 }
@@ -53,20 +57,20 @@ export const discussionSnapshots=(ws,r)=>[r.target,r.other].filter(Boolean).map(
 const snapshotUnavailable=s=>!s||s.wording.status==='withdrawn'||s.target.type==='inference'&&(!s.wording.reason||!s.wording.conclusion||s.wording.reason.wording.status==='withdrawn'||s.wording.conclusion.wording.status==='withdrawn');
 export function discussionHealth(ws,r){
   const current=discussionSnapshots(ws,r),baseline=r.reviewedSources||r.sourceSnapshots;
-  const premise=premiseHealth(ws,r);
-  let missing=current.some(snapshotUnavailable)||premise.state==='unavailable',upstreamChanged=false;
+  const premise=premiseHealth(ws,r),interaction=interactionHealth(ws,r);
+  let missing=current.some(snapshotUnavailable)||premise.state==='unavailable'||interaction.state==='unavailable',upstreamChanged=false;
   const byId=new Map(ws.discussions.map(entry=>[entry.id,entry])),seen=new Set([r.id]);let target=r.target;
   while(['entry','inference'].includes(target?.type)){
     const parent=byId.get(target.entryId);if(!parent||seen.has(parent.id)){missing=true;break;}seen.add(parent.id);
     const snapshots=discussionSnapshots(ws,parent),prior=parent.reviewedSources||parent.sourceSnapshots;
-    const parentPremise=premiseHealth(ws,parent);
-    if(parent.status==='withdrawn'||snapshots.some(snapshotUnavailable)||parentPremise.state==='unavailable')missing=true;
-    if(prior&&!discussionEqual(snapshots,prior)||parentPremise.state==='changed')upstreamChanged=true;
+    const parentPremise=premiseHealth(ws,parent),parentInteraction=interactionHealth(ws,parent);
+    if(parent.status==='withdrawn'||snapshots.some(snapshotUnavailable)||parentPremise.state==='unavailable'||parentInteraction.state==='unavailable')missing=true;
+    if(prior&&!discussionEqual(snapshots,prior)||parentPremise.state==='changed'||parentInteraction.state==='changed')upstreamChanged=true;
     target=parent.target;
   }
   if(missing)return {state:'unavailable',label:'Source unavailable or withdrawn',needsReview:true,current};
   if(!baseline)return {state:'unrecorded',label:'Earlier source wording not captured',needsReview:true,current};
-  const changed=!discussionEqual(current,baseline)||upstreamChanged||premise.state==='changed';
+  const changed=!discussionEqual(current,baseline)||upstreamChanged||premise.state==='changed'||interaction.state==='changed';
   return {state:changed?'changed':'current',label:changed?'Source changed · review needed':'Sources reviewed',needsReview:changed,current,upstreamChanged};
 }
 function validReference(url){if(!url)return true;try{return typeof url==='string'&&url.length<=2000&&['http:','https:'].includes(new URL(url).protocol);}catch{return false;}}
@@ -76,6 +80,7 @@ export function validateDiscussions(ws){
   for(const r of ws.discussions){
     if(!r||typeof r.id!=='string'||!r.id||r.id.length>200||ids.has(r.id)||!discussionKinds[r.kind]?.includes(r.action)||!ws.participants.some(p=>p.id===r.authorId)||!discussionTargetValid(r.target)||typeof r.body!=='string'||r.body.length>10000||typeof r.targetLabel!=='string'||r.targetLabel.length>2000||!['active','withdrawn'].includes(r.status)||!Number.isFinite(Date.parse(r.createdAt))||!Number.isFinite(Date.parse(r.updatedAt))||!Array.isArray(r.history)||r.version!==r.history.length+1)throw Error('Invalid comparison contribution.');
     ids.add(r.id);
+    for(const v of [...r.history,r])validateInteractionRecord(v);
     const thread=ws.comparisonThreads.find(t=>t.id===r.comparisonId);
     if(r.kind==='context'?r.comparisonId!==null||!['node','edge'].includes(r.target.type):!thread?.participants.includes(r.authorId))throw Error('Invalid conversation membership.');
     if(['relationship','correspondence'].includes(r.kind)&&(r.target.type!=='node'||r.other?.type!=='node'||!discussionTargetValid(r.other)||r.target.mapId===r.other.mapId))throw Error('Choose one node from each map.');
@@ -130,6 +135,7 @@ export function validateDiscussionEdit(ws,old,r,actor){
   const withdrawalFields=({status,version,history,updatedAt,...rest})=>rest;
   const statusOnlyWithdrawal=old&&old.status==='active'&&r.status==='withdrawn'&&r.version===old.version+1&&discussionEqual(withdrawalFields(old),withdrawalFields(r));
   if(statusOnlyWithdrawal&&r.kind!=='context')return;
+  validateInteractionEdit(ws,old,r,actor);
   validateReflectionEdit(ws,old,r,actor);
   if(discussionHealth(ws,r).state==='unavailable')throw Error('Choose an available source before continuing this conversation.');
   for(const target of [r.target,r.other].filter(Boolean)){
@@ -166,14 +172,15 @@ export function validateDiscussionEdit(ws,old,r,actor){
   if(r.kind==='correspondence'&&![r.target,r.other].some(t=>discussionSource(ws,t)?.map.ownerId===actor))throw Error('Link a counterpart from your own map.');
   if(r.kind==='correspondence'&&[r.target,r.other].some(t=>discussionSource(ws,t)?.item.parent===null))throw Error('Choose ordinary nodes; frame headings already correspond.');
   if(r.kind==='correspondence'&&ws.discussions.some(e=>e.id!==r.id&&e.kind==='correspondence'&&e.status==='active'&&e.comparisonId===r.comparisonId&&[stableJSON(e.target),stableJSON(e.other)].sort().join('|')===[stableJSON(r.target),stableJSON(r.other)].sort().join('|')))throw Error('These counterparts are already linked.');
-  if(!['relationship','correspondence','counterpart','adoption'].includes(r.kind)&&!r.body.trim()&&r.status==='active')throw Error('Write your contribution before saving.');
+  if(!['relationship','correspondence','counterpart','adoption','interaction'].includes(r.kind)&&!r.body.trim()&&r.status==='active')throw Error('Write your contribution before saving.');
   if(r.kind==='relationship'&&ws.discussions.some(e=>e.id!==r.id&&e.kind==='relationship'&&e.status==='active'&&e.authorId===actor&&e.comparisonId===r.comparisonId&&[stableJSON(e.target),stableJSON(e.other)].sort().join('|')===[stableJSON(r.target),stableJSON(r.other)].sort().join('|')))throw Error('You already recorded this pair. Open its connection to edit it.');
 }
 export function makeDiscussion(ws,input,actor,old=null){
   const now=new Date().toISOString(),{history,...prior}=old||{};
   // Referenced titles retain exact saved wording, including imported spacing.
   const body=isReason(input)&&(input.premise!==undefined||old?.premise!==undefined)?input.body??'':input.body?.trim()||'';
-  const r={id:old?.id||(isAdoptionReceipt(input)&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
+  const r={id:old?.id||((isAdoptionReceipt(input)||input.kind==='interaction')&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
+  if(input.kind==='interaction')r.interaction=input.status==='withdrawn'&&old&&discussionEqual(input.interaction,old.interaction)?structuredClone(old.interaction):makeInteraction(ws,{...input,...(input.interaction||old?.interaction||{})},actor);
   if(input.adoption!==undefined)r.adoption=structuredClone(input.adoption);else if(old?.adoption)r.adoption=structuredClone(old.adoption);
   if(input.premise!==undefined)r.premise=structuredClone(input.premise);else if(old?.premise)r.premise=structuredClone(old.premise);
   if(input.reflection!==undefined)r.reflection=structuredClone(input.reflection);else if(old?.reflection)r.reflection=structuredClone(old.reflection);

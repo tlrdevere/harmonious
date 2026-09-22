@@ -16,17 +16,20 @@ export class NodeActions{
     }
     if(this.detail==='child'){
       const title=document.createElement('strong');title.textContent=`Add beneath “${n.title}”`;
-      const label=document.createElement('label');label.textContent='Child type';const select=document.createElement('select');select.id='on-map-child-kind';label.htmlFor=select.id;
-      for(const [value,text]of [['position','Position'],['question','Question'],['topic','Topic'],['explainer','Example']]){const o=document.createElement('option');o.value=value;o.textContent=text;select.append(o);}
-      this.host.append(title,label,select,this.button('Create child',()=>this.actions.addChild(select.value)),this.button('Back',()=>this.show(n)));return;
+      this.host.append(title,this.button('Create statement',()=>this.actions.addChild()));
+      if(n.parent!==null)this.host.append(this.button('Create reason',()=>this.actions.addChild(true)));
+      this.host.append(this.button('Back',()=>this.show(n)));return;
     }
-    this.host.append(this.button('Edit',()=>this.actions.edit()),this.button('Add child',()=>this.show(n,'child')),this.button('Connect',()=>this.actions.connect()));
+    const canEdit=this.actions.canEdit?.()!==false;
+    if(canEdit){
+      this.host.append(this.button('Edit',()=>this.actions.edit()),this.button('Add statement',()=>this.show(n,'child')));
+      if(n.parent!==null)this.host.append(this.button('Create reason',()=>this.actions.addChild(true)));
+      if(n.parent!==null)this.host.append(this.button('Connect',()=>this.actions.connect()));
+    }
     if(n.kind==='position'&&n.parent!==null&&this.actions.canSetConfidence?.())this.host.append(this.button('My confidence',()=>this.actions.confidence(n.id)));
     if(this.actions.definitions)this.host.append(this.button('Definitions & standards',()=>this.actions.definitions(n.id)));
     if(n.parent!==null)this.host.append(this.button('Compare',()=>this.actions.compare(n.id)));
-    if(this.actions.canArgue(n.id))this.host.append(this.button('Add reasoning',()=>this.actions.argue(n.id)));
-    if(this.detail==='more'){this.host.append(this.button('View co-signs',()=>this.actions.contributions(n.id)));if(n.parent!==null)this.host.append(this.button('Delete branch',()=>this.actions.remove()));}
-    this.host.append(this.button(this.detail==='more'?'Less':'More',()=>this.show(n,this.detail==='more'?null:'more')));
+    if(canEdit&&n.parent!==null){if(this.detail==='more')this.host.append(this.button('Delete branch',()=>this.actions.remove()));this.host.append(this.button(this.detail==='more'?'Less':'More',()=>this.show(n,this.detail==='more'?null:'more')));}
   }
   position(point,camera){
     if(this.host.hidden||!point)return;

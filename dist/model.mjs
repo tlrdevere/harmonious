@@ -1,10 +1,11 @@
 import {validateForest} from './layout.mjs';
 
 export const NODE_KINDS={
-  topic:{label:'Topic',hint:'A domain or area of concern.'},
-  question:{label:'Question',hint:'A point of inquiry that a position can answer.'},
-  position:{label:'Position',hint:'An answer, claim, or proposed course of action.'},
-  explainer:{label:'Explainer',hint:'An example or illustration that clarifies an idea.'}
+  position:{label:'Statement',hint:'A claim, reason, example, or proposed course of action.'},
+  // Older files can still be opened, but new nodes all use the statement kind.
+  topic:{label:'Statement',legacy:true},
+  question:{label:'Statement',legacy:true},
+  explainer:{label:'Statement',legacy:true}
 };
 export const STRUCTURAL_TYPES={
   nesting:{label:'Nested under parent',forward:'contains'},
@@ -13,6 +14,10 @@ export const STRUCTURAL_TYPES={
   answer:{label:'Answers parent question',forward:'is answered by'}
 };
 export const RELATION_TYPES={
+  reason:{label:'Is a reason for',group:'reasoning',directed:true},
+  cause:{label:'Causes',group:'reasoning',directed:true},
+  addresses:{label:'Is addressed by',group:'cross',directed:true},
+  enables:{label:'Enables',group:'cross',directed:true},
   causal:{label:'Contributes to',group:'within',directed:true},
   related:{label:'Related to',group:'within',directed:false},
   illustrative:{label:'Illustrates',group:'within',directed:true},
@@ -26,6 +31,11 @@ export function frameOf(nodes,id){
   return n?.id??null;
 }
 export function allowedRelationTypes(nodes,from,to){
+  if(from===to||!nodes.some(n=>n.id===from&&n.parent!==null)||!nodes.some(n=>n.id===to&&n.parent!==null))return [];
+  const a=frameOf(nodes,from),b=frameOf(nodes,to);
+  return ['reason','cause',...(a==='status'&&b==='action'?['addresses']:[]),...(a==='action'&&b==='goal'?['enables']:[])];
+}
+function legacyRelationTypes(nodes,from,to){
   if(from===to||!nodes.some(n=>n.id===from)||!nodes.some(n=>n.id===to))return [];
   const a=frameOf(nodes,from),b=frameOf(nodes,to);
   if(a===b)return ['causal','related','illustrative'];
@@ -34,9 +44,17 @@ export function allowedRelationTypes(nodes,from,to){
   if((a==='status'&&b==='goal')||(a==='goal'&&b==='status'))return ['counterpart'];
   return [];
 }
+export function canonicalRelationType(type){return {causal:'cause',motivates:'addresses',aims_for:'enables'}[type]||type;}
 export function validateRelationship(nodes,relations,edge,ignoreId=null){
-  if(!allowedRelationTypes(nodes,edge.from,edge.to).includes(edge.type))throw Error('Choose a relationship that fits these frames and its direction.');
-  if(relations.some(e=>e.id!==ignoreId&&e.type===edge.type&&((e.from===edge.from&&e.to===edge.to)||(!RELATION_TYPES[edge.type].directed&&e.from===edge.to&&e.to===edge.from))))throw Error('That connection already exists.');
+  if(![...allowedRelationTypes(nodes,edge.from,edge.to),...legacyRelationTypes(nodes,edge.from,edge.to)].includes(edge.type))throw Error('Choose a relationship that fits these frames and its direction.');
+  if(relations.some(e=>e.id!==ignoreId&&canonicalRelationType(e.type)===canonicalRelationType(edge.type)&&((e.from===edge.from&&e.to===edge.to)||(!RELATION_TYPES[edge.type].directed&&e.from===edge.to&&e.to===edge.from))))throw Error('That connection already exists.');
+}
+export function createChildStatement(nodes,parent,id,{reasonId=null}={}){
+  const source=nodes.find(n=>n.id===parent);if(!source)throw Error('Choose a parent node.');
+  if(nodes.some(n=>n.id===id))throw Error('Duplicate node ID.');
+  if(reasonId&&source.parent===null)throw Error('Choose a statement to give a reason for.');
+  const node={id,parent,title:reasonId?'New reason':'New statement',summary:'',details:'',confidence:null,kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:''};
+  return {node,relation:reasonId?{id:reasonId,from:id,to:parent,type:'reason',note:''}:null};
 }
 export function validateGraph(nodes,roots,relations){
   validateForest(nodes,roots);const byId=new Map(nodes.map(n=>[n.id,n]));

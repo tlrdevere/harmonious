@@ -4,10 +4,10 @@
   "type": "module",
   "scripts": {
     "test": "node tests/reflection.test.mjs && node tests/premise.test.mjs && node tests/library-summary.test.mjs && node tests/graph.test.mjs && node tests/confidence.test.mjs && node tests/layout.test.mjs && node tests/comparison-layout.test.mjs && node tests/comparison-routing.test.mjs && node tests/reasoning-layout.test.mjs && node tests/reasoning-view.test.mjs && node tests/workspace.test.mjs && node tests/comparison-review.test.mjs && node tests/argument-ui.test.mjs && node tests/adoption.test.mjs && node tests/adoption-fulfillment.test.mjs && node tests/server.test.mjs",
-    "test:browser": "node tests/inquiry-browser.test.mjs && node tests/stabilization-browser.test.mjs && node tests/reflection-browser.test.mjs && node tests/premise-browser.test.mjs && node tests/confidence-browser.test.mjs && node tests/navigation-browser.test.mjs && node tests/discussion-browser.test.mjs && node tests/counterpart-browser.test.mjs && node tests/reasoning-browser.test.mjs && node tests/reasoning-navigation-browser.test.mjs && node tests/adoption-browser.test.mjs",
+    "test:browser": "node tests/map-grammar-browser.test.mjs && node tests/interaction-grammar-browser.test.mjs && node tests/interaction-retry-browser.test.mjs && node tests/confidence-browser.test.mjs && node tests/counterpart-browser.test.mjs",
     "build": "node scripts/build-cloudflare.mjs",
     "build:sites": "node scripts/build-worker.mjs",
-    "test:accounts": "node tests/reflection-api.test.mjs && node tests/premise-api.test.mjs && node tests/accounts.test.mjs && node tests/discussion.test.mjs && node tests/definitions.test.mjs && node tests/counterparts.test.mjs && node tests/conversation-edges.test.mjs && node tests/comparison-threads.test.mjs && node tests/elicitation.test.mjs && node tests/argument.test.mjs && node tests/comparison-migration.test.mjs && node tests/account-api.test.mjs && node tests/account-database.test.mjs && node tests/account-autosave.test.mjs && node tests/account-signup.test.mjs && node tests/reasoning.test.mjs && node tests/reasoning-api.test.mjs",
+    "test:accounts": "node tests/reflection-api.test.mjs && node tests/premise-api.test.mjs && node tests/accounts.test.mjs && node tests/discussion.test.mjs && node tests/definitions.test.mjs && node tests/counterparts.test.mjs && node tests/conversation-edges.test.mjs && node tests/comparison-threads.test.mjs && node tests/elicitation.test.mjs && node tests/argument.test.mjs && node tests/comparison-migration.test.mjs && node tests/account-api.test.mjs && node tests/account-database.test.mjs && node tests/account-autosave.test.mjs && node tests/account-signup.test.mjs && node tests/reasoning.test.mjs && node tests/reasoning-api.test.mjs && node tests/interaction-grammar.test.mjs && node tests/interaction-database.test.mjs && node tests/interaction-application.test.mjs",
     "deploy": "wrangler deploy",
     "preview:upload": "wrangler versions upload",
     "verify": "node scripts/verify.mjs",
@@ -20,5 +20,16 @@
     "drizzle-kit": "0.31.10",
     "drizzle-orm": "0.45.2",
     "playwright": "1.62.1"
+  },
+  "harmoniousLegacyBrowserTests": {
+    "inquiry-browser.test.mjs": "Blank Inquiry placeholder replaced by implemented grammar and interaction-grammar-browser.",
+    "stabilization-browser.test.mjs": "Legacy reflection/reasoning UI replaced; model and account tests remain.",
+    "reflection-browser.test.mjs": "Standalone reflection/outcome controls deferred by prototype agreement.",
+    "premise-browser.test.mjs": "Old Explain my reasoning picker replaced by Map/Create reason and shared Point to node.",
+    "navigation-browser.test.mjs": "Legacy paired judgments and interaction controls replaced by grammar; map/navigation coverage in map-grammar-browser and interaction-grammar-browser.",
+    "discussion-browser.test.mjs": "Old Ask/Challenge forms and resolution actions replaced by typed interaction flows.",
+    "reasoning-browser.test.mjs": "Old challenge/reply forms replaced by grammar; reasoning algorithms retain unit coverage.",
+    "reasoning-navigation-browser.test.mjs": "Old argument contribution forms retired; corresponding projection/search tests remain.",
+    "adoption-browser.test.mjs": "Standalone Suggest adoption deferred; explicit application covered by interaction-grammar-browser."
   }
 }

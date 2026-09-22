@@ -8,12 +8,15 @@ css=(root/'dist/style.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/library.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/reasoning.css').read_text(encoding='utf-8')
 parts=[]
-for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mjs','model.mjs','data.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','premise.mjs','premise-ui.mjs','reflection.mjs','reflection-ui.mjs','discussion.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','comparison-routing.mjs','reasoning-view.mjs','reasoning-ui.mjs','inquiry-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','compare-canvas.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-summary.mjs','library-ui.mjs','node-actions.mjs','account-ui.mjs','workspace-ui.mjs','app.mjs']:
+for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mjs','model.mjs','data.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','premise.mjs','premise-ui.mjs','reflection.mjs','reflection-ui.mjs','interaction-grammar.mjs','discussion.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','comparison-routing.mjs','reasoning-view.mjs','reasoning-ui.mjs','interaction-application.mjs','interaction-application-ui.mjs','interaction-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','compare-canvas.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-summary.mjs','library-ui.mjs','node-actions.mjs','account-ui.mjs','workspace-ui.mjs','app.mjs']:
     code=(root/'dist'/name).read_text(encoding='utf-8')
     code=re.sub(r'^import .*?;\n','',code,flags=re.M)
     code=re.sub(r'^export ','',code,flags=re.M)
     if name=='premise.mjs':
         names='capturePremise,premiseScope,premiseHealth,validatePremises,validatePremiseEdit,premiseChoices'
+        code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
+    if name=='interaction-grammar.mjs':
+        names='INTERACTION_ACTIONS,INTERACTION_DISPUTES,INTERACTION_CHOICES,interactionActions,interactionLabel,interactionMode,interactionSource,interactionClassification,optionsForClassification,interactionOptions,interactionRecipient,canRespondInteraction,interactionReferenceChoices,interactionReference,interactionHealth,makeInteraction,validateInteractionRecord,validateInteractionEdit'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='reflection.mjs':
         names='REFLECTION_CATEGORIES,REFLECTION_RESULTS,isReflection,isDisagreementPoint,isReflectionOutcome,canMarkDisagreement,reflectionOutcomes,validateReflections,validateReflectionEdit'
@@ -48,4 +51,7 @@ participation=participation.replace('Mapping prototype</span>', 'Co-sign prototy
 inquiry=html.replace('workspaceController.initialize();', "workspaceController.initialize().then(()=>{const maps=workspaceController.workspace.maps.filter(m=>!m.unavailable);workspaceController.library.createComparison(maps[0]?.id||null,null,maps[1]?.id||null);workspaceController.discussion.reasoning.setFocus('inquiry');});")
 inquiry=inquiry.replace('<title>Harmonious — Worldview Map</title>', '<title>Harmonious — Inquiry Mode Preview</title>')
 (root/'review/Harmonious-inquiry-preview.html').write_text(inquiry,encoding='utf-8')
+grammar=html.replace('workspaceController.initialize();',(root/'scripts/interaction-preview.js').read_text(encoding='utf-8'))
+grammar=grammar.replace('<title>Harmonious — Worldview Map</title>','<title>Harmonious — Interaction Grammar Preview</title>')
+(root/'review/Harmonious-interactions-preview.html').write_text(grammar,encoding='utf-8')
 print('Standalone prototype exported.')

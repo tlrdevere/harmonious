@@ -45,7 +45,7 @@ export class AccountWorkspace{
     const record=c.record.bind(c);c.record=async()=>{await record();if(accountUI('comparison-error').dataset.state==='success')accountUI('comparison-error').textContent='Judgment recorded. Saving to your account…';};
   }
   async request(path,body,method='POST'){
-    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1',...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
+    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1, interaction-grammar-v4',...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
     let data;try{data=await response.json();}catch{throw Error('The service could not be reached. Your work is still on this page.');}
     if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;error.code=data.code;if(error.code==='CLIENT_UPDATE_REQUIRED'){this.blocked=true;this.controller.message(error.message);this.status('Update needed · Your work is still on this page');}throw error;}return data;
   }

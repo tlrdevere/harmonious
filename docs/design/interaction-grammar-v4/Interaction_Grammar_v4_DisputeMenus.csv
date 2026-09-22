@@ -1,0 +1,37 @@
+Applies to,Base or add-on,Option,Helper text,Point to node,Signals (hidden tag)
+Node in Status Quo,Base,It's false,,Optional,Factual
+Node in Status Quo,Base,It's overstated,True only in some cases (hasty generalization),Optional,Factual
+Node in Status Quo,Base,It leaves out something important,True but misleading by omission,Required,Factual
+Node in Status Quo,Base,It's a value judgment presented as fact,,Optional,Values
+Node in Status Quo,Base,It conflicts with another claim,"Point to the other claim — on any map, including the author's own",Required,Logical
+Node in Status Quo,Base,It uses a standard not applied elsewhere,Double standard,Required,Logical
+Node in Goal State,Base,It conflicts with another goal,,Required,Logical
+Node in Goal State,Base,It isn't achievable,,Optional,Factual
+Node in Goal State,Base,It serves a value I weigh differently,,Optional,Values
+Node in Goal State,Base,It uses a standard not applied elsewhere,Double standard,Required,Logical
+Node in Transformation,Base,It has harmful side effects,,Optional,Factual
+Node in Transformation,Base,There's a better alternative,"False dilemma, if only two options were considered",Required,Mixed
+Node in Transformation,Base,It isn't practically or politically feasible,,Optional,Factual
+Node in Transformation,Base,It costs more than it's worth,,Optional,Mixed
+Node in Transformation,Base,It conflicts with a goal,,Required,Logical
+Node in Likely Future (sub-frame of Status Quo),Add-on,It's unlikely,Including slippery-slope predictions,Optional,Factual
+Any node with a source attached,Add-on,The data is inaccurate or misreported,,Optional,Factual
+Any node with a source attached,Add-on,The data is outdated,,Optional,Factual
+Any node with a source attached,Add-on,It's unrepresentative or cherry-picked,Including a single anecdote,Optional,Factual
+Any node with a source attached,Add-on,The source isn't credible or lacks relevant expertise,Appeal to authority,Optional,Factual
+Any node with a source attached,Add-on,The source has a conflict of interest,,Optional,Factual
+Any node with a source attached,Add-on,Other sources disagree,,Required,Factual
+Reason edge,Base,Not relevant,Including attacking the person rather than the claim (ad hominem),Optional,Logical
+Reason edge,Base,Not enough on its own,Hasty generalization,Optional,Logical
+Reason edge,Base,Relies on a hidden assumption,State the assumption,Required,Logical
+Reason edge,Base,The cases differ in an important way,"False analogy (e.g., 'it worked in another city')",Optional,Logical
+Reason edge,Base,The reason assumes the conclusion,Circular reasoning,Optional,Logical
+Reason edge,Base,A key term shifts meaning,Equivocation,Optional,Logical
+Reason edge,Base,There's an exception,"Usually true, but not in this case",Optional,Logical
+Cause edge,Base,"It's correlation, not cause",False cause,Optional,Factual
+Cause edge,Base,Something else explains it,A third factor drives both,Required,Factual
+Cause edge,Base,The mechanism doesn't work,,Optional,Factual
+Cause edge,Base,There's an exception,,Optional,Factual
+Addresses or enables edge,Base,It won't achieve the goal,,Optional,Factual
+Addresses or enables edge,Base,"It treats a symptom, not the cause",,Optional,Factual
+Addresses or enables edge,Base,It only works under conditions not stated,,Optional,Factual

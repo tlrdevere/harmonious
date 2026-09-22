@@ -1,31 +1,36 @@
-# Inquiry mode foundation
+# Inquiry mode
 
 Implemented on `redesign/node-interactions`, starting from the protected working baseline. This is a local redesign preview, not a live deployment.
 
-The owner chose to keep this first step easy to revise: Inquiry has its own menu area, with interactions and recipient responses to be specified next. Some Compare actions may move to Inquiry, and a shared action name may eventually have different options in different modes.
+The first foundation deliberately left Inquiry's actions unassigned while the owner supplied the interaction rules. That placeholder has now been replaced by the agreed [interaction grammar v4](interaction-grammar-v4.md). The linked document is the current specification and implementation record.
 
 ## Current behavior
 
-- Map creation/editing keeps its existing Maps destination.
-- Within the shared canvas, the mode selector is **Compare / Inquiry / Argument**.
-- Inquiry uses the same source maps and camera. Selecting a node or connection opens a source inspection panel with a short placeholder for forthcoming tools.
-- Its new interaction menu is unassigned. It does not copy Ask/Answer or critique controls from the other modes, create a second graph, or reclassify historical contributions.
-- Compare and Argument retain their current interactions. Their unfinished forms are parked when changing modes and restored when returning; changing targets still uses the existing discard safeguard.
-- Existing map navigation, branch expansion, definitions, view options and personal settings remain shared canvas facilities. Inquiry is not an application-wide read-only permission or a new authorization boundary.
-- Inquiry uses the same in-session mode retention as Compare/Argument. There is no new persisted mode field, schema migration, account setting or production data change.
+- Map creation/editing retains its Maps destination. The shared canvas has peer **Compare / Inquiry / Argument** modes.
+- Inquiry offers **Request reason**, **Request explanation**, **Propose alternative**, and **Offer reason** on another participant's ordinary statement or connection.
+- Menu choices follow the interaction and target. Comments and Point to a node are optional. Other opens a free-form field wherever offered.
+- A reference is one node from a map both participants can access. A user can instead create a statement on their own shared map; the form makes that map change explicit.
+- The intended recipient can Respond within Inquiry. Requests offer Answer / I don't know / Other; proposals and offers offer Accept / Reject / Other. Response outcomes are mutually exclusive.
+- Compare records Endorse / Disagree / No position. Argument provides context-sensitive Dispute reasoning. Inquiry does not offer critique controls.
+- Recording or accepting an interaction does not automatically revise, copy, or merge map content. A separate reviewed application can add a reason or revise an explanation on the owner's map. Reasons offered about edges remain attached interactions; there is no invented node-to-edge inference.
+- Modes share source maps and camera state. Unfinished forms are parked when changing modes and restored when returning. Changing targets still uses the discard safeguard.
+- Navigation, branch expansion, confidence, definitions, view options, and personal settings remain shared facilities. Inquiry is not a separate authorization boundary.
+- Saved interactions now include their originating mode and grammar metadata. Production records have not been changed.
 
-## Where the next changes belong
+## Implementation
 
-`dist/inquiry-ui.mjs` owns Inquiry's menu presentation. The shared mode selector is in `dist/reasoning-ui.mjs`; routing selections to the appropriate menu remains in `dist/discussion-ui.mjs`. Both the hosted asset list and portable export include Inquiry.
+`dist/interaction-grammar.mjs` owns mode vocabulary, menu filtering, recipient rules, and optional references. `dist/interaction-ui.mjs` presents Inquiry alongside the other interaction modes; `dist/interaction-application.mjs` and `dist/interaction-application-ui.mjs` provide explicit map-change previews. The shared selector remains in `dist/reasoning-ui.mjs`, with canvas integration in `dist/discussion-ui.mjs`.
 
-Define the forthcoming interaction matrix before sharing forms across modes: mode, actor, eligible target, interaction, menu choices, saved meaning, and recipient responses. Reuse low-level form/save helpers where behavior truly matches; keep mode-specific choices separate. Existing records must retain their original meaning and authored history when an action moves or gains a variant.
+The earlier foundation's statement that there were no persisted interaction fields or migration applied only to the placeholder milestone. A database migration is now prepared at `supabase/migrations/20260922222926_interaction_grammar_v4.sql`; it has **not** been applied to the live project.
 
-## Review
+## Local review and coverage
 
-The portable exporter creates `review/Harmonious-inquiry-preview.html`, which opens the sample maps in Inquiry directly. It is local and uses sample/offline data. The existing working site remains at the release documented in deployment status.
+The portable exporter creates `review/Harmonious-interactions-preview.html`, opening the example comparison in Inquiry. It uses local sample/offline data. The existing working site remains at the release documented in [deployment status](deployment-status.md).
 
-The focused Inquiry browser test checks peer mode controls, node/edge inspection, unassigned menus, preserved Compare/Argument drafts and camera, access to Maps, zero new saved records, and desktop/mobile layout. The aggregate verification also exercises the existing workflows and both build formats.
+`tests/interaction-grammar-browser.test.mjs` replaces blank-menu expectations with requests/offers, recipient responses, parked drafts, optional references and newly authored referenced statements, reviewed map changes, and mobile layout. Grammar/account/database tests cover filtering, internal Signals, ownership, source freshness, and shared-reference privacy. Map, counterpart, and confidence browser suites remain active.
 
-Verified September 22, 2026: all 47 registered checks passed across the original and resumed runs, including the portable preview and complete Worker module graph. Local evidence: `build/verification/inquiry-resumed-20260922/summary.json`, with provenance for the first 36 checks in `build/verification/2026-09-22T20-14-10-894Z-17748/summary.json`. Desktop and 390px mobile screenshots were inspected. Two existing browser assertions were stabilized: collapsed-camera checks use reduced motion, and grouped outcomes are checked by author rather than assuming a fixed map order. These are test corrections, not changes to outcome ordering or canvas animations.
+The old `inquiry-browser.test.mjs` is explicitly listed under `harmoniousLegacyBrowserTests` in `package.json`: its expected empty menu is no longer intended behavior. The [grammar implementation record](interaction-grammar-v4.md) describes the other intentional browser replacements. All 44 active release checks passed on September 22, 2026; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`.
 
-The protected tag and `main` still point to `b9ebc57fb0b317c820b8a0c4990ede7f36a5ce82`. No live deployment or database changes were made.
+The earlier placeholder milestone was verified with 47 registered checks across its original and resumed runs; that historical result does not certify the new grammar. Its reports remain at `build/verification/inquiry-resumed-20260922/summary.json` and `build/verification/2026-09-22T20-14-10-894Z-17748/summary.json`.
+
+The protected baseline and local source backup remain the recovery references described in [redesign preparation](interaction-redesign-preparation.md). No live deployment or production database changes are part of this local implementation.

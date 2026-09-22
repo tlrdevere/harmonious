@@ -1,7 +1,6 @@
 import {comparisonCounterparts,counterpartFrame,counterpartLinks,counterpartRequestState,sameCounterpartSource} from './counterparts.mjs';
 import {makeDiscussion,discussionSource} from './discussion.mjs';
 import {comparisonNodeKey} from './comparison-layout.mjs';
-import {NODE_KINDS} from './model.mjs';
 import {newId,validateWorkspace} from './workspace.mjs';
 import {synchronizeIdeas} from './adoption.mjs';
 const cpEl=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;e.className=cls;return e;};
@@ -61,9 +60,8 @@ export class CounterpartUI{
     for(const n of map.nodes.filter(n=>create||n.parent!==null)){const o=cpEl('option',path(n));o.value=n.id;pick.append(o);}
     const frame=counterpartFrame(source.map,target.nodeId),defaultNode=map.nodes.find(n=>create?n.id===frame:n.parent!==null&&counterpartFrame(map,n.id)===frame);if(defaultNode)pick.value=defaultNode.id;
     const pickLabel=cpEl('label',create?'Where in your map? Choose the parent.':'Node from your map');pickLabel.htmlFor=pick.id;form.append(pickLabel,pick);
-    const title=cpEl('input'),summary=cpEl('textarea'),kind=cpEl('select');title.id='counterpart-title';title.maxLength=200;title.required=true;summary.id='counterpart-summary';summary.rows=3;summary.maxLength=10000;kind.id='counterpart-kind';
-    for(const [id,v]of Object.entries(NODE_KINDS)){const o=cpEl('option',v.label);o.value=id;kind.append(o);}kind.value=NODE_KINDS[source.item.kind]?source.item.kind:'position';
-    if(create)for(const [text,input]of [['Type',kind],['Your node title',title],['Your explanation (optional)',summary]]){const l=cpEl('label',text);l.htmlFor=input.id;form.append(l,input);}
+    const title=cpEl('input'),summary=cpEl('textarea');title.id='counterpart-title';title.maxLength=200;title.required=true;summary.id='counterpart-summary';summary.rows=3;summary.maxLength=10000;
+    if(create)for(const [text,input]of [['Your node title',title],['Your explanation (optional)',summary]]){const l=cpEl('label',text);l.htmlFor=input.id;form.append(l,input);}
     const preview=cpEl('p','','field-help');const update=()=>{const n=map.nodes.find(n=>n.id===pick.value);preview.textContent=n?`${create?'New node under':'Selected'}: ${path(n)}${counterpartFrame(map,n.id)!==frame?' · Different frame: the link will cross frames.':''}${!create&&n.summary?' — '+n.summary:''}`:'';};pick.onchange=update;update();form.append(preview);
     const submit=cpEl('button',create?'Create and link counterpart':'Link counterpart','primary');submit.type='submit';submit.disabled=!pick.options.length;form.append(submit);
     if(!pick.options.length)form.append(cpEl('p','Your map has no non-frame nodes yet.'),cpButton('Create counterpart',()=>this.form(target,true)));
@@ -71,7 +69,7 @@ export class CounterpartUI{
       try{
         const thread=await this.c.ensureComparison(),ws=structuredClone(this.c.workspace),own=ws.maps.find(m=>m.id===map.id);let node=own?.nodes.find(n=>n.id===pick.value);
         if(own?.ownerId!==this.d.actor()||!node)throw Error('The source changed. Reopen the counterpart chooser.');
-        if(create){const parent=node;node={id:newId('node'),parent:parent.id,title:title.value.trim(),summary:summary.value.trim(),details:'',confidence:null,kind:kind.value,structuralType:parent.kind==='question'&&kind.value==='position'?'answer':'nesting',timeScope:parent.timeScope||'present',sourceTitle:'',sourceUrl:''};if(!node.title)throw Error('Enter a title.');own.nodes.push(node);synchronizeIdeas(ws,own);own.revision++;own.updatedAt=new Date().toISOString();}
+        if(create){const parent=node;node={id:newId('node'),parent:parent.id,title:title.value.trim(),summary:summary.value.trim(),details:'',confidence:null,kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:''};if(!node.title)throw Error('Enter a title.');own.nodes.push(node);synchronizeIdeas(ws,own);own.revision++;own.updatedAt=new Date().toISOString();}
         const ownTarget={type:'node',mapId:own.id,nodeId:node.id};
         const existing=counterpartLinks(ws,thread.id).find(r=>[r.target,r.other].some(t=>sameCounterpartSource(t,target))&&[r.target,r.other].some(t=>sameCounterpartSource(t,ownTarget)));
         const record=existing||makeDiscussion(ws,{kind:'correspondence',action:'counterpart_link',comparisonId:thread.id,target,other:ownTarget,body:'Comparable nodes linked. Agreement has not been judged.'},this.d.actor());

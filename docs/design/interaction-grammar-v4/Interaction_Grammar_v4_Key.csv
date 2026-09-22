@@ -1,0 +1,17 @@
+Term,Meaning
+Node,"Any statement on a map. Every node is a claim, whatever role it plays: a position, a reason, evidence, a surfaced assumption, or a value."
+Edge,"A connection between two nodes. Types: reason (X is a reason to believe Y, including evidence), cause (X brings about Y), addresses (a problem → an action), enables (an action → a goal). The type is set when the edge is drawn; it only changes which Dispute options appear."
+Toulmin roles,"Not targets. Claims in any role (claim, grounds, backing, a surfaced warrant) are nodes. The step from reason to conclusion is the edge. Roles can be displayed as context when a node is selected."
+Comparison,"Say where you stand: Endorse, Disagree, Decline."
+Inquiry,"Ask or offer something to the author: Request reason, Request explanation, Propose alternative, Offer reason."
+Argument,Give reasons against: Dispute reasoning.
+Response,Reply to something you received: one Respond action.
+Menu options,"Comma-separated, from a fixed vocabulary, for use as a multi-select."
+Point to node,"Select an existing node on any map, or write a new node on your own map."
+Comment,Optional free-form text.
+Other,"Appears wherever there are specific choices; opens a free-form field, so testing shows what's missing."
+Dispute Menus tab,"The Dispute reasoning options. Which ones a user sees is determined by facts the map already stores, never by a classification made at dispute time. A node gets the Base options for its frame (every node has exactly one frame), plus any Add-on options whose condition it meets (e.g., being in the Likely Future sub-frame, or having a source attached). Add-ons only append, so a node that fits more than one condition gets every matching set. An edge gets the options for its type (every edge has exactly one type). Nesting edges have no Dispute menu in v1."
+Helper text,"Plain-language explanation shown under an option, including the fallacy name where one applies. Fallacies are never options on their own."
+Signals (hidden tag),"The disagreement type each option implies: Factual, Logical, Values, or Mixed. Not shown to users; stored so testing data can show whether option choice predicts how disagreements play out."
+Not in the prototype,Endorse with condition; termination status; fork classification; question-wording interactions. Logged in the design doc for later.
+Required stored data,"For menu filtering to work, the platform must store each node's frame and sub-frame, whether a node has a source attached, and each edge's type. If edge types aren't stored yet, the three edge menus collapse into one until they are."

@@ -1,8 +1,8 @@
 # Interaction redesign: protected baseline
 
-Prepared September 22, 2026. Awaiting the owner's interaction and response details before design or application changes.
+Prepared September 22, 2026. The protected baseline remains fixed while the interaction redesign is developed locally.
 
-The owner subsequently authorized the [Inquiry mode foundation](inquiry-mode-foundation.md): a peer mode with its own unassigned interaction menu. Detailed interaction/response rules remain pending. Work stays on the redesign branch and local preview.
+The owner subsequently authorized the [Inquiry mode foundation](inquiry-mode-foundation.md), followed by the [version 4 interaction grammar](interaction-grammar-v4.md). The agreed mode-specific actions, contextual disputes, recipient responses, and explicit map changes are now implemented for local review. Work stays on the redesign branch and local preview.
 
 ## Checkpoint
 
@@ -54,6 +54,6 @@ The tag and bundle back up source and history, not hosted user records or encryp
 
 The recorded Cloudflare version is a deployment reference, not an instruction to roll it back blindly. Before a future rollback, verify that any records or schema created since this checkpoint remain compatible with the older application. Use a forward fix when rollback would strand newer data.
 
-## Next design input
+## Current review
 
-The owner will provide the redesign details. Map (Create), Compare and Argument remain, with Inquiry added. First map each interaction to its modes, eligible actor/target, menu choices and recipient responses. Resolve overlap before implementing controls. Do not predefine the owner's new interaction list here.
+Use `review/Harmonious-interactions-preview.html` to review the new controls with disposable sample maps. Follow the interaction grammar document for the final decisions that override provisional CSV wording. The new database migration has only been tested locally; the public site still runs the protected baseline release.

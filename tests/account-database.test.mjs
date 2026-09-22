@@ -26,6 +26,7 @@ await db.exec(await readFile('supabase/migrations/20260919032433_comparison_reas
 await db.exec(await readFile('supabase/migrations/20260919042425_adoption_fulfillment.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260919060236_existing_node_reasons.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260919062604_comparison_reflections.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260922222926_interaction_grammar_v4.sql','utf8'));
 assert((await db.query("select prosecdef from pg_proc where proname in ('harmonious_snapshot','harmonious_commit')")).rows.every(row=>!row.prosecdef),'Application RPCs must not elevate the caller\'s privileges');
 await db.exec('set role service_role');
 const store={

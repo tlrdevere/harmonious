@@ -22,7 +22,10 @@ function testFiles(name){
   });
 }
 const registeredBrowsers=testFiles('test:browser');
-const discoveredBrowsers=(await readdir(join(root,'tests'))).filter(name=>name.endsWith('-browser.test.mjs')).sort().map(name=>'tests/'+name);
+// Retired controls retain their baseline walkthroughs for reference. The replacement
+// suites are registered above; reasons are explicit in package.json.
+const retiredBrowsers=new Set(Object.keys(pkg.harmoniousLegacyBrowserTests||{}));
+const discoveredBrowsers=(await readdir(join(root,'tests'))).filter(name=>name.endsWith('-browser.test.mjs')&&!retiredBrowsers.has(name)).sort().map(name=>'tests/'+name);
 const stages=[
   ...testFiles('test').map(file=>({group:'application',file})),
   ...testFiles('test:accounts').map(file=>({group:'accounts',file})),
@@ -33,7 +36,7 @@ const stages=[
 ];
 if(args[0]==='--list'){
   for(const [index,stage]of stages.entries())console.log(`${String(index+1).padStart(2,'0')} ${stage.group.padEnd(11)} ${stage.file}`);
-  console.log(`${stages.length} checks. Browser discovery includes future *-browser.test.mjs walkthroughs.`);process.exit(0);
+  console.log(`${stages.length} checks. Browser discovery includes future *-browser.test.mjs walkthroughs; explicitly retired UI suites are documented in package.json.`);process.exit(0);
 }
 
 const startedAt=new Date().toISOString(),runId=startedAt.replace(/[:.]/g,'-')+'-'+process.pid;
