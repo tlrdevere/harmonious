@@ -2,6 +2,8 @@
 
 Prepared September 22, 2026. Awaiting the owner's interaction and response details before design or application changes.
 
+The owner subsequently authorized the [Inquiry mode foundation](inquiry-mode-foundation.md): a peer mode with its own unassigned interaction menu. Detailed interaction/response rules remain pending. Work stays on the redesign branch and local preview.
+
 ## Checkpoint
 
 - Stable annotated tag: `stable-before-interaction-redesign`.
@@ -54,4 +56,4 @@ The recorded Cloudflare version is a deployment reference, not an instruction to
 
 ## Next design input
 
-The owner will provide the redesign details. Map (Create), Compare and Argument remain, with Inquire added. First map each interaction to its modes, eligible actor/target, menu choices and recipient responses. Resolve overlap before implementing controls. Do not predefine the owner's new interaction list here.
+The owner will provide the redesign details. Map (Create), Compare and Argument remain, with Inquiry added. First map each interaction to its modes, eligible actor/target, menu choices and recipient responses. Resolve overlap before implementing controls. Do not predefine the owner's new interaction list here.

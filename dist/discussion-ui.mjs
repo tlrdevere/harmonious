@@ -1,3 +1,4 @@
+import {InquiryUI} from './inquiry-ui.mjs';
 import {CounterpartUI} from './counterpart-ui.mjs';
 import {AdoptionUI} from './adoption-ui.mjs';
 import {PremiseUI} from './premise-ui.mjs';
@@ -24,7 +25,7 @@ const contributionLabel=r=>r.kind==='argument'&&r.action==='evidence'?'Evidence'
 export class DiscussionUI{
   constructor(c){
     this.c=c;this.canvas=c.canvas;this.layers={map:true,inquiries:true,arguments:true};this.target=null;this.dirty=false;
-    this.groupTarget=null;this.counterparts=new CounterpartUI(this);this.adoption=new AdoptionUI(this);this.premises=new PremiseUI(this);this.reflections=new ReflectionUI(this);
+    this.groupTarget=null;this.counterparts=new CounterpartUI(this);this.adoption=new AdoptionUI(this);this.premises=new PremiseUI(this);this.reflections=new ReflectionUI(this);this.inquiry=new InquiryUI(this);
     this.canvas.options.canSetConfidence=(map,node)=>map.ownerId===this.actor()&&node.kind==='position';
     this.canvas.options.onConfidence=(side,id)=>{if(!this.canLeave())return;this.c.selectSource(side,id);this.confidence();};
     this.canvas.options.afterBuild=()=>this.draw();this.canvas.options.afterGeometry=()=>this.position();this.canvas.options.afterCamera=()=>this.positionPopover();
@@ -95,9 +96,10 @@ export class DiscussionUI{
     return [...records].sort((a,b)=>(latest.get(b.id)||Date.parse(b.updatedAt||b.createdAt)||0)-(latest.get(a.id)||Date.parse(a.updatedAt||a.createdAt)||0)||a.id.localeCompare(b.id));
   }
   applyMode(){
-    this.controls.querySelector('[data-layer="inquiries"]').hidden=this.mode()==='argument';
+    this.controls.querySelector('[data-layer="inquiries"]').hidden=this.mode()!=='compare';
     if(this.dirty||this.host.querySelector('form')){this.host.hidden=this.hostMode!==this.mode();return;}
     if(this.host.hidden)return;
+    if(this.mode()==='inquiry'){if(['entry','inference'].includes(this.target?.type)){const record=this.c.workspace.discussions.find(r=>r.id===this.target.entryId);this.target=record&&conversationAnchor(this.c.workspace.discussions,record);}this.viewId=null;this.groupTarget=null;this.inquiry.inspect();return;}
     if(this.viewId){const record=this.c.workspace.discussions.find(e=>e.id===this.viewId);if(record&&this.mode()==='compare'&&this.entryMode(record)==='argument'){this.target=conversationAnchor(this.c.workspace.discussions,record);this.viewId=null;if(this.target?.type==='entry')this.open(this.target.entryId);else this.actions();}else if(record)this.open(record.id,{context:true});}
     else if(this.groupTarget)this.openGroup(this.groupTarget);
     else if(this.target?.type==='inference'&&this.mode()==='compare'){const r=this.c.workspace.discussions.find(e=>e.id===this.target.entryId);this.target=r&&conversationAnchor(this.c.workspace.discussions,r);if(this.target?.type==='entry')this.open(this.target.entryId);else this.actions();}
@@ -122,6 +124,7 @@ export class DiscussionUI{
     }}));this.positionPopover();
   }
   actions(){
+    if(this.mode()==='inquiry'){this.inquiry.inspect();return;}
     if(this.target?.type==='inference'){this.reasoning.openInference(this.target.entryId);return;}
     if(!this.target)return;const ws=this.c.workspace,source=discussionSource(ws,this.target),own=source?.map.ownerId===this.actor();this.shell(discussionTargetLabel(ws,this.target));
     if(source){const text=source.item.details||source.item.summary;if(text){const details=discussEl('details');details.append(discussEl('summary','Read source'),discussEl('p',text,'discussion-body'));this.host.append(details);}}
@@ -270,8 +273,9 @@ export class DiscussionUI{
     if(!args.length&&!records.some(isDisagreementPoint))this.host.append(discussEl('p','Select another person’s node or edge and choose Challenge.'));
     this.positionPopover();
   }
-  list(){if(!this.canLeave())return;this.target=null;this.shell(this.mode()==='argument'?'Argument conversations':'Compare conversations');for(const r of this.recentConversations(this.entries().filter(r=>r.kind!=='reply'&&this.entryMode(r)===this.mode()))){if(isReflection(r)){if(isDisagreementPoint(r))this.host.append(this.reflections.group(r));else if(!this.entries().some(p=>p.id===r.target.entryId&&isDisagreementPoint(p)))this.host.append(this.reflections.row(r));continue;}const health=discussionHealth(this.c.workspace,r);this.host.append(discussButton(`${contributionLabel(r)} · ${this.name(r.authorId)} · ${r.targetLabel}${health.state==='changed'?' · Review source':''}`,()=>this.open(r.id),'discussion-list-item'));}const withdrawn=(this.c.workspace.discussions||[]).filter(r=>r.comparisonId===this.thread()?.id&&r.status==='withdrawn'&&this.entryMode(r)===this.mode());if(withdrawn.length){const history=discussEl('details');history.append(discussEl('summary','Withdrawn contributions'));for(const r of withdrawn)history.append(discussButton(`${DISCUSSION_LABELS[r.action]} · ${this.name(r.authorId)}`,()=>this.open(r.id),'discussion-list-item'));this.host.append(history);}if(this.host.children.length===1)this.host.append(discussEl('p','Select a node or connection to begin.'));this.positionPopover();}
+  list(){if(this.mode()==='inquiry'){this.inquiry.overview();return;}if(!this.canLeave())return;this.target=null;this.shell(this.mode()==='argument'?'Argument conversations':'Compare conversations');for(const r of this.recentConversations(this.entries().filter(r=>r.kind!=='reply'&&this.entryMode(r)===this.mode()))){if(isReflection(r)){if(isDisagreementPoint(r))this.host.append(this.reflections.group(r));else if(!this.entries().some(p=>p.id===r.target.entryId&&isDisagreementPoint(p)))this.host.append(this.reflections.row(r));continue;}const health=discussionHealth(this.c.workspace,r);this.host.append(discussButton(`${contributionLabel(r)} · ${this.name(r.authorId)} · ${r.targetLabel}${health.state==='changed'?' · Review source':''}`,()=>this.open(r.id),'discussion-list-item'));}const withdrawn=(this.c.workspace.discussions||[]).filter(r=>r.comparisonId===this.thread()?.id&&r.status==='withdrawn'&&this.entryMode(r)===this.mode());if(withdrawn.length){const history=discussEl('details');history.append(discussEl('summary','Withdrawn contributions'));for(const r of withdrawn)history.append(discussButton(`${DISCUSSION_LABELS[r.action]} · ${this.name(r.authorId)}`,()=>this.open(r.id),'discussion-list-item'));this.host.append(history);}if(this.host.children.length===1)this.host.append(discussEl('p','Select a node or connection to begin.'));this.positionPopover();}
   openConnection(group,label,anchor){
+    if(this.mode()==='inquiry'){this.inquiry.connection(label,anchor);return;}
     if(group.records.length===1){const r=group.records[0];if(r.legacy){if(this.canLeave())this.c.openRecord(r.id);}else this.open(r.id);return;}
     if(!this.canLeave())return;this.target=anchor;this.shell(label);this.host.append(discussEl('p','One connection, with these saved details.'));
     for(const r of group.records)this.host.append(discussButton(r.legacy?`Earlier comparison · ${r.question}`:`${contributionLabel(r)} · ${this.name(r.authorId)} · ${r.targetLabel}`,()=>r.legacy?this.c.openRecord(r.id):this.open(r.id),'discussion-list-item'));
@@ -358,8 +362,8 @@ export class DiscussionUI{
     }
     this.counterparts.draw();
     this.reasoning.draw();
-    canvas.hint.textContent=this.mode()==='compare'?'Select two nodes to record agreement or disagreement. Select a source to ask a question or find a counterpart.':'Select your position to explain its reasoning, or another person’s statement or connection to challenge it.';
-    document.querySelector('.comparison-canvas-footer').textContent=this.mode()==='compare'?'Select nodes or connections to relate or ask · Drag empty space to pan · Scroll to zoom':'Select nodes or reasoning connections to follow or challenge · Drag empty space to pan · Scroll to zoom';
+    canvas.hint.textContent=this.mode()==='inquiry'?'Inquiry · Select a node or connection to inspect it.':this.mode()==='compare'?'Select two nodes to record agreement or disagreement. Select a source to ask a question or find a counterpart.':'Select your position to explain its reasoning, or another person’s statement or connection to challenge it.';
+    document.querySelector('.comparison-canvas-footer').textContent=this.mode()==='inquiry'?'Select a source to inspect · Drag empty space to pan · Scroll to zoom':this.mode()==='compare'?'Select nodes or connections to relate or ask · Drag empty space to pan · Scroll to zoom':'Select nodes or reasoning connections to follow or challenge · Drag empty space to pan · Scroll to zoom';
     canvas.linkStatus.textContent=`${this.entries().filter(r=>r.kind!=='reply').length} contributions in this comparison`;
     document.querySelector('.comparison-heading').hidden=!!this.thread();
     discussUI('comparison-form').hidden=!this.c.editingRecord;
