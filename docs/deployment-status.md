@@ -1,8 +1,23 @@
 # Deployment status
 
-Updated September 19, 2026 (UTC).
+Updated September 22, 2026 (UTC).
 
 ## Current release
+
+Stabilization, grouped outcomes and shared-map discovery deployed September 22, 2026 at **17:28:21 UTC** (1:28 p.m. in New York). Application source: `9fd1336`.
+
+- Worker version **40**: `190c2303-0765-467e-ad97-580da77f8680`, serving **100%** of traffic. Deployment: `63cbc3fa-d918-406f-882d-1c7dd67da15e`.
+- All five findings from the September 19 review are fixed: source previews show reference and node metadata changes; point/outcome withdrawal retries recover lost acknowledgments while retaining real conflict checks; finding an edge-attached point reveals both endpoints at the existing zoom; argument search includes saved premise summaries/details; the Library correctly labels the earlier-judgment review count.
+- **Argument → Conversations** groups disagreement points with each owner's assessment and optional next step. Missing assessments are neutral. Outcomes remain authored independently, preserve history, and do not imply agreement or alter source maps/challenge resolution.
+- **Map Library → Comparisons & arguments → Find a shared map** searches shared maps by map/person name, with predictable alphabetical ordering. **Compare with my map** preselects the other source and leaves the user's map choice explicit. Existing comparison search retains its empty-state message. No additional main tab or Compass placement was added.
+- **46/46 release checks passed**, including ten browser workflows, disposable two-account tests, direct database regression tests, portable export, production build and asset checks. Final report: `build/verification/2026-09-22T17-21-40-805Z-50256/summary.json`. Earlier verification attempts caught an export text-encoding issue and a missing empty-search message; both were corrected before this passing run.
+- New browser regressions cover reference-only changes on reasons/nodes, point/outcome lost-withdrawal acknowledgments, actual competing edits, structural and explicit edge reveal, preserved zoom, grouped two-author assessments/next steps, discovery search, private-map removal and mobile layout. Desktop/mobile discovery and grouped-outcome screenshots were visually inspected.
+- Public verification confirms all **44 client files** and the homepage exactly match the tested checkout. Configured sign-in, anonymous account denial, private-configuration denial and security headers pass. Worker SHA-256: `6f0a0d320b089684f353aab0795c970e4fe8ee00df5fa609b809c6ab486e56ae`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were preserved. No database migration, live account writes, authentication changes, dependency install/update or registry audit occurred.
+
+**Reload both PCs before testing.** Start with the new discovery/overview checks and the short two-person example in [the checklist](user-testing-checklist.md). Owner usability acceptance remains distinct from automated coverage. Compass axes require a product decision; GitHub synchronization and hosted CI remain outstanding. Source and release notes are checkpointed locally.
+
+## Preceding disagreement-point release
 
 Attached disagreement points, individual outcomes and the Compare inquiry preset deployed September 19, 2026 at **06:33:16 UTC** (2:33 a.m. in New York).
 
