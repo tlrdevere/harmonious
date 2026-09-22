@@ -40,8 +40,10 @@ workspace.discussions=[];workspace.comparisonThreads=[{...thread,id:'z'},{...thr
 workspace.maps.push({id:'c',name:'Aaron'});workspace.comparisonThreads=[{...thread,id:'z',aMapId:'c'},thread];assert.deepEqual(libraryComparisonOrder(workspace).map(s=>s.thread.id),['z','thread'],'Equal activity uses the displayed title before id');
 
 const legacy=initialWorkspace(),[a,b]=legacy.maps,proposal=recordComparison(legacy,{aMapId:a.id,bMapId:b.id,aNodeId:'a211',bNodeId:'a211',questionStatus:'matched',question:'Which order?',answerStatus:'aligned'},null,a.ownerId);legacy.comparisons.push(proposal);
-const legacyThread=legacy.comparisonThreads.find(t=>t.id===proposal.comparisonId);proposal.updatedAt='2026-09-22T00:00:00Z';legacyThread.createdAt='2026-09-01T00:00:00Z';
+const legacyThread=legacy.comparisonThreads.find(t=>t.id===proposal.comparisonId);proposal.createdAt='2026-09-01T00:00:00Z';proposal.updatedAt='2026-09-22T00:00:00Z';legacyThread.createdAt='2026-09-01T00:00:00Z';
 assert.equal(libraryComparisonSummary(legacy,legacyThread).activity,Date.parse(proposal.updatedAt),'Earlier proposal updates contribute to recency');
 assert.equal(libraryComparisonSummary(legacy,legacyThread).description,'1 earlier judgment');a.nodes.find(n=>n.id==='a211').summary+=' Changed wording.';
 assert.equal(libraryComparisonSummary(legacy,legacyThread).counts.sourceReviews,1,'Existing source-review information remains available');
 console.log('Library summaries passed: distinct reason/challenge counts, earlier work labels, meaningful activity order, timestamp normalization, stable ties and unchanged data.');
+
+assert.match(libraryComparisonSummary(legacy,legacyThread).description,/1 earlier judgment needs source review/);

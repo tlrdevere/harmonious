@@ -94,3 +94,12 @@ Both people can see the recipient's outcome. A fulfilled suggestion offers **Ope
 - Multiple pinned conversation windows, automatic node merging, live notifications, and pod design.
 
 The main test is a complete **position → reason → challenge → response** exchange between two accounts, while each person's worldview remains unchanged.
+
+
+## Find maps and revisit assessments
+
+Within **Map Library → Comparisons & arguments**, choose **Find a shared map**. Search by map name or person; results are alphabetized by map name and exclude your own maps and unavailable/private maps. **View map** opens its source. **Compare with my map** preselects the other source and lets you choose your own map before starting/opening the shared comparison. **Saved comparisons** returns to existing work. There is no separate Shared maps tab or Compass placement yet.
+
+In **Argument → Conversations**, each disagreement point now groups both owners’ individual assessments and any next steps. An owner without an assessment is labeled **No assessment recorded**. Matching labels do not imply agreement. Clicking a point or outcome opens its existing authored detail and history; outcomes whose point was withdrawn remain accessible.
+
+Source review and history include saved reference links and node metadata. Finding an edge-attached point reveals its endpoints through collapsed branches without changing zoom. Search includes the saved summary and details of an existing-node reason, rather than unpublished source edits.

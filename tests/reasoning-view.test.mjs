@@ -66,3 +66,7 @@ assert.equal(records[0].status,'active','Projection does not edit saved contribu
 const maximumChain=Array.from({length:10000},(_,i)=>record('limit-'+i,'argument','reason',i?entry('limit-'+(i-1)):anchor)),maximumIndex=buildReasoningIndex(maximumChain),maximumView=projectReasoning(maximumIndex,{anchor,focusId:'limit-9900'});
 assert(maximumView.entries.some(r=>r.id==='limit-9900'));assert.equal(maximumView.entries.length,40);assert(maximumView.earlierSteps[0].count>9000,'The supported record limit is traversed iteratively');
 console.log('Typed argument folds, exact counts, draft paths, deep bounded sections, inference groups, search and private view state passed.');
+
+const pinnedWording=record('pinned','argument','reason',anchor,{premise:{wording:{title:'Saved title',summary:'Distinct summary phrase',details:'Pinned detail phrase'}}});
+for(const query of ['distinct summary','pinned detail','saved title'])assert.equal(searchReasoning(buildReasoningIndex([pinnedWording]),{query}).results[0].entry.id,'pinned');
+assert.equal(searchReasoning(buildReasoningIndex([pinnedWording]),{query:'unreviewed changes'}).total,0);

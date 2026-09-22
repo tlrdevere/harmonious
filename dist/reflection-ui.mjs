@@ -1,5 +1,6 @@
 import {isReflection,isDisagreementPoint,isReflectionOutcome,REFLECTION_CATEGORIES,REFLECTION_RESULTS,canMarkDisagreement,reflectionOutcomes} from './reflection.mjs';
-import {makeDiscussion,discussionSourceSnapshot,discussionTargetLabel,discussionHealth} from './discussion.mjs';
+import {makeDiscussion,discussionSource,discussionSourceSnapshot,discussionTargetLabel,discussionHealth} from './discussion.mjs';
+import {revealPath} from './model.mjs';
 import {stableJSON} from './account-model.mjs';
 
 const reflectionEl=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;e.className=cls;return e;};
@@ -12,7 +13,31 @@ export class ReflectionUI{
   target(record){return this.point(record)?.target;}
   points(target){return this.d.entries().filter(r=>isDisagreementPoint(r)&&stableJSON(r.target)===stableJSON(target));}
   label(target){const r=target?.entryId&&this.c.workspace.discussions.find(r=>r.id===target.entryId);return target?.type==='inference'?`Reasoning connection: ${r?.body||'Unavailable reason'}`:r?.body||discussionTargetLabel(this.c.workspace,target);}
-  sourcePreview(snapshot,depth=0){const section=reflectionEl('section');if(!snapshot||depth>3){section.append(reflectionEl('p','Unavailable source'));return section;}const w=snapshot.wording||{};section.append(reflectionEl('strong',snapshot.label||'Attached source'));for(const key of ['reason','conclusion'])if(w[key]){section.append(reflectionEl('h4',key==='reason'?'Reason':'Conclusion'),this.sourcePreview(w[key],depth+1));}const wording=[w.title,w.body,w.summary,w.details].filter(Boolean).join('\n');if(wording)section.append(reflectionEl('p',wording,'discussion-body'));for(const endpoint of [w.from,w.to].filter(Boolean))section.append(reflectionEl('p',[endpoint.title,endpoint.summary,endpoint.details].filter(Boolean).join('\n'),'discussion-body'));if(w.premise)section.append(this.d.premises.wording(w.premise,'Used position'));if(w.reflection?.category)section.append(reflectionEl('p',REFLECTION_CATEGORIES[w.reflection.category]));for(const def of snapshot.definitions||[])section.append(reflectionEl('p',def.body,'discussion-body'));return section;}
+  sourcePreview(snapshot,depth=0){
+    const section=reflectionEl('section');if(!snapshot||depth>3){section.append(reflectionEl('p','Unavailable source'));return section;}
+    const w=snapshot.wording||{};section.append(reflectionEl('strong',snapshot.label||'Attached source'));
+    for(const key of ['reason','conclusion'])if(w[key])section.append(reflectionEl('h4',key==='reason'?'Reason':'Conclusion'),this.sourcePreview(w[key],depth+1));
+    const appendWording=value=>{
+      const text=[value.title,value.body,value.summary,value.details].filter(Boolean).join('\n');if(text)section.append(reflectionEl('p',text,'discussion-body'));
+      for(const [key,label]of [['kind','Type'],['timeScope','Time scope'],['sourceTitle','Source']])if(value[key])section.append(reflectionEl('p',`${label}: ${value[key]}`));
+      for(const url of new Set([value.referenceUrl,value.sourceUrl].filter(Boolean))){const line=reflectionEl('p');if(/^https?:\/\//i.test(url)){const link=reflectionEl('a',url);link.href=url;link.target='_blank';link.rel='noopener noreferrer';line.append(link);}else line.textContent=url;section.append(line);}
+    };
+    appendWording(w);for(const endpoint of [w.from,w.to].filter(Boolean))appendWording(endpoint);
+    if(w.premise)section.append(this.d.premises.wording(w.premise,'Used position'));
+    if(w.reflection?.category)section.append(reflectionEl('p',REFLECTION_CATEGORIES[w.reflection.category]));
+    for(const def of snapshot.definitions||[])section.append(reflectionEl('p',`Definitions / standards: ${def.title||''} ${def.body}`,'discussion-body'));return section;
+  }
+  group(record){
+    const section=reflectionEl('section','','reflection-conversation');section.dataset.point=record.id;section.append(this.row(record));
+    const outcomes=reflectionOutcomes(this.c.workspace,record.id),thread=this.d.thread();
+    for(const authorId of [...new Set([thread?.aMapId,thread?.bMapId].map(id=>this.c.workspace.maps.find(m=>m.id===id)?.ownerId).filter(Boolean))]){
+      const outcome=outcomes.find(r=>r.authorId===authorId),assessment=reflectionEl('div','','reflection-assessment');
+      if(outcome){assessment.append(this.row(outcome));if(outcome.reflection.nextStep)assessment.append(reflectionEl('p',`Next step: ${outcome.reflection.nextStep}`,'discussion-body'));}
+      else assessment.append(reflectionEl('p',`${this.d.name(authorId)} · No assessment recorded`,'field-help'));
+      section.append(assessment);
+    }
+    return section;
+  }
   marker(target,points=this.points(target)){
     if(this.d.mode()!=='argument'||!points.length)return null;
     const button=reflectionButton(`${points.length} ${points.length===1?'point':'points'}`,()=>this.list(target,points),'reflection-marker');button.setAttribute('aria-label',`${points.length} points of disagreement attached to ${this.label(target)}`);return button;
@@ -29,7 +54,14 @@ export class ReflectionUI{
     const target=this.target(record);if(!target)return;const reasoning=this.d.reasoning;reasoning.activateScope();reasoning.anchor=reasoning.anchorFor(target);reasoning.focusId=target.entryId||null;reasoning.returnId=target.entryId||null;reasoning.revealFocus=!!target.entryId;reasoning.mode='argument';reasoning.sync();this.d.draw();
     if(pan){const p=this.d.point(target);if(p){const canvas=this.d.canvas;canvas.camera={...canvas.camera,x:canvas.surface.clientWidth/2-p.x*canvas.camera.z,y:canvas.surface.clientHeight/2-p.y*canvas.camera.z};canvas.drawCamera();}}
   }
-  reveal(record){if(!this.d.canLeave())return;const target=this.target(record);if(target?.type==='node'){const side=['a','b'].find(side=>this.c.sides[side].mapId===target.mapId);if(side)this.c.selectSource(side,target.nodeId);}this.d.reasoning.closeSearch(false);this.focus(record,{pan:true});this.open(record);}
+  reveal(record){
+    if(!this.d.canLeave())return;const target=this.target(record),canvas=this.d.canvas;
+    if(target?.type==='node'||target?.type==='edge'){
+      const side=['a','b'].find(side=>this.c.sides[side].mapId===target.mapId),source=discussionSource(this.c.workspace,target);
+      if(side&&source){const state=canvas.states[side],ids=target.type==='node'?[target.nodeId]:[source.item.from,source.item.to];for(const id of ids)state.expanded=revealPath(state.map.nodes,id,state.expanded);state.frame='all';document.getElementById(`compare-frame-${side}`).value='all';canvas.reflow({animate:false});}
+    }
+    this.d.reasoning.closeSearch(false);this.focus(record,{pan:true});this.open(record);
+  }
   metadata(record,host){if(isDisagreementPoint(record)&&record.reflection.category)host.append(reflectionEl('p',REFLECTION_CATEGORIES[record.reflection.category],'discussion-byline'));if(isReflectionOutcome(record)){if(record.reflection.result)host.append(reflectionEl('p',REFLECTION_RESULTS[record.reflection.result],'discussion-state'));if(record.reflection.nextStep)host.append(reflectionEl('h3','Next step'),reflectionEl('p',record.reflection.nextStep,'discussion-body'));}}
   open(record){
     if(!this.d.canLeave())return;record=this.c.workspace.discussions.find(r=>r.id===record.id)||record;this.d.activateMode('argument');this.d.target={type:'entry',entryId:record.id};this.d.shell(isDisagreementPoint(record)?'Point of disagreement':'Individual outcome');this.d.viewId=record.id;this.focus(record);
@@ -41,7 +73,8 @@ export class ReflectionUI{
       const outcomes=reflectionOutcomes(this.c.workspace,record.id);this.d.host.append(reflectionEl('h3','Individual outcomes'),reflectionEl('p','Each person records their own assessment. These notes do not change either map or resolve a challenge.','field-help'));for(const outcome of outcomes)this.d.host.append(this.row(outcome));
       if(record.status==='active'&&health.state!=='unavailable'){const own=outcomes.find(r=>r.authorId===this.d.actor());this.d.host.append(reflectionButton(own?'Edit my outcome':'Record my outcome',()=>this.compose({type:'entry',entryId:record.id},own,true)));}
     }
-    if(record.authorId===this.d.actor()&&record.status==='active')this.d.actionGroup('Manage',[reflectionButton('Edit',()=>this.compose(record.target,record,isReflectionOutcome(record))),reflectionButton('Withdraw',()=>{if(confirm('Withdraw your annotation? Its history will remain saved.'))this.save({target:record.target,old:record,comparisonId:record.comparisonId,reviewed:discussionSourceSnapshot(this.c.workspace,record.target),pending:null},()=>({...record,status:'withdrawn'}),this.d.host);})]);
+    const withdrawal={target:record.target,old:record,comparisonId:record.comparisonId,reviewed:discussionSourceSnapshot(this.c.workspace,record.target),pending:null};
+    if(record.authorId===this.d.actor()&&record.status==='active')this.d.actionGroup('Manage',[reflectionButton('Edit',()=>this.compose(record.target,record,isReflectionOutcome(record))),reflectionButton('Withdraw',()=>{if(confirm('Withdraw your annotation? Its history will remain saved.'))this.save(withdrawal,()=>({...record,status:'withdrawn'}),this.d.host);})]);
     if(record.history.length){const history=reflectionEl('details');history.append(reflectionEl('summary','Earlier wording'));for(const version of record.history){const section=reflectionEl('section','','reflection-history');section.append(reflectionEl('p',version.body,'discussion-body'));this.metadata(version,section);history.append(section);}this.d.host.append(history);}this.d.positionPopover();
   }
   compose(target,old=null,outcome=false){

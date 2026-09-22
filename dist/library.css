@@ -242,3 +242,5 @@ body.comparison-full-canvas #comparison-commandbar .comparison-full-status{order
 .counterpart-status{font-size:10px;line-height:1.2;padding:3px;max-width:85px}
 .discussion-relationship.counterpart_link{stroke:#74869b;stroke-dasharray:5 4}
 .discussion-badge.counterpart_link{border-color:#8396ab;background:#f4f7fb;color:#42596f}
+
+.library-discovery-heading,.library-browse{grid-column:1/-1}.library-browse{justify-self:start}

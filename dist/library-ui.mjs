@@ -8,7 +8,7 @@ const libButton=(text,action,className='')=>{const button=libEl('button',text,cl
 // The Library lists saved objects. Opening a canvas is always a deliberate action.
 export class LibraryUI{
   constructor(controller){
-    this.c=controller;this.definitions=new DefinitionsUI(controller);this.section='maps';this.query='';
+    this.c=controller;this.definitions=new DefinitionsUI(controller);this.section='maps';this.query='';this.browsing=false;
     const section=libEl('section','','library-workspace');section.id='library-workspace';section.hidden=true;
     section.innerHTML='<div class="library-heading"><div><div class="eyebrow">YOUR WORKSPACE</div><h1>Map Library</h1><p>Choose where to begin, or return to a conversation.</p></div><div id="library-create" class="library-actions"></div></div><nav id="library-sections" class="library-sections" aria-label="Library sections"></nav><label for="library-search">Find in this section</label><input id="library-search" type="search" placeholder="Search by map name or person"><div id="library-results" class="library-grid"></div>';
     libUI('editor-main').before(section);
@@ -36,7 +36,7 @@ export class LibraryUI{
     const podNote=libEl('p','This prototype derives shared nodes from recorded co-signs. Pod authoring will be designed separately.','field-help');libUI('pods-workspace').prepend(libButton('← Pods in Library',()=>this.open('pods')),podNote);
   }
   open(section=this.section){
-    if(!this.c.showMode('library'))return false;this.c.message();this.section=section;this.query='';libUI('library-search').value='';this.render();this.route({library:section});return true;
+    if(!this.c.showMode('library'))return false;this.c.message();this.section=section;this.browsing=false;this.query='';libUI('library-search').value='';this.render();this.route({library:section});return true;
   }
   route(values){const hash=new URLSearchParams(values);history.replaceState(null,'',`${location.pathname}${location.search}#${hash}`);}
   ownedMaps(){return this.c.workspace.maps.filter(map=>!map.unavailable&&this.c.canEditMap(map));}
@@ -55,8 +55,11 @@ export class LibraryUI{
       const updated=map.updatedAt?new Date(map.updatedAt).toLocaleDateString():'';
       host.append(this.card(map.name,`${this.name(map)} · ${map.visibility==='shared'?'Shared with beta participants':'Private'}${updated?' · Updated '+updated:''}`,()=>this.openMap(map.id),'Open map'));
     }
+    libUI('library-search').placeholder=this.browsing?'Search shared maps by name or person':'Search by map name or person';
+    if(this.section==='comparisons'&&this.browsing){this.renderDiscovery(host);return;}
     if(this.section==='comparisons'){
-      if(!this.query)host.append(this.card('Start a comparison','Choose one of your maps and another accessible map. Browse shared maps in the source picker.',()=>this.createComparison(),'Choose maps'));
+      if(!this.query)host.append(this.card('Start a comparison','Choose one of your maps and another accessible map. Or find another person’s shared map below.',()=>this.createComparison(),'Choose maps'));
+      host.append(libButton('Find a shared map',()=>{this.browsing=true;this.query='';libUI('library-search').value='';this.render();libUI('library-search').focus();},'library-browse'));
       for(const {thread,title,description}of libraryComparisonOrder(ws)){
         const maps=ws.maps.filter(m=>[thread.aMapId,thread.bMapId].includes(m.id));
         if(!this.matches(title+' '+maps.map(m=>this.name(m)).join(' ')))continue;
@@ -67,7 +70,17 @@ export class LibraryUI{
       if(!this.matches(map.name+' '+this.name(map)))continue;
       host.append(this.card(`Shared nodes in ${map.name}`,`Derived from co-signs on ${this.name(map)}’s map. Choose people and a threshold to inspect their shared wording.`,()=>{this.c.participation.podMapId=map.id;this.c.participation.peopleSelection=null;if(this.c.showMode('pods'))this.route({pod:map.id});},'Inspect derived pod'));
     }
-    if(!host.children.length){const empty=libEl('div','','library-empty');empty.append(libEl('h2',this.query?'No matching work':'Choose your starting point'),libEl('p',this.query?'Try another name or clear the search.':'Create your first map. It starts private; you can share it when ready.'));if(!this.query)empty.append(libButton('Create your first map',()=>this.c.showMapDialog()));host.append(empty);}
+    if(!host.children.length||[...host.children].every(child=>child.classList.contains('library-browse'))){const empty=libEl('div','','library-empty');empty.append(libEl('h2',this.query?'No matching work':'Choose your starting point'),libEl('p',this.query?'Try another name or clear the search.':'Create your first map. It starts private; you can share it when ready.'));if(!this.query)empty.append(libButton('Create your first map',()=>this.c.showMapDialog()));host.append(empty);}
+  }
+  renderDiscovery(host){
+    const heading=libEl('div','','library-discovery-heading');heading.append(libButton('← Saved comparisons',()=>this.open('comparisons')),libEl('h2','Find a shared map'),libEl('p','Shared maps, ordered by name. Choose a map to read it or compare it with one of your own.'));host.append(heading);
+    const actor=this.c.account?.actor?.id||this.c.participation.actorId;
+    const maps=this.c.workspace.maps.filter(m=>!m.unavailable&&m.visibility==='shared'&&m.ownerId!==actor&&this.matches(`${m.name} ${this.name(m)}`)).sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true})||this.name(a).localeCompare(this.name(b),'en')||a.id.localeCompare(b.id));
+    for(const map of maps){const card=this.card(map.name,`By ${this.name(map)}`,()=>this.openSource(map.id),'View map');card.dataset.map=map.id;card.append(libButton('Compare with my map',()=>{
+      const current=this.c.workspace.maps.find(m=>m.id===map.id&&!m.unavailable&&m.visibility==='shared');if(!current){this.render();this.c.message('This map is no longer available.');return;}
+      this.createComparison(null,null,current.id);
+    }));host.append(card);}
+    if(!maps.length)host.append(libEl('p',this.query?'No shared maps match. Try another map name or person.':'No other shared maps are available yet.','library-empty'));
   }
   openMap(id,nodeId=null){
     const map=this.c.workspace.maps.find(m=>m.id===id&&!m.unavailable);if(!map){this.open('maps');this.c.message('This map is unavailable.');return false;}
@@ -76,10 +89,10 @@ export class LibraryUI{
     this.c.captureActive();this.c.loadMap(id);this.c.showMode('individual');this.c.populateMaps();this.c.updateNavigation();if(nodeId&&map.nodes.some(n=>n.id===nodeId))this.c.editor.focusNode(nodeId);this.route({map:id,...(nodeId?{node:nodeId}:{})});return true;
   }
   openSource(id,nodeId=null){if(!this.c.showMode('discover'))return false;this.c.participation.openMap(id,nodeId);this.route({source:id,...(nodeId?{node:nodeId}:{})});return true;}
-  createComparison(mapId=null,nodeId=null){
+  createComparison(mapId=null,nodeId=null,otherMapId=null){
     if(!this.c.showMode('compare')||!this.c.canLeaveComparison()||!this.c.argument.canLeave())return;
     this.c.argument.reset();this.c.clearComparison();this.c.activeComparisonPair=null;
-    this.c.sides={a:{mapId,nodeId},b:{mapId:null,nodeId:null}};this.c.populateMaps();this.c.renderComparison(true);this.c.setComparisonRoute();
+    this.c.sides={a:{mapId,nodeId},b:{mapId:otherMapId,nodeId:null}};this.c.populateMaps();this.c.renderComparison(true);this.c.setComparisonRoute();
     this.c.message('Choose two source maps, then select Start / open comparison. Shared maps are listed with their owners.');libUI('compare-map-a').focus();
   }
   context(){

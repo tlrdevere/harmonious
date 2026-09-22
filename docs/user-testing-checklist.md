@@ -1,5 +1,13 @@
 # Harmonious: what to check on your next visit
 
+## Shared-map discovery and conversation overview
+
+- [ ] Open **Comparisons & arguments → Find a shared map** in the Library. Search by a person's name and a map name. Your own maps and other people's private maps should be absent.
+- [ ] Choose **Compare with my map**. The other map should be preselected; choose your own map explicitly, then start/open the comparison.
+- [ ] In **Argument → Conversations**, find a disagreement point. Check that each person's assessment and next step appear together under it, with no duplicate standalone outcome rows. Missing assessments should remain neutral.
+- [ ] Change only a reference link on a source under discussion. The old/current source review should show the changed link. Search for wording in a saved existing-node reason's summary or details.
+- [ ] Collapse source branches, find an edge-attached disagreement point, and choose **Show on map**. Its endpoints should become visible without changing zoom.
+
 ## Points of disagreement and personal outcomes
 
 Reload both accounts after the release in [deployment status](deployment-status.md). Use a disposable Comparison.
@@ -228,3 +236,17 @@ Dragging nodes and rearranging maps are deliberately deferred.
 The current Argument mode has automatic positioning and authored challenge outcomes. Individual card dragging, arbitrary graph links, and merged agreement cards remain deferred. Pod design is also deferred. The separate Ground/Evidence/Value graph is the earlier compatibility view.
 
 If something fails, note the account label (A or B), map/proposal name, the action you took, what you expected, and what happened. A screenshot and the visible error text are useful. Do not share sign-in codes or private keys.
+
+
+## Short two-person example
+
+Use disposable maps to discuss whether a community meeting should be in the evening.
+
+1. Alice adds “Hold the meeting in the evening.” Bob adds “Hold it during the day.” Create/open their shared Comparison.
+2. In Compare, Bob asks Alice what evidence would change her mind. Alice answers with a concrete condition, such as a representative attendance survey.
+3. In Argument, Alice explains her position: “Most respondents preferred evening.” She can add a supporting reason about the responses received, or use an existing position from her map.
+4. Bob selects the Supports connection and challenges whether the respondents represent all members. A challenge to the statement itself should attach to the reason card instead.
+5. Alice responds. Mark the disagreement as the representativeness of the sample, then let each person record their own assessment. Alice might need more evidence while Bob understands the difference; neither outcome changes the other's map or automatically resolves the challenge.
+6. Open Conversations and find that point, both assessments and their next steps together. Fold the branch and use Find in argument to return to it. Refresh the other account and verify the same saved conversation.
+
+Automated local workflows cover the mechanics with disposable accounts. This walkthrough is for judging whether the wording, targets and next actions are understandable to a person using the prototype.

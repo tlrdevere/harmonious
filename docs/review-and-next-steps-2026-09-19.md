@@ -1,6 +1,6 @@
 # Review and next steps — September 19, 2026
 
-Reviewed release source `0b2aa31`, following the disagreement-point/outcome deployment. This is a review and implementation plan: the application defects below remain unfixed. No application code, live account records, database schema or deployment changed during this review.
+Reviewed release source `0b2aa31`, following the disagreement-point/outcome deployment. The findings below describe that release. All five fixes, grouped assessments in Conversations, and searchable shared-map discovery were implemented September 22; see deployment status for final release verification. The original review itself made no application or live-data changes.
 
 ## Confirmed issues
 

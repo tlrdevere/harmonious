@@ -22,7 +22,7 @@ export function libraryComparisonSummary(workspace,thread){
   const points=active.filter(isDisagreementPoint);counts.disagreementPoints=points.length;counts.outcomes=active.filter(r=>isReflectionOutcome(r)&&points.some(p=>p.id===r.target.entryId)).length;
   const labels=[];
   for(const [key,singular,plural]of [['relationships','relationship','relationships'],['inquiries','question or request','questions & requests'],['reasons','reason','reasons'],['challenges','challenge','challenges'],['disagreementPoints','point of disagreement','points of disagreement'],['outcomes','individual outcome','individual outcomes'],['earlierJudgments','earlier judgment','earlier judgments'],['earlierReasoning','earlier reasoning item','earlier reasoning items']])if(counts[key])labels.push(`${counts[key]} ${counts[key]===1?singular:plural}`);
-  if(counts.sourceReviews)labels.push(`${counts.sourceReviews} need source review`);
+  if(counts.sourceReviews)labels.push(`${counts.sourceReviews} earlier ${counts.sourceReviews===1?'judgment needs':'judgments need'} source review`);
   return {thread,title,activity,counts,description:labels.join(' · ')||(discussions.length||earlier.length?'Conversation history available':'No contributions yet')};
 }
 

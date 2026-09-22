@@ -118,7 +118,7 @@ export function searchReasoning(index,{query='',filter='all',authorName=id=>id,l
     const parent=index.byId.get(entry.target.entryId),targetType=entry.target.type==='inference'?'Reasoning connection':entry.target.type==='node'?'Position':entry.target.type==='edge'?'Map connection':isDisagreementPoint(parent)?'Point of disagreement':isReason(parent)?'Reason statement':parent?.kind==='reply'?'Response':isChallenge(parent)?'Challenge':['relationship','correspondence'].includes(parent?.kind)?'Relationship':parent?.kind==='inquiry'?'Question':'Contribution';
     const type=isDisagreementPoint(entry)?'Point of disagreement':isReflectionOutcome(entry)?'Outcome':isReason(entry)?'Reason':isChallenge(entry)?'Challenge':entry.kind==='reply'?'Response':entry.kind==='inquiry'?'Question':entry.kind==='relationship'?'Relationship':entry.kind==='correspondence'?'Counterpart link':'Request';
     const metadata=isReflection(entry)?[REFLECTION_CATEGORIES[entry.reflection?.category],REFLECTION_RESULTS[entry.reflection?.result],entry.reflection?.nextStep].filter(Boolean):[];
-    const text=[entry.body,entry.targetLabel,authorName(entry.authorId),type,targetType,...metadata].join(' ').toLocaleLowerCase();if(!words.every(word=>text.includes(word)))continue;
+    const text=[entry.body,entry.targetLabel,authorName(entry.authorId),type,targetType,...['title','summary','details'].map(key=>entry.premise?.wording?.[key]),...metadata].join(' ').toLocaleLowerCase();if(!words.every(word=>text.includes(word)))continue;
     results.push({entry,type,targetType,anchor:index.anchorById.get(entry.id),openChallenge});
   }
   return {results:results.slice(0,Math.max(1,limit)),total:results.length};
