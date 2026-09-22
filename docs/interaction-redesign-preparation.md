@@ -9,11 +9,23 @@ Prepared September 22, 2026. Awaiting the owner's interaction and response detai
 - Working branch for the redesign: `redesign/node-interactions`.
 - Local `main` remains at the baseline. Back up the tag and redesign branch to GitHub without moving the remote production branch.
 - Full-history local Git bundle: `../harmonious-backups/stable-before-interaction-redesign.bundle`. Its history and integrity were verified with `git bundle verify`.
+- Restore rehearsal: cloned the bundle into an ignored local verification directory, checked out the stable tag, verified the exact baseline commit, and ran `git fsck --full` successfully.
 - Baseline verification: 46/46 release checks passed, report `build/verification/2026-09-22T17-21-40-805Z-50256/summary.json`.
 - Recorded live Cloudflare version: `190c2303-0765-467e-ad97-580da77f8680` (version 40); deployment `63cbc3fa-d918-406f-882d-1c7dd67da15e`.
 - Worker SHA-256: `6f0a0d320b089684f353aab0795c970e4fe8ee00df5fa609b809c6ab486e56ae`.
 
 See [deployment status](deployment-status.md) for the release and [the testing checklist](user-testing-checklist.md) for the current working behavior. Preparation adds no application, database or deployment changes; the existing application checks need not be repeated for a tag and documentation-only branch.
+
+## GitHub backup status
+
+Local preparation is complete. The attempted atomic push of the stable tag and redesign branch failed because Git on this PC has no usable GitHub credential. No remote reference was created. The GitHub backup remains pending authentication; it is not a completed off-device backup. The local tag, branch and verified bundle are available for recovery now.
+
+After GitHub authentication is available, push only these prepared references, then verify their remote hashes:
+
+```text
+git push --atomic -u origin refs/heads/redesign/node-interactions:refs/heads/redesign/node-interactions refs/tags/stable-before-interaction-redesign:refs/tags/stable-before-interaction-redesign
+git ls-remote origin refs/heads/redesign/node-interactions refs/tags/stable-before-interaction-redesign
+```
 
 ## Safe return to the source baseline
 
