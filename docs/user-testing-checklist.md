@@ -1,5 +1,20 @@
 # Harmonious: what to check on your next visit
 
+## Current: redesigned interactions
+
+Reload both PCs after Worker version 41, then open a shared comparison. Use fresh maps if you want a clean start.
+
+- [ ] **Map/Create:** add ordinary statements and Create reason. A reason should connect toward its conclusion, with one visible edge per pair. Try reason, cause, addresses and enables connections.
+- [ ] **Compare:** select the other person's statement and record Endorse, Disagree, or No position. It should appear as an attributed attachment without automatically editing either map or requiring a co-sign.
+- [ ] **Inquiry:** try Request reason, Request explanation, Propose alternative, and Offer reason. The other account should receive Respond in Inquiry; the sender should not have that response control.
+- [ ] **Argument:** choose Dispute reasoning on each frame and a typed connection. Check that the available grounds match the source, citation grounds appear only for cited nodes, Other opens a text field, and internal Signals are absent.
+- [ ] Submit a dispute with only one selected ground. Try optional comments and one optional node reference. Choosing an existing reference should not copy it; explicitly creating a reference statement should add it to your own map.
+- [ ] Respond with one outcome. Accept alone should leave maps unchanged. Use a separate Review/Apply action to make an owned copy, add a reason, or revise your own wording. Copied statements should default to their original frame.
+- [ ] Collapse a branch and reopen its attached interactions. Switch modes while drafting and return to the draft. Check that the controls remain usable in a narrower window.
+- [ ] Confirm confidence, central definitions/standards, and counterpart requests still work. A linked node should not offer Request counterpart.
+
+See [the grammar implementation](interaction-grammar-v4.md) for final decisions and prototype limits. The walkthroughs below describe preceding releases; old Ask/Challenge, standalone adoption, reflection/outcome and blank-Inquiry expectations have been superseded or deferred by this redesign.
+
 ## Shared-map discovery and conversation overview
 
 - [ ] Open **Comparisons & arguments → Find a shared map** in the Library. Search by a person's name and a map name. Your own maps and other people's private maps should be absent.

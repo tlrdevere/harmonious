@@ -1,6 +1,6 @@
 # Inquiry mode
 
-Implemented on `redesign/node-interactions`, starting from the protected working baseline. This is a local redesign preview, not a live deployment.
+Implemented on `redesign/node-interactions`, starting from the protected working baseline. The owner subsequently authorized live deployment; the redesigned modes are live in Worker version 41. See [deployment status](deployment-status.md).
 
 The first foundation deliberately left Inquiry's actions unassigned while the owner supplied the interaction rules. That placeholder has now been replaced by the agreed [interaction grammar v4](interaction-grammar-v4.md). The linked document is the current specification and implementation record.
 
@@ -21,7 +21,7 @@ The first foundation deliberately left Inquiry's actions unassigned while the ow
 
 `dist/interaction-grammar.mjs` owns mode vocabulary, menu filtering, recipient rules, and optional references. `dist/interaction-ui.mjs` presents Inquiry alongside the other interaction modes; `dist/interaction-application.mjs` and `dist/interaction-application-ui.mjs` provide explicit map-change previews. The shared selector remains in `dist/reasoning-ui.mjs`, with canvas integration in `dist/discussion-ui.mjs`.
 
-The earlier foundation's statement that there were no persisted interaction fields or migration applied only to the placeholder milestone. A database migration is now prepared at `supabase/migrations/20260922222926_interaction_grammar_v4.sql`; it has **not** been applied to the live project.
+The earlier foundation's statement that there were no persisted interaction fields or migration applied only to the placeholder milestone. The database migration is applied and recorded locally as `supabase/migrations/20260923002452_interaction_grammar_v4.sql`, matching the connector-generated deployment timestamp.
 
 ## Local review and coverage
 
@@ -33,4 +33,4 @@ The old `inquiry-browser.test.mjs` is explicitly listed under `harmoniousLegacyB
 
 The earlier placeholder milestone was verified with 47 registered checks across its original and resumed runs; that historical result does not certify the new grammar. Its reports remain at `build/verification/inquiry-resumed-20260922/summary.json` and `build/verification/2026-09-22T20-14-10-894Z-17748/summary.json`.
 
-The protected baseline and local source backup remain the recovery references described in [redesign preparation](interaction-redesign-preparation.md). No live deployment or production database changes are part of this local implementation.
+The protected baseline and local source backup remain the references described in [redesign preparation](interaction-redesign-preparation.md). The live release applies validation functions without rewriting existing stored records. After new grammar records exist, use a forward fix rather than an older Worker that cannot read them.

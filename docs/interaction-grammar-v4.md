@@ -1,6 +1,6 @@
 # Interaction grammar v4
 
-Implemented locally on `redesign/node-interactions`. The portable review file is `review/Harmonious-interactions-preview.html`. This work has not been deployed, and the prepared database migration has not been applied to the live project. All **44 active release checks passed** on September 22, 2026; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`.
+Implemented on `redesign/node-interactions` and deployed to the live beta at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). The database migration is applied; see [deployment status](deployment-status.md). The optional portable review file remains `review/Harmonious-interactions-preview.html`. All **44 active release checks passed** on September 22, 2026; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`.
 
 ## Specification and final decisions
 
@@ -103,7 +103,7 @@ Open `review/Harmonious-interactions-preview.html`. Use **Preview as** to switch
 - `dist/interaction-ui.mjs`: source actions, grouped forms, responses, and interaction lists.
 - `dist/interaction-application.mjs` and `dist/interaction-application-ui.mjs`: reviewed owner-controlled map changes and receipts.
 - `dist/discussion-ui.mjs`: canvas attachments and mode integration. The Map editor uses `dist/model.mjs`, `dist/app.mjs`, and `dist/node-actions.mjs` for statements and typed connections.
-- `supabase/migrations/20260922222926_interaction_grammar_v4.sql`: prepared database-side checks, **not applied to the live project**. Database tests exercise it in a disposable database.
+- `supabase/migrations/20260923002452_interaction_grammar_v4.sql`: applied database-side checks. Database tests exercise it in a disposable database. The original local timestamp was renamed to match the connector's applied history.
 
 Active browser suites are `map-grammar-browser`, `interaction-grammar-browser`, `interaction-retry-browser`, `confidence-browser`, and `counterpart-browser`. They cover Map creation, typed reasons, modes/drafts, minimal submissions, recipient responses, source Add-ons, hidden tags, references, explicit application, counterpart independence, persistence, narrow screens, lost save acknowledgments, and concurrent edits. `interaction-grammar.test.mjs`, `interaction-application.test.mjs`, and `interaction-database.test.mjs` cover model/account behavior, source freshness, ownership, privacy, and application identity. The database suite compares SQL options/tags with the client grammar and checks direct write enforcement.
 
@@ -118,6 +118,6 @@ Active browser suites are `map-grammar-browser`, `interaction-grammar-browser`, 
 | `reflection-browser`, `stabilization-browser` | Standalone reflection controls deferred; reflection/account and other focused checks remain |
 | `reasoning-browser`, `reasoning-navigation-browser` | Old contribution forms replaced; reasoning layout/projection/search model checks remain |
 
-The complete 44-check run passed, including all five active browser suites, the standalone preview's request/response flow, database checks, and the Worker build. Retiring a suite does not imply every historical screen has been revalidated under the new UI. No new Worker version or production records have been published by this local implementation.
+The complete 44-check run passed, including all five active browser suites, the standalone preview's request/response flow, database checks, and the Worker build. Retiring a suite does not imply every historical screen has been revalidated under the new UI. Worker version 41 and its migration are live; all existing stored records matched their pre-deployment checksum.
 
-See [protected baseline preparation](interaction-redesign-preparation.md) for the stable tag and source backup. Source rollback is not a database rollback. Before any future live release, apply and verify the prepared migration, check client capability compatibility, and account for newly stored interaction records when considering rollback.
+See [protected baseline preparation](interaction-redesign-preparation.md) for the stable tag and source backup. Source rollback is not a database rollback. Once new grammar interactions are stored, prefer a forward fix over the older Worker, which cannot read their format. Older open tabs must reload; the new Worker checks client capabilities before serving or accepting unsupported records.

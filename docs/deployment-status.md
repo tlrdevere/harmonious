@@ -1,8 +1,23 @@
 # Deployment status
 
-Updated September 22, 2026 (UTC).
+Updated September 23, 2026 (UTC).
 
 ## Current release
+
+Interaction grammar v4 deployed September 23, 2026 at **00:25:01 UTC** (September 22 at 8:25 p.m. in New York), at the owner's request to test on the live site. Application source: `c0381c8` on `redesign/node-interactions`.
+
+- Worker version **41**: `bd989842-33dd-4333-91d4-e061ddcecacd`, serving **100%** of traffic. Deployment: `93547ccd-0f96-4992-bedb-adeba0af6c2e`.
+- **Compare** records Endorse, Disagree, or No position. **Inquiry** provides Request reason, Request explanation, Propose alternative, and Offer reason. **Argument** provides Dispute reasoning with frame/type Base options and source Add-ons. Intended recipients respond within the originating mode. References and comments are optional; Other opens free text; Signals remain internal.
+- Map/Create uses statements and explicit typed connections. Recording positions or accepting proposals does not automatically edit maps; separate owner-controlled Review/Apply actions handle copies, reasons, and revisions. Counterpart requests, confidence, definitions, collapsed attachments, and parked mode drafts remain available. See [the grammar specification](interaction-grammar-v4.md) for prototype limits and deferred older controls.
+- Migration `20260923002452_interaction_grammar_v4` is applied. The local file was renamed from `20260922222926` to match the connector-generated migration version. SQL SHA-256: `bf961933fb6af4f595da2c0db278df5bcad1d1b4cc61ed2d72f69a4ea05551ea`. No stored records were rewritten: before/after count **45**, generation **55**, content digest `8bf597572c7d9a4fed5b58f346867b3f`.
+- All seven affected functions are security invoker, with empty search paths and service-only execute grants. RLS and direct anonymous/authenticated table denials remain intact. The interaction trigger is enabled. Live read-only menu checks return 13 choices for a cited Status Quo statement, zero for nesting, and the correct addresses wording. The original reflection helper's body checksum is preserved.
+- **44/44 active release checks passed** before publication, including five browser suites, two-account flows, migration/permission tests, explicit application, retries, mobile views and build checks. Report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. Older browser expectations retired by this redesign are explicitly listed in `package.json` and the grammar document.
+- Public verification confirms all **48 client files** and the homepage exactly match the tested checkout. Configured sign-in, anonymous account denial, private-configuration denial and security headers pass. Worker SHA-256: `e2aff179e57899e8e44a90d0ab894cb1297c9a9df2f2107db760d3eaa509e470`.
+- All eight encrypted bindings, compatibility date `2026-09-08`, and empty compatibility flags were preserved. Security advisors retain the existing two service-only [RLS-without-policy notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) and existing [password-protection notice](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). No authentication setting, live test account, dependency version, or registry audit changed.
+
+**Reload both PCs before testing.** Use the new interaction checks at the top of [the testing checklist](user-testing-checklist.md). The stable tag and `main` remain at the pre-redesign checkpoint; deployment was direct through Cloudflare, not a GitHub push. Once new grammar records exist, use a forward fix: the older Worker cannot read the new interaction format. The stable source checkpoint is not a production database rollback.
+
+## Preceding stabilization release
 
 Stabilization, grouped outcomes and shared-map discovery deployed September 22, 2026 at **17:28:21 UTC** (1:28 p.m. in New York). Application source: `9fd1336`.
 

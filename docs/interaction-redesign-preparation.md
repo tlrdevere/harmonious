@@ -2,7 +2,7 @@
 
 Prepared September 22, 2026. The protected baseline remains fixed while the interaction redesign is developed locally.
 
-The owner subsequently authorized the [Inquiry mode foundation](inquiry-mode-foundation.md), followed by the [version 4 interaction grammar](interaction-grammar-v4.md). The agreed mode-specific actions, contextual disputes, recipient responses, and explicit map changes are now implemented for local review. Work stays on the redesign branch and local preview.
+The owner subsequently authorized the [Inquiry mode foundation](inquiry-mode-foundation.md), followed by the [version 4 interaction grammar](interaction-grammar-v4.md). After local review, the owner requested live publication. The agreed mode-specific actions, contextual disputes, recipient responses, and explicit map changes were deployed September 23, 2026 at 00:25 UTC. Source remains on the redesign branch; the stable tag and `main` remain fixed.
 
 ## Checkpoint
 
@@ -56,4 +56,4 @@ The recorded Cloudflare version is a deployment reference, not an instruction to
 
 ## Current review
 
-Use `review/Harmonious-interactions-preview.html` to review the new controls with disposable sample maps. Follow the interaction grammar document for the final decisions that override provisional CSV wording. The new database migration has only been tested locally; the public site still runs the protected baseline release.
+Use the live beta for the owner's current testing, following the [interaction checklist](user-testing-checklist.md). The optional `review/Harmonious-interactions-preview.html` still provides disposable sample maps. The grammar document records the decisions that override provisional CSV wording. The new migration is applied and Worker version 41 is live. Existing records were unchanged by deployment; after new grammar records exist, the stable source tag alone is not a safe production rollback.
