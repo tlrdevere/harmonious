@@ -4,6 +4,20 @@ Updated September 25, 2026 (UTC).
 
 ## Current release
 
+Connection drawing and inspection deployed September 25, 2026 at **20:36:30 UTC** (4:36 p.m. in New York). Application source: `5f8a6f78846b57ecf300207a161a30859c375a6f` on `redesign/node-interactions`.
+
+- Worker version **44**: `b6ffecd8-8ec3-4e43-9af9-5bed646d8973`, serving **100%** of traffic. Deployment: `24e72e1f-190b-46cd-afe5-5947d1e1c3e4`.
+- The misleading **2 connections · Collapsed branches** line is replaced by compact branch badges. Their counts group distinct real node pairs, with attributed judgments, counterpart meanings, earlier comparisons and withdrawn history retained in detail. **Show connected nodes** reveals both actual endpoints, retains zoom/unrelated folds and respects drafts. Filtered and unavailable sources do not become fictitious ancestor edges.
+- Map/Create, Inquiry, Compare and Argument share direct-if-clear, rounded-if-obstructed routes. Radial node positions are retained. Exact pairs have one visible edge with their saved meanings/directions inspectable; source routes stay stable across mode changes. Bounded route calculations and completed-geometry reuse avoid recalculation during Map/Create pan/zoom.
+- Map/Create connection selection opens a compact on-map menu, with owner Edit/Remove actions and the existing optional edit panel. Additional connections default to All visible in View options. Hiding them never substitutes an apparently different parent line. Keyboard focus, fold cleanup, reveal centering and single draft-discard confirmation are covered.
+- **46/46 release checks passed**, including six browser suites, account/database tests, standalone export, production build and complete module graph. Report: `build/verification/2026-09-25T20-33-53-484Z-66488/summary.json`. New regression coverage includes asymmetric/both-side collapse, exact-pair counts, historical follow-ups, frame-filter reveal, unchanged stored data, counterpart suppression, source-route reuse, card avoidance, direction, Map/Create editing/removal and narrow screens. Desktop/mobile screenshots and the [computed routing preview](design/connection-routing.html) were visually inspected.
+- Public verification at **20:36:47 UTC** confirms all **51 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers intact. Report: `build/public-connection-verification.json`. Worker SHA-256: `68133e87f6545d1ba1d0b538bd8a4afb32c210ae7b40008736fc400331af55a1`.
+- All eight encrypted bindings, compatibility date `2026-09-08`, and empty compatibility flags were preserved. No database migration, live account test write, authentication change, dependency update or registry audit occurred. The two increments in [the plan](connection-drawing-plan.md) were finished and verified together for one release. Source and release notes are checkpointed locally; no GitHub push was made.
+
+**Reload both PCs before testing.** Start with **Connection drawing and inspection** in [the checklist](user-testing-checklist.md). The preceding v4-compatible release is Worker 43/source `885280d`; the pre-redesign stable tag remains unchanged. Owner usability acceptance and the separate cross-depth counterpart-placement decision remain next.
+
+## Preceding node wording release
+
 Node wording and Map/Create cleanup deployed September 25, 2026 at **20:00:38 UTC** (4:00 p.m. in New York). Application source: `885280d8931b575a074bbd3265accf3dde184011` on `redesign/node-interactions`.
 
 - Worker version **43**: `ee44a623-3ccc-4e57-b305-d7e542effe98`, serving **100%** of traffic. Deployment: `ee1d7560-b74b-4d5f-b954-5a0afb3d634b`.

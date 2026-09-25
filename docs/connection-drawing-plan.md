@@ -1,6 +1,6 @@
 # Connection drawing and collapsed branches
 
-Prepared September 25, 2026, after the owner's `harmonious3.png` screenshot. **Status: implemented; 46/46 release checks passed.** Baseline: `f45e6c4`, Worker version 43. [Deployment status](deployment-status.md) identifies the published version. This replaces the open browser-discrepancy investigation and prioritizes connection meaning and drawing over changes to radial node placement.
+Prepared September 25, 2026, after the owner's `harmonious3.png` screenshot. **Status: implemented and live in Worker version 44; 46/46 release checks passed.** Baseline: `f45e6c4`, Worker version 43. [Deployment status](deployment-status.md) records source, publication and public verification. This replaces the open browser-discrepancy investigation and prioritizes connection meaning and drawing over changes to radial node placement.
 
 ## Implementation record
 
