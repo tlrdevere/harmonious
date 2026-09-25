@@ -2,7 +2,7 @@
 
 ## Current priorities — September 25, 2026
 
-The active work is the [Compare, Inquiry, and Argument consistency plan](mode-consistency-plan.md): shared interaction summaries and counts, consistent opening and search, retirement of old authoring routes, and a separate investigation of counterpart placement while retaining radial organization. The consistency changes are implemented locally; see deployment status for release verification and publication. Radial positioning is unchanged, with a representative counterpart-placement study available in the plan. The [v4 interaction grammar](interaction-grammar-v4.md) defines the current actions; older reason/challenge, reflection/outcome, and standalone adoption workflows below are historical context, not the current acceptance checklist.
+The consistency increment of the [Compare, Inquiry, and Argument plan](mode-consistency-plan.md) is live: shared interaction summaries and counts, consistent opening and search, and retirement of old authoring routes. All 46 release checks and public asset/access verification passed; [deployment status](deployment-status.md) records Worker version 42. Next, complete the owner's mode-consistency walkthrough and review the representative counterpart-placement study before adopting a different displacement policy. Radial positioning is unchanged. The [v4 interaction grammar](interaction-grammar-v4.md) defines the current actions; older reason/challenge, reflection/outcome, and standalone adoption workflows below are historical context, not the current acceptance checklist.
 
 ## Earlier priorities — September 22, 2026 (UTC)
 

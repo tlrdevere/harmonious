@@ -1,8 +1,23 @@
 # Deployment status
 
-Updated September 23, 2026 (UTC).
+Updated September 25, 2026 (UTC).
 
 ## Current release
+
+Mode consistency deployed September 25, 2026 at **19:30:59 UTC** (3:30 p.m. in New York). Application source: `82997e60cc3be30c0cf7798f97ada4d7114263b1` on `redesign/node-interactions`.
+
+- Worker version **42**: `9a29cf19-929b-418d-86d8-3a0426452e62`, serving **100%** of traffic. Deployment: `b2e25d7f-fdb9-410b-b8da-fe10bbccd397`.
+- Compare, Inquiry, and Argument now share interaction labels, selected-ground previews, actual response outcomes, conversation counting and source navigation. Responses stay nested and do not inflate initiating-conversation counts. Badges open exactly their counted category.
+- **Find** is available in all three modes with separate remembered queries. It searches choices, Other text, comments, accessible references and response outcomes. Argument offers All/Disputes without implying resolution. Show on map reveals the existing attachment, including folded sources, without making an extra Context card.
+- Historical records, withdrawn replies and earlier individual outcomes remain readable. Retired creation, editing, adoption, reflection and source-confirmation routes are closed; supported counterpart fulfillment, definitions, confidence and explicit reviewed map application remain available. Current guidance and the owner checklist now describe the v4 workflow.
+- **46/46 release checks passed**, including six browser suites, two-account persistence and permissions, history, mode-local drafts/search, recipient restrictions, keyboard access, narrow screens, portable export, build and complete asset checks. Report: `build/verification/2026-09-25T19-28-36-151Z-75492/summary.json`. Earlier attempts exposed a historical-view test adapter expectation and a test's hardcoded map-side assumption; both were corrected before the final passing run.
+- Public verification confirms all **50 client files** and the homepage exactly match the tested checkout. Configured sign-in, anonymous account denial, private-configuration denial and security headers pass. Report: `build/public-consistency-verification.json`. Worker SHA-256: `e9a1e9a9d2b160909bd50d6339776aa0241ddfc3a72057d28f2cf98a429bf3d4`.
+- All eight encrypted bindings, compatibility date `2026-09-08`, and empty compatibility flags were preserved. This release has no database migration, stored-data rewrite, live account test writes, authentication changes, dependency update or registry audit.
+- Radial positioning is unchanged. Mode switches preserve source coordinates, camera, selection and folds. A [representative cross-depth counterpart study](design/counterpart-depth-study.html) identifies a separate placement tradeoff: a paired node can change displayed depth while its descendants retain theirs. That evidence does not diagnose or fix the owner's particular live map; a new displacement policy remains a separate design decision.
+
+**Reload both PCs before testing.** Start with the mode-consistency checks in [the checklist](user-testing-checklist.md). Owner usability acceptance remains outstanding. Source and release notes are checkpointed locally; this release does not push to GitHub. The previous v4-compatible release is version 41/source `c0381c8`; `stable-before-interaction-redesign` and `main` remain at the older checkpoint and are not a database rollback. See [the completed consistency plan and remaining layout work](mode-consistency-plan.md).
+
+## Preceding interaction grammar release
 
 Interaction grammar v4 deployed September 23, 2026 at **00:25:01 UTC** (September 22 at 8:25 p.m. in New York), at the owner's request to test on the live site. Application source: `c0381c8` on `redesign/node-interactions`.
 

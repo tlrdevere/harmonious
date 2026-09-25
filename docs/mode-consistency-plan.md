@@ -1,6 +1,6 @@
 # Compare, Inquiry, and Argument consistency plan
 
-Prepared September 25, 2026, following the code review and disposable browser reproduction. **Implementation status:** steps 1–4 are implemented locally, including shared summaries/counts, search in each mode, consistent attachment navigation, and retirement of older authoring routes. Targeted and browser checks pass; final release verification and publication are tracked in [deployment status](deployment-status.md). Step 5 has a [representative placement study](design/counterpart-depth-study.html); the radial layout remains unchanged. Reviewed source: `41b186fa47fc547a9c03ad76e68d1768757e7123`, on `redesign/node-interactions`.
+Prepared September 25, 2026, following the code review and disposable browser reproduction. **Implementation status:** steps 1–4 are live in Worker version 42, source `82997e6`, with shared summaries/counts, search in each mode, consistent attachment navigation, and retirement of older authoring routes. All 46 release checks and public asset/access checks passed; [deployment status](deployment-status.md) records the release. Step 6's consistency increment is complete; owner usability acceptance remains. Step 5 has a [representative placement study](design/counterpart-depth-study.html); the radial layout remains unchanged and a different counterpart displacement policy awaits design review. Reviewed baseline: `41b186fa47fc547a9c03ad76e68d1768757e7123`, on `redesign/node-interactions`.
 
 The [interaction grammar](interaction-grammar-v4.md) remains the product specification. This plan fixes its integration with lists, search, canvas attachments, and historical views. It supersedes conflicting next-work priorities in older plans, not the agreed grammar.
 
@@ -123,7 +123,7 @@ For each increment:
 4. Run the aggregate release verification and Worker build on the final source. Record actual results; the previous 44-check pass does not cover these new cases.
 5. Once implementation is authorized and release checks pass, use the established live-beta deployment process within the owner's deployment authorization. Confirm deployed assets, core navigation, and the updated walkthrough. Document any portion still awaiting owner usability testing.
 
-This increment has no database migration or stored-data rewrite. Deployment follows final release checks.
+This increment has no database migration or stored-data rewrite. The consistency release passed final checks and was published September 25, 2026 at 19:30:59 UTC. All 50 client assets and the homepage match the tested build. The separate layout increment has not been implemented.
 
 ## Implementation order and decisions
 
