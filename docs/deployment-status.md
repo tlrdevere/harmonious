@@ -4,6 +4,20 @@ Updated September 25, 2026 (UTC).
 
 ## Current release
 
+Node wording and Map/Create cleanup deployed September 25, 2026 at **20:00:38 UTC** (4:00 p.m. in New York). Application source: `885280d8931b575a074bbd3265accf3dde184011` on `redesign/node-interactions`.
+
+- Worker version **43**: `ee44a623-3ccc-4e57-b305-d7e542effe98`, serving **100%** of traffic. Deployment: `ee1d7560-b74b-4d5f-b954-5a0afb3d634b`.
+- User-facing entity labels now consistently say **node**. Saved data identifiers, types and authored wording are unchanged. Map/Create cards omit Frame/type footers with no replacement author label. Shared mode controls are ordered **Inquiry → Compare → Argument**.
+- Selecting a node in Map/Create opens the on-map menu; Edit opens the optional panel. Close returns keyboard focus. Saving on-map confidence does not force the panel open. Signed-in save feedback no longer incorrectly demands a manual workspace save.
+- **46/46 release checks passed**, including six browser suites, account/database tests, portable export and the production build. Report: `build/verification/2026-09-25T19-58-13-520Z-76692/summary.json`. New assertions cover absent footer labels, optional panel behavior, node creation wording, confidence/panel preservation, save guidance and mode order. The narrow Map/Create screenshot was visually inspected.
+- Public verification confirms all **50 client files** and the homepage match the tested source, with sign-in configuration, anonymous account denial, private-configuration denial and security headers intact. Report: `build/public-node-ui-verification.json`. The first read during rollout encountered one previous-version file; a subsequent full check at 20:01:21 UTC passed. Worker SHA-256: `91e3278e3f9c4385a7ba8a5c674a995479518e9e2d03aced6d4ec7ccf5962d68`.
+- All eight encrypted bindings, compatibility date `2026-09-08`, and empty compatibility flags were preserved. No database migration, live account test write, authentication change, dependency update or registry audit was needed. Source and notes are checkpointed locally; no GitHub push was made.
+- No node-positioning or connection-routing algorithm changed. A disposable fixture produced identical geometry in Chrome and Edge across nine corresponding states. Expansion and historical proposal links can change edge grouping and shape, but the owner's exact two-browser disparity remains unconfirmed. The [follow-up review](ui-followup-2026-09-25.md) records the evidence and recommends consistent connection drawing as the next visual cleanup.
+
+**Reload both PCs before testing.** Start with the node wording/map-editor section of [the checklist](user-testing-checklist.md). The preceding v4-compatible release is Worker 42/source `82997e6`; the pre-redesign stable tag remains unchanged.
+
+## Preceding mode consistency release
+
 Mode consistency deployed September 25, 2026 at **19:30:59 UTC** (3:30 p.m. in New York). Application source: `82997e60cc3be30c0cf7798f97ada4d7114263b1` on `redesign/node-interactions`.
 
 - Worker version **42**: `9a29cf19-929b-418d-86d8-3a0426452e62`, serving **100%** of traffic. Deployment: `b2e25d7f-fdb9-410b-b8da-fe10bbccd397`.
