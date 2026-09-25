@@ -6,7 +6,8 @@
 - [ ] Open your map: the bottom-left Frame/type labels should be absent, with no replacement author name. Confidence and expansion/add buttons should still work.
 - [ ] Select a node: its on-map menu should open. Edit should open the optional panel; Close should return keyboard focus. Saving on-map confidence should keep a closed panel closed.
 - [ ] In a shared comparison, the controls should read Inquiry, Compare, Argument from left to right; each should retain its actions and parked drafts.
-- [ ] If two browsers still show different agreement edges, capture both windows with their address bars and View options. App Refresh retains expansion, while older proposal links can restore different selections. See [the investigation](ui-followup-2026-09-25.md).
+
+Known issue: a collapsed branch can produce a misleading cross-map line between visible ancestors. The owner supplied `harmonious3.png` and confirmed both browsers behave alike. [The connection drawing plan](connection-drawing-plan.md) addresses that line first; this behavior is not yet fixed in the live release.
 
 ## Current: mode consistency
 

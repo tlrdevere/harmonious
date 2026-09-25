@@ -12,6 +12,8 @@ September 25, 2026. This follows the owner's review of the mode-consistency rele
 
 ## Browser discrepancy investigation
 
+**Follow-up:** the owner subsequently supplied `harmonious3.png` and confirmed the line appears in both browsers. The browser-specific concern is closed. [The connection drawing plan](connection-drawing-plan.md) identifies the misleading collapsed-ancestor aggregation shown in that screenshot and supersedes the outstanding diagnosis below.
+
 The owner's exact case remains unconfirmed. A disposable two-map/account fixture produced identical coordinates, connection paths, label sizes/positions and source paths in Chrome and Edge across nine corresponding states: initial, expanded, refreshed, wide viewport, selected source, reloaded and historical-proposal cases. Both browsers reported no page errors. Diagnostic artifacts are in ignored `build/edge-browser-probe.mjs` and `.json`; no live account was modified.
 
 The following mechanisms can change what appears within the same named Comparison:
