@@ -70,3 +70,13 @@ console.log('Typed argument folds, exact counts, draft paths, deep bounded secti
 const pinnedWording=record('pinned','argument','reason',anchor,{premise:{wording:{title:'Saved title',summary:'Distinct summary phrase',details:'Pinned detail phrase'}}});
 for(const query of ['distinct summary','pinned detail','saved title'])assert.equal(searchReasoning(buildReasoningIndex([pinnedWording]),{query}).results[0].entry.id,'pinned');
 assert.equal(searchReasoning(buildReasoningIndex([pinnedWording]),{query:'unreviewed changes'}).total,0);
+
+// Modern interactions stay attached to their source even if an old navigation
+// caller passes one as a focused or pinned historical graph contribution.
+const modern=record('modern-dispute','interaction','dispute',anchor,{interaction:{mode:'argument'}});
+const modernIndex=buildReasoningIndex([...records,modern]);
+for(const opts of [{focusId:modern.id,revealFocus:true},{pinnedIds:[modern.id]}]){
+  const projection=projectReasoning(modernIndex,{anchor,...opts});
+  assert(!projection.entries.some(r=>r.id===modern.id));
+  assert(!projection.links.some(r=>r.entryId===modern.id));
+}

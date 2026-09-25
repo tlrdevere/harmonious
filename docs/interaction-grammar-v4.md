@@ -2,6 +2,10 @@
 
 Implemented on `redesign/node-interactions` and deployed to the live beta at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). The database migration is applied; see [deployment status](deployment-status.md). The optional portable review file remains `review/Harmonious-interactions-preview.html`. All **44 active release checks passed** on September 22, 2026; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`.
 
+## Consistency follow-up
+
+The September 25 consistency pass integrates this grammar with shared previews/counts, Find in all three modes, response outcomes, and attachment navigation. It retires creation and source-confirmation paths in older workflows while keeping their history readable. New interaction and privacy tests and an active mode-consistency browser suite cover the regressions missed by earlier checks. See [the implementation plan](mode-consistency-plan.md), [current workflow](current-argument-workflow.md), and [deployment status](deployment-status.md) for the published state.
+
 ## Specification and final decisions
 
 The specification is the revised `Interaction_Grammar_v4 (1).csv`, `Interaction_Grammar_v4_DisputeMenus (1).csv`, and `Interaction_Grammar_v4_Key (1).csv`, together with the owner's subsequent decisions in the task. Those decisions supersede conflicting spreadsheet entries:

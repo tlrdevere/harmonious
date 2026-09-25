@@ -6,6 +6,7 @@ export const reasoningTargetKey=target=>stableJSON(target);
 const entryTarget=id=>({type:'entry',entryId:id});
 const inferenceTarget=id=>({type:'inference',entryId:id});
 const hasParent=target=>['entry','inference'].includes(target?.type);
+const attachedOnly=r=>r?.kind==='interaction'||isReflection(r);
 const ordinary=r=>r.status==='active'&&(r.kind==='argument'||r.kind==='reply'&&r.layer==='arguments'&&r.action==='reply');
 const byTime=(a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id);
 
@@ -42,11 +43,11 @@ const recordPath=(index,id,stop=null)=>{const path=[],seen=new Set();let r=index
 export function projectReasoning(index,{anchor,collapsed=new Set(),focusId=null,pinnedIds=[],budget=40,revealFocus=false}={}){
   // Attached annotations are searchable, but are never graph cards, including
   // when a restored view or caller passes one as a focused/pinned contribution.
-  if(isReflection(index.byId.get(focusId)))focusId=null;
-  pinnedIds=pinnedIds.filter(id=>!isReflection(index.byId.get(id)));
+  if(attachedOnly(index.byId.get(focusId)))focusId=null;
+  pinnedIds=pinnedIds.filter(id=>!attachedOnly(index.byId.get(id)));
   const limit=Math.max(3,Math.min(40,Number.isFinite(budget)?Math.floor(budget):40)),anchorKey=reasoningTargetKey(anchor),anchorId=anchor?.type==='entry'?anchor.entryId:null;
   const needed=new Set(),eligible=new Set(),pinned=new Set(),effectiveFolds=new Set(collapsed),revealedFoldKeys=[];
-  const needPath=id=>{let p=index.byId.get(id);const seen=new Set();while(p&&p.id!==anchorId&&!needed.has(p.id)&&!seen.has(p.id)){seen.add(p.id);if(!isReflection(p))needed.add(p.id);p=index.byId.get(index.parentById.get(p.id));}};
+  const needPath=id=>{let p=index.byId.get(id);const seen=new Set();while(p&&p.id!==anchorId&&!needed.has(p.id)&&!seen.has(p.id)){seen.add(p.id);if(!attachedOnly(p))needed.add(p.id);p=index.byId.get(index.parentById.get(p.id));}};
   for(const r of index.ordered){
     if(!ordinary(r)||reasoningTargetKey(index.anchorById.get(r.id))!==anchorKey)continue;
     eligible.add(r.id);needPath(r.id);

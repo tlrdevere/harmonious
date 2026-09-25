@@ -22,8 +22,8 @@ const workspace={maps:[{id:'a',name:'Alice',updatedAt:'2099-01-01T00:00:00Z'},{i
   r('inaccessible-context','context','context',{comparisonId:null,updatedAt:'2099-01-01T00:00:00Z'}),r('another-thread','argument','reason',{comparisonId:'unrelated',updatedAt:'2099-01-01T00:00:00Z'})
 ]};
 const before=structuredClone(workspace),summary=libraryComparisonSummary(workspace,thread);
-assert.deepEqual(summary.counts,{relationships:1,inquiries:3,reasons:1,challenges:2,earlierJudgments:0,earlierReasoning:2,sourceReviews:0,disagreementPoints:0,outcomes:0});
-assert.equal(summary.description,'1 relationship · 3 questions & requests · 1 reason · 2 challenges · 2 earlier reasoning items');
+assert.deepEqual(summary.counts,{positions:0,relationships:1,inquiries:1,counterparts:1,reasons:1,disputes:0,challenges:2,earlierRecords:1,earlierJudgments:0,earlierReasoning:2,sourceReviews:0,disagreementPoints:0,outcomes:0});
+assert.equal(summary.description,'1 inquiry · 1 counterpart request · 1 earlier relationship · 1 earlier reason · 2 earlier challenges · 1 earlier conversation · 2 earlier reasoning items');
 assert.equal(summary.activity,Date.parse('2026-09-19T00:00:00Z'),'Replies affect activity; unrelated threads, map edits and personal context do not');
 assert.deepEqual(libraryComparisonOrder(workspace).map(s=>s.thread.id),['thread','second'],'A recent response brings an older comparison before a newer empty one');
 assert.deepEqual(workspace,before,'Building summaries preserves all source data');
@@ -32,7 +32,16 @@ workspace.discussions.find(r=>r.id==='reply').updatedAt='invalid';workspace.disc
 assert.equal(libraryComparisonSummary(workspace,thread).activity,Date.parse('2026-09-20T00:00:00Z'),'A withdrawal is activity but not a current challenge count');
 assert.equal(libraryComparisonSummary(workspace,thread).counts.challenges,2);
 workspace.discussions.push(r('point','reflection','disagreement_point'),r('alice-outcome','reflection','outcome',{target:{type:'entry',entryId:'point'}}),r('bob-outcome','reflection','outcome',{target:{type:'entry',entryId:'point'}}),r('withdrawn-point','reflection','disagreement_point',{status:'withdrawn'}),r('historical-outcome','reflection','outcome',{target:{type:'entry',entryId:'withdrawn-point'}}));
-const reflected=libraryComparisonSummary(workspace,thread);assert.equal(reflected.counts.disagreementPoints,1);assert.equal(reflected.counts.outcomes,2);assert.equal(reflected.counts.inquiries,3);assert.equal(reflected.counts.challenges,2);assert.match(reflected.description,/1 point of disagreement · 2 individual outcomes/);
+const reflected=libraryComparisonSummary(workspace,thread);assert.equal(reflected.counts.disagreementPoints,1);assert.equal(reflected.counts.outcomes,2);assert.equal(reflected.counts.inquiries,1);assert.equal(reflected.counts.challenges,2);assert.equal(reflected.counts.earlierRecords,2);assert.match(reflected.description,/2 earlier conversations/);
+
+const modern=(id,action,mode,extra={})=>r(id,'interaction',action,{interaction:{mode},...extra});
+const modernOnly={...workspace,argumentNodes:[],argumentEdges:[],discussions:[modern('position','endorse','compare'),modern('no-position','decline','compare'),modern('ask','request_explanation','inquiry'),modern('offer','offer_reason','inquiry'),modern('dispute','dispute','argument'),modern('response','respond','argument',{target:{type:'entry',entryId:'dispute'},updatedAt:'2026-09-24T00:00:00Z'}),modern('withdrawn-position','disagree','compare',{status:'withdrawn'}),modern('withdrawn-question','request_reason','inquiry',{status:'withdrawn'}),modern('withdrawn-dispute','dispute','argument',{status:'withdrawn'}),modern('active-response-to-withdrawn','respond','argument',{target:{type:'entry',entryId:'withdrawn-dispute'},updatedAt:'2026-09-25T00:00:00Z'})]};
+const modernSummary=libraryComparisonSummary(modernOnly,thread);
+assert.equal(modernSummary.description,'2 positions · 2 inquiries · 1 dispute','Grammar-only comparisons communicate their initiating interactions');
+assert.equal(modernSummary.activity,Date.parse('2026-09-25T00:00:00Z'),'An active response to withdrawn history remains meaningful activity');
+assert.equal(modernSummary.counts.positions,2);assert.equal(modernSummary.counts.inquiries,2);assert.equal(modernSummary.counts.disputes,1);assert.equal(modernSummary.counts.challenges,0);
+const mixed=libraryComparisonSummary({...modernOnly,discussions:[...modernOnly.discussions,...workspace.discussions]},thread);
+assert.equal(mixed.counts.positions,2);assert.equal(mixed.counts.relationships,1);assert.equal(mixed.counts.inquiries,3);assert.equal(mixed.counts.counterparts,1);assert.equal(mixed.counts.disputes,1);assert.equal(mixed.counts.challenges,2);assert.equal(mixed.counts.earlierRecords,2);
 workspace.discussions=[];workspace.argumentNodes=[];workspace.argumentEdges=[];
 assert.equal(libraryComparisonSummary(workspace,thread).description,'No contributions yet');
 workspace.discussions=[r('withdrawn-only','argument','reason',{status:'withdrawn'})];assert.equal(libraryComparisonSummary(workspace,thread).description,'Conversation history available');

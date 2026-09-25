@@ -36,3 +36,10 @@
 .reflection-attachments{border-top:1px solid #dfe8ed;margin-top:14px;padding-top:8px}.reflection-item{display:grid;gap:4px;white-space:normal;text-align:left;width:100%;margin:8px 0}.reflection-item p{margin:2px 0}.reflection-item small{color:#687d87;font-size:11px}.reflection-marker{font-size:11px!important;padding:4px 7px!important;background:#f6f8fa!important;color:#536a79!important;border-color:#ccd9e0!important}.reflection-history{border-top:1px solid #e0e8ed;padding:8px 0}.reflection-source-review{background:#fffaf0;border-left:3px solid #b59146;padding:10px;margin:8px 0;overflow-wrap:anywhere}.reflection-form details{margin:4px 0}.reflection-form summary{font-size:13px}.reflection-form select{margin-top:8px}
 
 .reflection-conversation{border-top:1px solid #dce5eb;padding-block:12px}.reflection-assessment{margin:8px 0 0 16px;padding-left:12px;border-left:2px solid #dce5eb}.reflection-assessment .discussion-body{margin-block:6px;overflow-wrap:anywhere}.reflection-source-review a,.discussion-source-history a{overflow-wrap:anywhere}
+
+/* A shared search surface and compact interaction summaries across modes. */
+.interaction-search{top:12px;max-height:calc(100% - 24px)}
+.interaction-search .reasoning-search-filters[hidden]{display:none}
+.discussion-list-item>small{display:block;margin-top:5px;color:#627687;font-weight:400}
+.discussion-list-item[aria-current=true]{border-color:#347d82;background:#edf6f5}
+@media(max-width:700px){.interaction-search{top:8px;max-height:calc(100% - 16px)}}

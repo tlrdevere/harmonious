@@ -1,8 +1,22 @@
 # Harmonious: what to check on your next visit
 
+## Current: mode consistency
+
+See [deployment status](deployment-status.md) for publication. Reload both PCs before testing the consistency release.
+
+- [ ] Record a dispute with selected grounds and no comment. Its list preview should identify the grounds; opening it should show every choice.
+- [ ] Respond from the other account. The response row should show the actual outcome, and the source's conversation count should not increase for that response.
+- [ ] Find the interaction by a selected ground, Other text, or response outcome. Show on map should open its existing detail at the source, with no extra Context card.
+- [ ] Try Find in Compare, Inquiry, and Argument. Each mode should retain its query and show only its own interactions. Disputes should include received or answered disputes without implying resolution.
+- [ ] Open a badge, Conversations, and a search result for the same interaction. Labels, choices, authorship, and target should agree. A reason badge must not open an unrelated dispute.
+- [ ] Open Withdrawn interactions and read their responses. Earlier withdrawn replies and individual outcomes should remain readable from their parent.
+- [ ] Switch modes without changing anything else: map positions, zoom, selected nodes, and expanded branches should remain stable. A parked form should return intact.
+- [ ] Open earlier records: history should remain available, while retired creation and source-confirmation controls should be absent. Counterpart requests/create/choose and central definitions should still work.
+- [ ] Repeat Find and opening an edge interaction in a narrow window; verify keyboard Close/Escape returns focus sensibly.
+
 ## Current: redesigned interactions
 
-Reload both PCs after Worker version 41, then open a shared comparison. Use fresh maps if you want a clean start.
+Reload both PCs after the current release, then open a shared comparison. Use fresh maps if you want a clean start.
 
 - [ ] **Map/Create:** add ordinary statements and Create reason. A reason should connect toward its conclusion, with one visible edge per pair. Try reason, cause, addresses and enables connections.
 - [ ] **Compare:** select the other person's statement and record Endorse, Disagree, or No position. It should appear as an attributed attachment without automatically editing either map or requiring a co-sign.

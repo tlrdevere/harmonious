@@ -1,105 +1,48 @@
-# Using Argument in a shared Comparison
+# Working in a shared Comparison
 
-**Compare** and **Argument** are two modes of the same Comparison. Both people use the same saved conversation and source maps. You can begin without recording agreement, defining a shared question, or creating a proposal.
+Updated September 25, 2026. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera. [Deployment status](deployment-status.md) identifies the published version; [the grammar](interaction-grammar-v4.md) defines the actions.
 
-Use **Compare** to understand and relate maps: ask for explanations, examples, evidence or a specific answer; record relationships; and request a missing counterpart or suggest adoption. Use **Argument** to explain reasoning, critique a statement or inference, point out a logical fallacy, and contest a relationship. The modes keep these actions and conversation indicators separate. See the [interaction and sorting rules](compare-argument-ui-rules.md) for the intended boundaries and next-feature design.
+## Choose a mode
 
-This guide describes the new workflow. [Deployment status](deployment-status.md) identifies the version available on the live site. [The testing checklist](user-testing-checklist.md) provides a two-account walkthrough.
-
-## Explain your position
-
-On an ordinary **Position** node you own, **My confidence** lets you record an optional score from 0 to 100. An assessed node shows a small percentage in Maps and Compare; selecting your own badge opens the same control. The other person can read your score but cannot edit it. **Not assessed** clears the score; it is different from zero. Confidence belongs to your own position and does not change its wording version or record agreement. Independent adopted copies start unassessed. This control is not currently offered on the separate reason/challenge/response cards.
-
-1. Open a Comparison from **Map Library → Comparisons & arguments**.
-2. Switch to **Argument**, select an ordinary node on your own map and choose **Explain my reasoning**. The three frame headings are not positions to explain.
-3. Choose **Write a reason** or **Use one of my nodes**. A written reason can include an optional reference link and explain its relevance in the text. The node picker searches your participating map's positions within the same frame; inspect the wording and destination, then save.
-4. Open your saved reason and choose **Add supporting reason** to explain it further. The same action is available on your own Argument responses.
-
-Each reason supports one particular position or contribution. A position can have several reasons. The same existing position can be used under different conclusions, with a separate reviewed reference for each use. Creating reasoning does not add, move or change nodes in either original worldview. A node cannot support itself, and circular or duplicate uses are rejected.
-
-An existing-node reason retains the wording and invoked definitions used when saved. Later source edits do not silently update it. Open the reason and use **Review used node** to inspect changes and explicitly use the current wording; earlier versions remain readable. Confidence-only changes do not require a wording review. If the source is removed or moved outside the eligible frame, the saved wording remains historical and the reason can be withdrawn. See [existing-node reasons](existing-node-reasons.md) for the scope and review rules.
-
-## Challenge the statement or the connection
-
-In **Argument**, the other person can address three different things:
-
-| What you want to question | Action |
+| Mode | Use it to |
 | --- | --- |
-| The original position | Select its source node and choose **Challenge**. |
-| A reason's statement | Open its card and choose **Challenge reason**. |
-| Whether a reason establishes its conclusion | Select **Supports**, or **Inspect reasoning connection**, then choose **Challenge reasoning**. |
+| Map / Create | Write and edit your own statements, create reasons, and add typed connections. |
+| Compare | Record Endorse, Disagree, or No position toward another person's statement or connection. Find, link, or request a counterpart. |
+| Inquiry | Request reason, Request explanation, Propose alternative, or Offer reason. |
+| Argument | Dispute reasoning, choosing the grounds relevant to a statement's frame or a connection's type. |
 
-The connection window shows both the reason and its conclusion. Its challenge remains attached to that connection. This is different from challenging a parent–child connection in a source map, which remains available through that map edge.
+Select a source node or connection to see its available actions. The three frame headings are containers. A cited statement offers additional source-related dispute grounds. Other opens free text; comments and a single node reference are optional. A dispute needs at least one ground. Internal Signals tags are never shown.
 
-Write the problem in your own words. Expand **Type of challenge (optional)** if a classification helps: **General challenge**, **Reasoning does not follow**, **Counterexample**, or **Logical fallacy or reasoning error**. Name and explain a specific fallacy in the text. These labels express the contributor's judgment; they do not establish that the other person is wrong.
+## Read and find interactions
 
-Questions belong in **Compare → Ask**, including requests for explanation, examples, evidence, or a specific question. Asking for evidence requests information; challenging the adequacy of that evidence belongs in Argument. To contest a recorded agreement or disagreement, open that relationship in **Argument** and use **Contest agreement** or **Contest disagreement**.
+Source badges count initiating conversations, excluding their responses. A badge opens exactly that category of conversations. Collapsing a branch keeps its attachments reachable from the visible ancestor. Select Conversations to browse the current mode; Withdrawn interactions opens historical threads.
 
-## Respond and record an outcome
+Rows identify the action, author, source, and a compact preview of the selected choices or comment. Response rows show the outcome, such as Partly accept, rather than a generic Respond label. Open a row for full wording and options; withdrawn responses remain labeled within their parent thread.
 
-Open a challenge and choose **Respond**. A response can include a reference link and definitions or standards. Its author can add supporting reasons; the other person can challenge the response. Parent links identify what each contribution addresses.
+Find is available in all three modes and searches only the current comparison and mode. It includes selected choices, Other text, comments, authors, source labels, accessible references, and response outcomes. Each mode remembers its query during the page session. Argument offers All and Disputes; no filter claims that a response resolved a dispute.
 
-The recipient can **Accept challenge** or **Maintain position**, with an explanation. Only the person who made the challenge can **Mark resolved** or **Reopen challenge**. Acceptance does not close the challenge automatically, and resolution does not change the maps' agreement/disagreement relationship. Reasons themselves have no challenge-resolution controls.
+Show on map reveals the original source and opens the same detail as an attachment or conversation row. It preserves zoom and unrelated branch folds. A response result opens its parent thread with the matching response identified; select that response to inspect its full details and any available reviewed map change. Source positions do not change merely because the mode changes.
 
-## Locate a disagreement and record your assessment
+## Respond and optionally change your map
 
-In **Argument**, select an ordinary source node, source-map connection, reason, Argument response, or **Supports** connection. Choose **Mark point of disagreement**, explain where you think the difference lies, and optionally choose Facts, Reasoning, Values, or Other. The point is attached to that source, with a small count when detail is closed. It does not add another canvas card or connection.
+Only the intended recipient can Respond to an active request, proposal, offer, or dispute, within its originating mode. Choose one outcome. Compare stances do not acquire a generic response control.
 
-Open a point and choose **Record my outcome**. Write your assessment; optionally add **Changed my position**, **More work needed**, or **Difference understood**, and a next step. Each person has one current outcome per point and can edit their own assessment with earlier wording retained. Your partner records a separate outcome. Neither person's note changes a source map, records mutual agreement, or resolves a challenge.
+Recording a stance or accepting an interaction does not edit either map. A separate Review action previews an owned copy, revision, or added reason; Apply to my map commits that change. Copies retain independent authorship. Responses do not automatically close or resolve disputes.
 
-**Find in argument** includes points, outcomes and next steps. Opening a result reveals its source and attached note. Compare does not show these Argument annotations. In **Compare → Ask**, **What would change your mind?** is an editable question preset; it uses the ordinary inquiry and response flow, without interpreting silence.
+Unfinished forms are parked when you switch modes and restored when you return. Opening another target uses the existing discard safeguard. Reload after All changes saved to check persistence on another PC.
 
-See [disagreement points and outcomes](disagreement-points-outcomes.md) for the saved-data and source-review rules. [Deployment status](deployment-status.md) identifies when this increment is live.
+## Meaning, confidence, and counterparts
 
-## Read the argument on the map
+Definitions and standards are maintained centrally in Map Library and invoked at relevant sources. Confidence belongs to the statement's author and can be assessed or cleared without asserting agreement. An independent copy does not inherit another author's confidence.
 
-**Argument** displays reason, challenge, and response cards attached to the selected source. Names and ownership colors identify authors. Its **↳** and **!** indicators distinguish reasons and challenges; **Compare** shows question/request indicators. Earlier questions can remain readable as context for an argument, without showing unrelated inquiries throughout Argument.
+Counterpart links identify comparable statements separately from stances. Request counterpart is available in Compare for your own unlinked ordinary node. The other person can create or choose their own counterpart. Empty spots remain visible; a linked node does not offer another counterpart request.
 
-Use **Follow argument**, **Fit argument**, and **Back to source** to navigate. **Collapse argument** closes the expanded group while its source indicators remain. Inquiries belong to Compare; reasoning and challenges belong to Argument. Visibility options cannot enable critiques in Compare. A collapsed source containing several conversations lets you choose which to open within its mode.
+## Earlier records
 
-Use **Hide follow-ups** on a card to fold that statement's branch. The **Supports** marker has its own fold control for challenges to the reasoning connection. Hidden counts remain visible; open challenges have a separate indicator. Folding is personal and preserves zoom and the clicked card's screen position. Your partner's view is independent. Folds survive changing modes and revisiting the Comparison during this page session; reloading may reset them. New responses update the counts without reopening your folds.
+Earlier relationships, reasons, challenges, replies, and annotations remain readable with their attributed history. Their old creation, editing, adoption, reflection, and Resolve/Reopen controls are retired. Authorized withdrawal remains available. Counterpart fulfillment and central definitions remain supported workflows.
 
-**Find in argument** searches accessible argument contributions, responses and their necessary context across all source groups. Unrelated inquiries and adoption receipts stay in Compare. Choose **All** or **Open challenges**, then **Show on map**. Results prioritize recent matching activity; this does not rearrange the graph. The result identifies the author and whether it addresses a position, reason, reasoning connection, or response. Typing a search does not discard an unfinished form. Showing a different target uses the normal explicit discard decision when needed.
+Earlier records and Earlier reasoning preserve the previous proposal-based material as read-only views. Their historical data model remains supported; opening an old record does not silently convert it into a new interaction.
 
-The canvas shows up to **40 cards** at once, keeping necessary context with the selected contribution. **Browse all … contributions** opens the complete searchable list. For a longer chain, **Earlier steps** navigates through bounded sections; **Back to selected contribution** returns to your result. No line skips omitted parents. Withdrawn ancestors can remain clearly labeled historical cards. Search and Follow pan at the current zoom; only **Fit argument** fits the expanded group.
+## Positioning
 
-Folding another branch preserves an unfinished form, including its reference and selected definitions. If a fold would hide that draft's target, the required context stays visible until you finish or discard the form.
-
-Switching between **Compare** and **Argument** preserves the camera and source selection. An unfinished form is parked and hidden in the other mode, then restored when you return. Choosing a different target still requires the normal explicit discard decision. Explicit navigation actions such as **Fit argument** change the camera. Save a contribution before reloading; an unfinished form is not a saved contribution.
-
-## Definitions, history, and privacy
-
-Create reusable wording under **Map Library → Definitions & standards**. A reason, challenge, or Argument response can explicitly invoke an entry and version. Its definition icon shows the selected wording. Editing the library later does not update an existing invocation or reveal unused library entries to the other person.
-
-Only authors can edit or withdraw their contributions. **Earlier wording** and **Source wording & history** preserve the distinction between what was said and what source wording was addressed. A challenge to a reasoning connection captures both endpoints. Changed or unavailable sources are indicated, including relevant changes farther up a reasoning chain.
-
-You can withdraw your own existing response after its parent is withdrawn, without changing its earlier text. Further contributions require available sources. If either map stops being available to a participant, that participant loses access to the shared conversation and its invoked definitions.
-
-Wait for **All changes saved** before closing the page. The other account can use **Refresh** to retrieve saved changes. Earlier proposal-based arguments remain under **View options → Earlier reasoning** where applicable, with their original history.
-
-## Act on an adoption suggestion
-
-In **Compare**, select an ordinary node you own and choose **Suggest adoption**. The other map owner can discuss it using **Respond**, choose **Not now**, **Add to my map**, or **Use an existing node**. Frame headings and comparisons between two maps with the same owner do not offer this suggestion.
-
-**Add to my map** lets the recipient edit the wording and choose any parent in their comparison map. **Link as counterparts** is optional and starts unchecked. Definitions already invoked by the source appear in a collapsed section; each **Copy to my library and use here** choice is also unchecked initially. Only selected, exact shared versions are imported, with origin attribution. Existing-node adoption leaves the selected node's wording and definitions unchanged.
-
-Saving creates the independent copy, selected definition imports, optional neutral link, and receipt together. Neither route records agreement or a co-sign. A failed or interrupted save retains the draft; retrying checks for an existing receipt before attempting another copy. If source wording or invoked definitions changed, review the displayed difference explicitly before saving. Your drafted wording is kept.
-
-Both people can see the recipient's outcome. A fulfilled suggestion offers **Open node**. Its receipt cannot be edited or withdrawn as if that would undo the map action. The recipient can separately edit or remove their own node; the receipt then says **Changed since adding** or **Removed from map**. Withdrawing an unfulfilled suggestion prevents adoption, while a previously saved independent copy remains owned by its recipient.
-
-## Still outside this version
-
-- Manual card dragging, one shared reason card with several Supports connections, and arbitrary graph links. Existing positions can already be referenced in separate reason cards under different conclusions.
-- Keeping several unfinished forms across different Comparisons or across a reload. Changing targets or leaving a draft still asks before discarding it.
-- Multiple pinned conversation windows, automatic node merging, live notifications, and pod design.
-
-The main test is a complete **position → reason → challenge → response** exchange between two accounts, while each person's worldview remains unchanged.
-
-
-## Find maps and revisit assessments
-
-Within **Map Library → Comparisons & arguments**, choose **Find a shared map**. Search by map name or person; results are alphabetized by map name and exclude your own maps and unavailable/private maps. **View map** opens its source. **Compare with my map** preselects the other source and lets you choose your own map before starting/opening the shared comparison. **Saved comparisons** returns to existing work. There is no separate Shared maps tab or Compass placement yet.
-
-In **Argument → Conversations**, each disagreement point now groups both owners’ individual assessments and any next steps. An owner without an assessment is labeled **No assessment recorded**. Matching labels do not imply agreement. Clicking a point or outcome opens its existing authored detail and history; outcomes whose point was withdrawn remain accessible.
-
-Source review and history include saved reference links and node metadata. Finding an edge-attached point reveals its endpoints through collapsed branches without changing zoom. Search includes the saved summary and details of an existing-node reason, rather than unpublished source edits.
+The source maps still use radial positioning. Sparse branches with one or two children can look vertical. Counterpart alignment can move a node away from its source branch; [the placement study](design/counterpart-depth-study.html) shows a representative cross-depth case. Manual dragging and a replacement layout remain deferred.

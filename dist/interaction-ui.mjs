@@ -1,10 +1,11 @@
 import {interactionActions,interactionOptions,optionsForClassification,interactionMode,interactionLabel,interactionReferenceChoices} from './interaction-grammar.mjs';
-import {makeDiscussion,discussionSource,discussionTargetLabel,discussionSourceSnapshot,discussionHealth,DISCUSSION_LABELS} from './discussion.mjs';
+import {makeDiscussion,discussionSource,discussionTargetLabel,discussionSourceSnapshot,discussionHealth} from './discussion.mjs';
 import {conversationAnchor} from './conversation-tree.mjs';
 import {validateWorkspace} from './workspace.mjs';
 import {synchronizeIdeas} from './adoption.mjs';
 import {stableJSON} from './account-model.mjs';
 import {InteractionApplicationUI} from './interaction-application-ui.mjs';
+import {interactionPresentation,conversationThreads} from './interaction-presentation.mjs';
 
 const interactionEl=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;e.className=cls;return e;};
 const interactionButton=(text,run,cls='')=>{const e=interactionEl('button',text,cls);e.type='button';e.onclick=run;return e;};
@@ -35,7 +36,7 @@ export class InteractionUI{
       if(own&&!d.counterparts.links(target).length)buttons.push(interactionButton('Request counterpart',()=>{const request=d.counterparts.requests(target).at(-1);if(request)d.open(request.id);else d.compose('counterpart','counterpart');}));
       d.actionGroup('Counterparts',buttons);
     }
-    const attached=d.entries().filter(r=>r.kind==='interaction'&&interactionMode(r)===d.mode()&&stableJSON(conversationAnchor(ws.discussions,r))===stableJSON(target));
+    const attached=conversationThreads(d.allEntries(),{mode:d.mode()}).filter(r=>stableJSON(conversationAnchor(ws.discussions,r))===stableJSON(target));
     if(attached.length)d.host.append(interactionButton(`View ${attached.length} attached ${attached.length===1?'interaction':'interactions'}`,()=>this.list(target),'discussion-text-action'));
     d.positionPopover();
   }
@@ -102,28 +103,34 @@ export class InteractionUI{
     };d.positionPopover();
   }
   error(host,message){let alert=host.querySelector('[role=alert]');if(!alert){alert=interactionEl('p');alert.setAttribute('role','alert');host.append(alert);}alert.textContent=message;}
-  open(id){
+  open(id,{selectedResponse=null}={}){
     const d=this.d;if(!d.canLeave())return;const r=this.c.workspace.discussions.find(r=>r.id===id);if(!r)return;
-    d.activateMode(interactionMode(r));d.target={type:'entry',entryId:id};d.shell(interactionLabel(r));d.viewId=id;
+    d.activateMode(interactionMode(r));d.target={type:'entry',entryId:id};d.shell(interactionPresentation(this.c.workspace,r).label);d.viewId=id;
     d.host.append(interactionEl('p',`${d.name(r.authorId)} · ${r.targetLabel}`,'discussion-byline'));
     const parent=r.target.type==='entry'?this.c.workspace.discussions.find(p=>p.id===r.target.entryId):null;
     const choices=optionsForClassification(r.interaction.classification,r.action),labels=new Map(choices.map(o=>[o.id,o.label]));
     for(const option of r.interaction.options)d.host.append(interactionEl('p',labels.get(option)||option.replaceAll('_',' '),'interaction-selected'));
     if(r.interaction.otherText)d.host.append(interactionEl('p',r.interaction.otherText,'discussion-body'));if(r.body)d.host.append(interactionEl('p',r.body,'discussion-body'));
-    if(r.interaction.reference){const ref=r.interaction.reference,source=discussionSource(this.c.workspace,ref.target);const box=interactionEl('section','','interaction-reference-preview');box.append(interactionEl('strong','Referenced statement'),interactionEl('p',ref.snapshot.label));if(source)box.append(interactionButton('Show referenced node',()=>{if(d.canLeave())this.c.library.openSource(ref.target.mapId,ref.target.nodeId);}));else box.append(interactionEl('p','Reference no longer available','field-help'));d.host.append(box);}
+    if(r.interaction.reference){const ref=r.interaction.reference,accessible=interactionReferenceChoices(this.c.workspace,r.comparisonId).some(choice=>stableJSON(choice.target)===stableJSON(ref.target));const box=interactionEl('section','','interaction-reference-preview');box.append(interactionEl('strong','Referenced statement'));if(accessible)box.append(interactionEl('p',ref.snapshot.label),interactionButton('Show referenced node',()=>{if(d.canLeave())this.c.library.openSource(ref.target.mapId,ref.target.nodeId);}));else box.append(interactionEl('p','Reference no longer available','field-help'));d.host.append(box);}
     const health=discussionHealth(this.c.workspace,r);if(['changed','unavailable'].includes(health.state))d.host.append(interactionEl('p',health.label,'review-warning'));
     if(r.status==='active'&&r.action!=='respond'&&['request_reason','request_explanation','propose_alternative','offer_reason','dispute'].includes(r.action)&&r.interaction.recipientId===d.actor())d.actionGroup('Your response',[interactionButton('Respond',()=>this.compose('respond'))]);
-    const replies=d.entries().filter(reply=>reply.kind==='interaction'&&reply.action==='respond'&&reply.target.entryId===id);
-    if(replies.length){d.host.append(interactionEl('h3','Responses'));for(const reply of replies)d.host.append(this.row(reply));}
-    if(parent)d.host.append(interactionButton('Back to '+interactionLabel(parent),()=>this.open(parent.id),'discussion-text-action'));
+    if(r.status==='withdrawn')d.host.append(interactionEl('p','Withdrawn','discussion-state'));
+    const replies=d.allEntries().filter(reply=>reply.kind==='interaction'&&reply.action==='respond'&&reply.target.entryId===id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
+    if(replies.length){d.host.append(interactionEl('h3','Responses'));for(const reply of replies){const row=this.row(reply);if(reply.id===selectedResponse){row.setAttribute('aria-current','true');row.dataset.selectedResponse=reply.id;}d.host.append(row);}}
+    if(parent)d.host.append(interactionButton('Back to '+interactionPresentation(this.c.workspace,parent).label,()=>d.revealInteraction(parent.id),'discussion-text-action'));
     this.application.actions(r);
     if(r.status==='active'&&r.authorId===d.actor())d.actionGroup('Manage',[interactionButton('Edit',()=>this.compose(r.action,r)),interactionButton('Withdraw',()=>{if(confirm('Withdraw this interaction?'))d.save({...r,status:'withdrawn'},r);})]);
-    d.draw();d.positionPopover();
+    d.draw();d.positionPopover();if(selectedResponse)d.host.querySelector('[data-selected-response]')?.focus({preventScroll:true});
   }
-  row(r){const button=interactionButton('',()=>this.d.open(r.id),'discussion-list-item');button.dataset.entry=r.id;button.append(interactionEl('strong',`${r.kind==='interaction'?interactionLabel(r):DISCUSSION_LABELS[r.action]||'Conversation'} · ${this.d.name(r.authorId)}`),interactionEl('span',r.body||r.targetLabel));return button;}
-  list(target=null,records=null){
+  row(r){const d=this.d,p=interactionPresentation(this.c.workspace,r,{authorName:id=>d.name(id)}),button=interactionButton('',()=>d.revealInteraction(r.id),'discussion-list-item');button.dataset.entry=r.id;button.append(interactionEl('strong',`${p.label} · ${d.name(r.authorId)}${r.status==='withdrawn'?' · Withdrawn':''}`),interactionEl('small',r.targetLabel),interactionEl('p',p.preview));return button;}
+  list(target=null,records=null,{category=null,history=false}={}){
     const d=this.d;if(!d.canLeave())return;d.target=target;d.shell({compare:'Compare interactions',inquiry:'Inquiry interactions',argument:'Argument interactions'}[d.mode()]);
-    const entries=d.recentConversations((records||d.entries()).filter(r=>['interaction','counterpart','inquiry'].includes(r.kind)&&r.action!=='respond'&&d.entryMode(r)===d.mode()&&(records||!target||stableJSON(conversationAnchor(d.allEntries(),r))===stableJSON(target))));
-    if(!entries.length)d.host.append(interactionEl('p','Select another person’s statement or connection to begin.'));for(const r of entries)d.host.append(this.row(r));d.positionPopover();
+    d.groupTarget=target;d.groupCategory=category;
+    const allowed=records&&new Set(records.map(r=>r.id)),matches=r=>(!allowed||allowed.has(r.id))&&(!target||records||stableJSON(conversationAnchor(d.allEntries(),r))===stableJSON(target))&&(!category||d.attachmentCategory(r)===category);
+    const entries=conversationThreads(d.allEntries(),{mode:d.mode(),history}).filter(matches);
+    if(history)d.host.append(interactionEl('h3','Withdrawn interactions'));
+    if(!entries.length)d.host.append(interactionEl('p',history?'No withdrawn interactions.':'No interactions here yet. Select another person’s statement or connection to begin.'));for(const r of entries)d.host.append(this.row(r));
+    if(!records){const earlier=conversationThreads(d.allEntries(),{mode:d.mode(),history:!history}).filter(matches);if(earlier.length||history)d.host.append(interactionButton(history?'Back to active interactions':'Withdrawn interactions',()=>this.list(target,null,{category,history:!history}),'discussion-text-action'));}
+    d.draw();d.positionPopover();
   }
 }

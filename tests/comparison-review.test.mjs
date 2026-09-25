@@ -15,7 +15,7 @@ const sameOwnerWorkspace=structuredClone(workspace);sameOwnerWorkspace.maps[1].o
 const single=recordComparison(sameOwnerWorkspace,input,null,a.ownerId);
 assert.equal(comparisonConsensus(sameOwnerWorkspace,single).label,'Your comparison');
 
-const element=()=>({value:'',textContent:'',dataset:{},children:[],append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;}});
+const element=()=>({value:'',textContent:'',dataset:{},children:[],querySelectorAll(){return ['question-status','shared-question','answer-status','comparison-notes','elicitation-response','divergence-confirmation'].map(id=>document.getElementById(id));},append(...children){this.children.push(...children);},replaceChildren(...children){this.children=children;}});
 const elements=new Map();
 globalThis.document={getElementById(id){if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:element,body:{classList:{remove(){}}}};
 const controller={workspace,account:{actor:{id:b.ownerId}},editingRecord:shared.id,activeMapId:b.id,comparisonDirty:false,mode:'compare',activeMap(){return this.workspace.maps.find(map=>map.id===this.activeMapId);},loadComparisonForm:WorkspaceController.prototype.loadComparisonForm,renderElicitation:WorkspaceController.prototype.renderElicitation,populateMaps(){},renderComparison(){},participation:{refresh(){}}};
@@ -35,7 +35,9 @@ const clarificationB=recordComparison(workspace,{...input,answerStatus:'divergen
 controller.workspace={...workspace,comparisons:[clarificationB]};controller.loadComparisonForm(clarificationB);
 assert.equal(elements.get('elicitation-response').value,'B answers the proposed question');
 assert.equal(elements.get('elicitation-status').textContent,'Responses ready for both people to review');
-assert(!elements.get('divergence-confirmation').disabled,'Confirmation is available after both responses');
+assert(elements.get('divergence-confirmation').disabled,'Earlier confirmation is historical, not an active authoring choice');
+assert(elements.get('record-comparison').hidden);
+assert(elements.get('comparison-notes').disabled);
 assert(textOf(elements.get('elicitation-responses')).includes('A explains the position'));
 elements.get('shared-question').value='A different question';controller.renderElicitation(clarificationB);
 assert(elements.get('divergence-confirmation').disabled,'A changed question cannot retain a confirmation');
