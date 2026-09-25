@@ -16,13 +16,13 @@ export class NodeActions{
     }
     if(this.detail==='child'){
       const title=document.createElement('strong');title.textContent=`Add beneath “${n.title}”`;
-      this.host.append(title,this.button('Create statement',()=>this.actions.addChild()));
+      this.host.append(title,this.button('Create node',()=>this.actions.addChild()));
       if(n.parent!==null)this.host.append(this.button('Create reason',()=>this.actions.addChild(true)));
       this.host.append(this.button('Back',()=>this.show(n)));return;
     }
     const canEdit=this.actions.canEdit?.()!==false;
     if(canEdit){
-      this.host.append(this.button('Edit',()=>this.actions.edit()),this.button('Add statement',()=>this.show(n,'child')));
+      this.host.append(this.button('Edit',()=>this.actions.edit()),this.button('Add node',()=>this.show(n,'child')));
       if(n.parent!==null)this.host.append(this.button('Create reason',()=>this.actions.addChild(true)));
       if(n.parent!==null)this.host.append(this.button('Connect',()=>this.actions.connect()));
     }
@@ -30,6 +30,7 @@ export class NodeActions{
     if(this.actions.definitions)this.host.append(this.button('Definitions & standards',()=>this.actions.definitions(n.id)));
     if(n.parent!==null)this.host.append(this.button('Compare',()=>this.actions.compare(n.id)));
     if(canEdit&&n.parent!==null){if(this.detail==='more')this.host.append(this.button('Delete branch',()=>this.actions.remove()));this.host.append(this.button(this.detail==='more'?'Less':'More',()=>this.show(n,this.detail==='more'?null:'more')));}
+    this.host.append(this.button('Close',()=>{this.hide();this.actions.focusNode?.();}));
   }
   position(point,camera){
     if(this.host.hidden||!point)return;

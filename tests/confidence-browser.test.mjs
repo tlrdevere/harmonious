@@ -36,6 +36,7 @@ try{
   const ownCard=p=>p.locator('#compare-canvas .node').filter({has:p.locator('.node-title').filter({hasText:'Alice position'})});
   await a.goto(origin+'/#map='+aMap.id);await a.locator('#editor-main').waitFor();await a.locator('#all').click();await a.locator('#cards .node-main').filter({hasText:'Alice position'}).click();
   assert.equal(await a.locator('#confidence').inputValue(),'73','An arbitrary valid imported score survives editor loading');
+  await a.locator('.on-map-actions').getByRole('button',{name:'Edit',exact:true}).click();
   await a.locator('#summary').fill('More detail without changing confidence.');await a.locator('#edit-form button[type=submit]').click();await saved(a);assert.equal(await score(),73);
   await a.locator('.on-map-actions').getByRole('button',{name:'My confidence',exact:true}).click();let form=a.locator('.on-map-actions .confidence-form');
   await form.getByRole('spinbutton').fill('101');await form.getByRole('button',{name:'Save confidence',exact:true}).click();assert.equal(await form.getByRole('spinbutton').evaluate(e=>e.checkValidity()),false);assert.equal(await score(),73);

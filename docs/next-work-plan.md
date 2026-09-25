@@ -2,6 +2,8 @@
 
 ## Current priorities — September 25, 2026
 
+The owner's follow-up prioritizes **connection drawing**, rather than replacing radial node positioning. [The UI follow-up review](ui-followup-2026-09-25.md) records node wording, Inquiry-first ordering, map-editor cleanup and the two-browser investigation. Next, compare a consistent routing policy across all four views, retaining clear branch structure, card avoidance and one edge per pair. The exact live browser disparity remains unconfirmed; screenshots are useful if it recurs. The cross-depth counterpart placement study below remains a separate, lower-priority design decision.
+
 The consistency increment of the [Compare, Inquiry, and Argument plan](mode-consistency-plan.md) is live: shared interaction summaries and counts, consistent opening and search, and retirement of old authoring routes. All 46 release checks and public asset/access verification passed; [deployment status](deployment-status.md) records Worker version 42. Next, complete the owner's mode-consistency walkthrough and review the representative counterpart-placement study before adopting a different displacement policy. Radial positioning is unchanged. The [v4 interaction grammar](interaction-grammar-v4.md) defines the current actions; older reason/challenge, reflection/outcome, and standalone adoption workflows below are historical context, not the current acceptance checklist.
 
 ## Earlier priorities — September 22, 2026 (UTC)

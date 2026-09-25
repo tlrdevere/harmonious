@@ -40,7 +40,7 @@ const targetView=projectReasoning(wideIndex,{anchor,focusId:'sibling-199'});asse
 assert.equal(searchReasoning(wideIndex,{query:'sibling-199'}).results[0].entry.id,'sibling-199','Search reaches records outside the rendered budget');
 assert.equal(searchReasoning(index,{filter:'open'}).results.length,1);
 assert.equal(searchReasoning(index,{query:'BOB reasoning connection',authorName:id=>id==='bob'?'Bob':'Alice'}).results[0].entry.id,'inference');
-const classified=searchReasoning(index,{query:'statement'}).results.find(r=>r.entry.id==='statement');assert.equal(classified.targetType,'Reason statement');
+const classified=searchReasoning(index,{query:'statement'}).results.find(r=>r.entry.id==='statement');assert.equal(classified.targetType,'Reason node');
 assert(searchReasoning(index,{query:'other'}).results.some(r=>r.anchor.nodeId==='other-position'),'Search spans all source groups in the current Comparison');
 const question=record('question','inquiry','question',anchor),questionView=projectReasoning(buildReasoningIndex([question]),{anchor,focusId:'question'});assert.equal(questionView.entries[0].id,'question','Contextual search results can be shown without pretending they are arguments');
 const questionDraft=projectReasoning(buildReasoningIndex([question]),{anchor,pinnedIds:['question'],collapsed:new Set([reasoningTargetKey(anchor)])});assert.equal(questionDraft.entries[0].id,'question','An unfinished contextual draft pins its target even when it is not an ordinary argument or focused result');assert.equal(questionDraft.hiddenByFold,0);

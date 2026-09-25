@@ -69,7 +69,7 @@ function accessibleSource(workspace,target){
   if(target.type==='node'){const node=nodes.find(candidate=>candidate.id===target.nodeId);return node?{map,label:node.title}:null;}
   if(target.type==='edge'){
     const edge=graphEdges(nodes,map.relations||[]).find(candidate=>candidate.id===target.edgeId);
-    return edge?{map,label:`${nodes.find(node=>node.id===edge.from)?.title||'Statement'} → ${nodes.find(node=>node.id===edge.to)?.title||'Statement'}`}:null;
+    return edge?{map,label:`${nodes.find(node=>node.id===edge.from)?.title||'Node'} → ${nodes.find(node=>node.id===edge.to)?.title||'Node'}`}:null;
   }
   return null;
 }

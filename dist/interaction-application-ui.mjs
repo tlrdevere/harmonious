@@ -16,25 +16,25 @@ export class InteractionApplicationUI{
     const form=applicationEl('form','','interaction-application-form'),map=preview.destination,operationId='application-'+crypto.randomUUID();
     form.append(applicationEl('p',`Your map: ${map.name}`,'discussion-byline'));
     const source=preview.source.item,edge=preview.origin.target.type==='edge';
-    form.append(applicationEl('p',preview.operation==='revise'?'Only your wording will change.':edge&&preview.operation==='copy'?'This creates independent copies of both statements and their connection.':preview.operation==='reason'&&edge?'This adds a statement to your map. The offer remains attached to the original connection.':'This creates an independent statement.','field-help'));
+    form.append(applicationEl('p',preview.operation==='revise'?'Only your wording will change.':edge&&preview.operation==='copy'?'This creates independent copies of both nodes and their connection.':preview.operation==='reason'&&edge?'This adds a node to your map. The offer remains attached to the original connection.':'This creates an independent node.','field-help'));
     const field=(text,input,name)=>{input.id='application-'+name;const l=applicationEl('label',text);l.htmlFor=input.id;form.append(l,input);return input;};
-    const mode=applicationEl('select');mode.append(new Option('Create a statement','copy'),new Option('Use an existing statement','existing'));
+    const mode=applicationEl('select');mode.append(new Option('Create a node','copy'),new Option('Use an existing node','existing'));
     if(preview.operation!=='revise'&&!(edge&&preview.operation==='copy'))field('How to add it',mode,'mode');
     const parent=applicationEl('select'),existing=applicationEl('select');for(const node of map.nodes){parent.append(new Option(node.title,node.id));if(node.parent!==null)existing.append(new Option(node.title,node.id));}
     const placementSource=preview.operation==='reason'?preview.reference:!edge?preview.source:null;if(placementSource)parent.value=frameOf(placementSource.map.nodes,placementSource.item.id);
-    field('Place under',parent,'parent');field('Existing statement',existing,'existing');
+    field('Place under',parent,'parent');field('Existing node',existing,'existing');
     const seed=preview.operation==='reason'?preview.reference?.item:source;
     const title=applicationEl('input'),summary=applicationEl('textarea'),details=applicationEl('textarea');title.maxLength=200;summary.maxLength=10000;details.maxLength=10000;summary.rows=3;details.rows=3;
     title.value=preview.operation==='revise'&&preview.origin.action==='propose_alternative'?(preview.origin.body||preview.origin.interaction.otherText||source.title):seed?.title||preview.origin.body||preview.origin.interaction.otherText||'';
     summary.value=preview.origin.action==='request_explanation'?(preview.record.body||seed?.summary||''):seed?.summary||'';details.value=edge&&preview.operation==='revise'?(preview.origin.action==='request_explanation'?preview.record.body:preview.origin.body||preview.origin.interaction.otherText||source.note||''):seed?.details||'';
     if(preview.operation==='reason'&&preview.origin.action==='request_reason')title.value=seed?.title||preview.record.body||preview.record.interaction.otherText||'';
     if(title.value.length>200){summary.value=[title.value,summary.value].filter(Boolean).join('\n\n');title.value=title.value.slice(0,200).trimEnd();}
-    field('Statement',title,'title');field('Explanation (optional)',summary,'summary');field(edge&&preview.operation==='revise'?'Connection wording':'More detail (optional)',details,'details');
+    field('Node title',title,'title');field('Explanation (optional)',summary,'summary');field(edge&&preview.operation==='revise'?'Connection wording':'More detail (optional)',details,'details');
     const link=applicationEl('input');link.type='checkbox';link.id='application-counterpart';const linkLabel=applicationEl('label','','interaction-choice');linkLabel.append(link,applicationEl('span','Link as counterparts'));if(preview.operation==='copy'&&!edge)form.append(linkLabel);
     const reasonTitle=applicationEl('textarea');reasonTitle.maxLength=200;reasonTitle.rows=2;
     if(preview.operation==='copy'&&!edge&&preview.origin.interaction.options.includes('own_reason')){
-      if(preview.reference)form.append(applicationEl('p',`Supporting reason: ${preview.reference.item.title}${preview.reference.map.id===map.id?' (use your existing statement)':' (add an independent copy)'}`,'field-help'));
-      else{reasonTitle.value=preview.origin.body;field('Your reason statement (optional)',reasonTitle,'own-reason');}
+      if(preview.reference)form.append(applicationEl('p',`Supporting reason: ${preview.reference.item.title}${preview.reference.map.id===map.id?' (use your existing node)':' (add an independent copy)'}`,'field-help'));
+      else{reasonTitle.value=preview.origin.body;field('Your reason node (optional)',reasonTitle,'own-reason');}
     }
     const show=(input,visible)=>{input.hidden=!visible;form.querySelector(`label[for="${input.id}"]`)?.toggleAttribute('hidden',!visible);};
     const sync=()=>{const simple=!(edge&&preview.operation==='copy'),copy=mode.value==='copy',revise=preview.operation==='revise';show(parent,!revise&&simple&&copy);show(existing,!revise&&simple&&!copy);show(title,simple&&!(revise&&edge)&&(revise||copy));show(summary,simple&&(!edge||preview.operation==='reason')&&(revise||copy));show(details,simple&&(revise||copy));title.required=!title.hidden;d.positionPopover();};mode.onchange=()=>{d.dirty=true;sync();};sync();

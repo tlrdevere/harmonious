@@ -1,15 +1,15 @@
 # Inquiry mode
 
-Implemented on `redesign/node-interactions`, starting from the protected working baseline. The owner subsequently authorized live deployment; the redesigned modes are live in Worker version 41. See [deployment status](deployment-status.md).
+Implemented on `redesign/node-interactions`, starting from the protected working baseline. The owner subsequently authorized live deployment; see [deployment status](deployment-status.md) for the current release.
 
 The first foundation deliberately left Inquiry's actions unassigned while the owner supplied the interaction rules. That placeholder has now been replaced by the agreed [interaction grammar v4](interaction-grammar-v4.md). The linked document is the current specification and implementation record.
 
 ## Current behavior
 
-- Map creation/editing retains its Maps destination. The shared canvas has peer **Compare / Inquiry / Argument** modes.
-- Inquiry offers **Request reason**, **Request explanation**, **Propose alternative**, and **Offer reason** on another participant's ordinary statement or connection.
+- Map creation/editing retains its Maps destination. The shared canvas has peer **Inquiry / Compare / Argument** modes, in that left-to-right order.
+- Inquiry offers **Request reason**, **Request explanation**, **Propose alternative**, and **Offer reason** on another participant's ordinary node or connection.
 - Menu choices follow the interaction and target. Comments and Point to a node are optional. Other opens a free-form field wherever offered.
-- A reference is one node from a map both participants can access. A user can instead create a statement on their own shared map; the form makes that map change explicit.
+- A reference is one node from a map both participants can access. A user can instead create a node on their own shared map; the form makes that map change explicit.
 - The intended recipient can Respond within Inquiry. Requests offer Answer / I don't know / Other; proposals and offers offer Accept / Reject / Other. Response outcomes are mutually exclusive.
 - Compare records Endorse / Disagree / No position. Argument provides context-sensitive Dispute reasoning. Inquiry does not offer critique controls.
 - Recording or accepting an interaction does not automatically revise, copy, or merge map content. A separate reviewed application can add a reason or revise an explanation on the owner's map. Reasons offered about edges remain attached interactions; there is no invented node-to-edge inference.
@@ -27,7 +27,7 @@ The earlier foundation's statement that there were no persisted interaction fiel
 
 The portable exporter creates `review/Harmonious-interactions-preview.html`, opening the example comparison in Inquiry. It uses local sample/offline data. The existing working site remains at the release documented in [deployment status](deployment-status.md).
 
-`tests/interaction-grammar-browser.test.mjs` replaces blank-menu expectations with requests/offers, recipient responses, parked drafts, optional references and newly authored referenced statements, reviewed map changes, and mobile layout. Grammar/account/database tests cover filtering, internal Signals, ownership, source freshness, and shared-reference privacy. Map, counterpart, and confidence browser suites remain active.
+`tests/interaction-grammar-browser.test.mjs` replaces blank-menu expectations with requests/offers, recipient responses, parked drafts, optional references and newly authored referenced nodes, reviewed map changes, and mobile layout. Grammar/account/database tests cover filtering, internal Signals, ownership, source freshness, and shared-reference privacy. Map, counterpart, and confidence browser suites remain active.
 
 The old `inquiry-browser.test.mjs` is explicitly listed under `harmoniousLegacyBrowserTests` in `package.json`: its expected empty menu is no longer intended behavior. The [grammar implementation record](interaction-grammar-v4.md) describes the other intentional browser replacements. All 44 active release checks passed on September 22, 2026; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`.
 

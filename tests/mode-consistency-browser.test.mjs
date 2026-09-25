@@ -136,6 +136,7 @@ try{
   };
 
   await load(a);await load(b);
+  assert.deepEqual(await a.locator('[aria-label="Conversation mode"] button:visible').allTextContents(),['Inquiry','Compare','Argument'],'Shared mode buttons follow the intended Inquiry, Compare, Argument order');
   await mode(a,'argument');await node(a,'Daytime meeting');
   assert(await button(a,'View 1 attached interaction').isVisible(),'A response does not inflate the source attachment count');
   await click(a,'View 1 attached interaction');

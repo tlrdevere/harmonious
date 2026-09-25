@@ -6,12 +6,14 @@ Updated September 25, 2026. Compare, Inquiry, and Argument use the same saved co
 
 | Mode | Use it to |
 | --- | --- |
-| Map / Create | Write and edit your own statements, create reasons, and add typed connections. |
-| Compare | Record Endorse, Disagree, or No position toward another person's statement or connection. Find, link, or request a counterpart. |
+| Map / Create | Write and edit your own nodes, create reasons, and add typed connections. |
 | Inquiry | Request reason, Request explanation, Propose alternative, or Offer reason. |
-| Argument | Dispute reasoning, choosing the grounds relevant to a statement's frame or a connection's type. |
+| Compare | Record Endorse, Disagree, or No position toward another person's node or connection. Find, link, or request a counterpart. |
+| Argument | Dispute reasoning, choosing the grounds relevant to a node's frame or a connection's type. |
 
-Select a source node or connection to see its available actions. The three frame headings are containers. A cited statement offers additional source-related dispute grounds. Other opens free text; comments and a single node reference are optional. A dispute needs at least one ground. Internal Signals tags are never shown.
+Select a source node or connection to see its available actions. The three frame headings are containers. A cited node offers additional source-related dispute grounds. Other opens free text; comments and a single node reference are optional. A dispute needs at least one ground. Internal Signals tags are never shown.
+
+In Map/Create, selecting a node opens its on-map menu. Edit opens the optional detail panel; Close returns focus to the node. Node footers omit redundant type and author labels. Confidence and expansion/add controls remain available, and signed-in edits use the global autosave indicator.
 
 ## Read and find interactions
 
@@ -33,9 +35,9 @@ Unfinished forms are parked when you switch modes and restored when you return. 
 
 ## Meaning, confidence, and counterparts
 
-Definitions and standards are maintained centrally in Map Library and invoked at relevant sources. Confidence belongs to the statement's author and can be assessed or cleared without asserting agreement. An independent copy does not inherit another author's confidence.
+Definitions and standards are maintained centrally in Map Library and invoked at relevant sources. Confidence belongs to the node's author and can be assessed or cleared without asserting agreement. An independent copy does not inherit another author's confidence.
 
-Counterpart links identify comparable statements separately from stances. Request counterpart is available in Compare for your own unlinked ordinary node. The other person can create or choose their own counterpart. Empty spots remain visible; a linked node does not offer another counterpart request.
+Counterpart links identify comparable nodes separately from stances. Request counterpart is available in Compare for your own unlinked ordinary node. The other person can create or choose their own counterpart. Empty spots remain visible; a linked node does not offer another counterpart request.
 
 ## Earlier records
 

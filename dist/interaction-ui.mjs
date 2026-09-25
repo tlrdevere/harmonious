@@ -17,7 +17,7 @@ export class InteractionUI{
   sourceActions(){
     const d=this.d,ws=this.c.workspace,target=d.target,source=discussionSource(ws,target);
     d.shell(discussionTargetLabel(ws,target));
-    if(!source){d.host.append(interactionEl('p','Select a statement or connection.'));return;}
+    if(!source){d.host.append(interactionEl('p','Select a node or connection.'));return;}
     const own=source.map.ownerId===d.actor(),ordinary=target.type==='edge'||source.item.parent!==null;
     d.host.append(interactionEl('p',d.name(source.map.ownerId),'discussion-byline'));
     const wording=[source.item.summary,source.item.details,source.item.note].filter(Boolean).join('\n');
@@ -26,9 +26,9 @@ export class InteractionUI{
     if(ordinary&&!own){
       const actions=interactionActions(d.mode()).filter(action=>action.id!=='dispute'||interactionOptions(ws,target,'dispute').length>0);
       d.actionGroup({compare:'Your position',inquiry:'Ask or offer',argument:'Critique'}[d.mode()],actions.map(action=>interactionButton(action.label,()=>this.compose(action.id))));
-      if(d.mode()==='argument'&&!actions.length)d.host.append(interactionEl('p','This is an organizational connection. Select a statement or a typed reasoning connection to dispute.','field-help'));
+      if(d.mode()==='argument'&&!actions.length)d.host.append(interactionEl('p','This is an organizational connection. Select a node or a typed reasoning connection to dispute.','field-help'));
     }
-    if(own&&target.type==='node'&&ordinary)d.actionGroup('Your statement',[interactionButton('Edit in my map',()=>{if(d.canLeave())this.c.library.openMap(source.map.id,source.item.id);}),interactionButton('My confidence',()=>d.confidence())]);
+    if(own&&target.type==='node'&&ordinary)d.actionGroup('Your node',[interactionButton('Edit in my map',()=>{if(d.canLeave())this.c.library.openMap(source.map.id,source.item.id);}),interactionButton('My confidence',()=>d.confidence())]);
     const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));
     const definitions=[];if(context)definitions.push(interactionButton('View definitions & standards',()=>d.openContexts(target)));if(own&&ordinary)definitions.push(interactionButton('Use definitions & standards',()=>this.c.library.definitions.choose(target)));d.actionGroup('Meaning',definitions);
     if(d.mode()==='compare'&&target.type==='node'&&ordinary){
@@ -60,15 +60,15 @@ export class InteractionUI{
     const comment=interactionEl('textarea');comment.rows=3;comment.maxLength=10000;comment.value=old?.body||'';interactionField(form,action==='propose_alternative'?'Proposed wording or comment (optional)':'Comment (optional)',comment,'interaction-comment');
     const refs=interactionReferenceChoices(ws,d.thread()?.id),reference=interactionEl('select');reference.append(new Option('No node reference',''));
     for(const r of refs)reference.append(new Option(`${r.mapName} · ${r.label}`,JSON.stringify(r.target)));
-    reference.append(new Option('Create a statement in my map…','new'));
+    reference.append(new Option('Create a node in my map…','new'));
     const oldReference=old?.interaction.reference?.target;if(oldReference)reference.value=JSON.stringify(oldReference);
     const referenceWrap=interactionEl('details','','interaction-reference');referenceWrap.append(interactionEl('summary','Point to a node (optional)'));interactionField(referenceWrap,'One node both people can access',reference,'interaction-reference');
     const newFields=interactionEl('div'),mapSelect=interactionEl('select'),frameSelect=interactionEl('select'),nodeTitle=interactionEl('input');nodeTitle.maxLength=200;
     const availableMaps=ws.maps.filter(m=>!m.unavailable&&m.ownerId===d.actor()&&m.visibility==='shared');for(const m of availableMaps)mapSelect.append(new Option(m.name,m.id));
     const preferred=availableMaps.find(m=>[d.thread()?.aMapId,d.thread()?.bMapId].includes(m.id));if(preferred)mapSelect.value=preferred.id;
     for(const [id,label]of Object.entries(interactionParentLabels))frameSelect.append(new Option(label,id));
-    interactionField(newFields,'Your shared map',mapSelect,'interaction-new-map');interactionField(newFields,'Frame',frameSelect,'interaction-new-frame');interactionField(newFields,'New statement',nodeTitle,'interaction-new-title');
-    newFields.append(interactionEl('p','Saving creates this statement in your map and references it here.','field-help'));referenceWrap.append(newFields);form.append(referenceWrap);
+    interactionField(newFields,'Your shared map',mapSelect,'interaction-new-map');interactionField(newFields,'Frame',frameSelect,'interaction-new-frame');interactionField(newFields,'New node',nodeTitle,'interaction-new-title');
+    newFields.append(interactionEl('p','Saving creates this node in your map and references it here.','field-help'));referenceWrap.append(newFields);form.append(referenceWrap);
     const syncReference=()=>{newFields.hidden=reference.value!=='new';nodeTitle.required=!newFields.hidden;mapSelect.required=!newFields.hidden;d.positionPopover();};reference.onchange=()=>{d.dirty=true;syncReference();};syncReference();if(oldReference)referenceWrap.open=true;
     const submit=interactionEl('button',old?'Save changes':action==='respond'?'Send response':mode==='compare'?'Record position':'Send '+(action==='dispute'?'dispute':action==='offer_reason'?'offer':action==='propose_alternative'?'proposal':'request'),'primary');submit.type='submit';form.append(submit);d.host.append(form);
     form.onsubmit=async e=>{e.preventDefault();if(d.saving)return;d.saving=true;d.dirty=true;d.host.inert=true;
@@ -87,11 +87,11 @@ export class InteractionUI{
             throw Error('This interaction was edited in another session. Your draft is still here. Copy it before closing and reopening the latest interaction.');
           }
           if(stableJSON(discussionSourceSnapshot(workspace,target))!==stableJSON(reviewed))throw Error('The source changed. Close this form and review it before sending. Your draft is still here.');
-          if(input.interaction.reference&&stableJSON(discussionSourceSnapshot(ws,input.interaction.reference))!==stableJSON(discussionSourceSnapshot(workspace,input.interaction.reference)))throw Error('The referenced statement changed. Reopen it before sending. Your draft is still here.');
+          if(input.interaction.reference&&stableJSON(discussionSourceSnapshot(ws,input.interaction.reference))!==stableJSON(discussionSourceSnapshot(workspace,input.interaction.reference)))throw Error('The referenced node changed. Reopen it before sending. Your draft is still here.');
           const candidate=structuredClone(workspace);
           if(reference.value==='new'){
             const map=candidate.maps.find(m=>m.id===mapSelect.value&&m.ownerId===d.actor()&&m.visibility==='shared'&&!m.unavailable);if(!map)throw Error('Choose one of your shared maps.');
-            const title=nodeTitle.value.trim();if(!title)throw Error('Write the statement you want to add.');
+            const title=nodeTitle.value.trim();if(!title)throw Error('Enter a title for the node you want to add.');
             map.nodes.push({id:nodeId,parent:frameSelect.value,title,summary:'',details:'',kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:'',confidence:null});map.revision++;map.updatedAt=new Date().toISOString();synchronizeIdeas(candidate,map);input.interaction.reference={type:'node',mapId:map.id,nodeId};
           }
           const record=makeDiscussion(candidate,input,d.actor(),old);candidate.discussions=candidate.discussions.filter(r=>r.id!==record.id);candidate.discussions.push(record);validateWorkspace(candidate);if(old){stagedEdit=structuredClone(record);stagedDraft=draft;}return {workspace:candidate,record};
@@ -111,7 +111,7 @@ export class InteractionUI{
     const choices=optionsForClassification(r.interaction.classification,r.action),labels=new Map(choices.map(o=>[o.id,o.label]));
     for(const option of r.interaction.options)d.host.append(interactionEl('p',labels.get(option)||option.replaceAll('_',' '),'interaction-selected'));
     if(r.interaction.otherText)d.host.append(interactionEl('p',r.interaction.otherText,'discussion-body'));if(r.body)d.host.append(interactionEl('p',r.body,'discussion-body'));
-    if(r.interaction.reference){const ref=r.interaction.reference,accessible=interactionReferenceChoices(this.c.workspace,r.comparisonId).some(choice=>stableJSON(choice.target)===stableJSON(ref.target));const box=interactionEl('section','','interaction-reference-preview');box.append(interactionEl('strong','Referenced statement'));if(accessible)box.append(interactionEl('p',ref.snapshot.label),interactionButton('Show referenced node',()=>{if(d.canLeave())this.c.library.openSource(ref.target.mapId,ref.target.nodeId);}));else box.append(interactionEl('p','Reference no longer available','field-help'));d.host.append(box);}
+    if(r.interaction.reference){const ref=r.interaction.reference,accessible=interactionReferenceChoices(this.c.workspace,r.comparisonId).some(choice=>stableJSON(choice.target)===stableJSON(ref.target));const box=interactionEl('section','','interaction-reference-preview');box.append(interactionEl('strong','Referenced node'));if(accessible)box.append(interactionEl('p',ref.snapshot.label),interactionButton('Show referenced node',()=>{if(d.canLeave())this.c.library.openSource(ref.target.mapId,ref.target.nodeId);}));else box.append(interactionEl('p','Reference no longer available','field-help'));d.host.append(box);}
     const health=discussionHealth(this.c.workspace,r);if(['changed','unavailable'].includes(health.state))d.host.append(interactionEl('p',health.label,'review-warning'));
     if(r.status==='active'&&r.action!=='respond'&&['request_reason','request_explanation','propose_alternative','offer_reason','dispute'].includes(r.action)&&r.interaction.recipientId===d.actor())d.actionGroup('Your response',[interactionButton('Respond',()=>this.compose('respond'))]);
     if(r.status==='withdrawn')d.host.append(interactionEl('p','Withdrawn','discussion-state'));
@@ -129,7 +129,7 @@ export class InteractionUI{
     const allowed=records&&new Set(records.map(r=>r.id)),matches=r=>(!allowed||allowed.has(r.id))&&(!target||records||stableJSON(conversationAnchor(d.allEntries(),r))===stableJSON(target))&&(!category||d.attachmentCategory(r)===category);
     const entries=conversationThreads(d.allEntries(),{mode:d.mode(),history}).filter(matches);
     if(history)d.host.append(interactionEl('h3','Withdrawn interactions'));
-    if(!entries.length)d.host.append(interactionEl('p',history?'No withdrawn interactions.':'No interactions here yet. Select another person’s statement or connection to begin.'));for(const r of entries)d.host.append(this.row(r));
+    if(!entries.length)d.host.append(interactionEl('p',history?'No withdrawn interactions.':'No interactions here yet. Select another person’s node or connection to begin.'));for(const r of entries)d.host.append(this.row(r));
     if(!records){const earlier=conversationThreads(d.allEntries(),{mode:d.mode(),history:!history}).filter(matches);if(earlier.length||history)d.host.append(interactionButton(history?'Back to active interactions':'Withdrawn interactions',()=>this.list(target,null,{category,history:!history}),'discussion-text-action'));}
     d.draw();d.positionPopover();
   }

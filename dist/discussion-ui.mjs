@@ -150,7 +150,7 @@ export class DiscussionUI{
     const reasoning=kind==='argument'&&action==='reason',argumentReply=kind==='reply'&&(old?.layer||saveExtra.layer)==='arguments';
     const form=discussEl('form'),fieldLabel=kind==='context'?'Author’s definitions and standards':kind==='inquiry'?'Your question':reasoning?'Your reason':kind==='argument'?'Your challenge':['counterpart','adoption'].includes(kind)?'Optional note':'Description';const label=discussEl('label',fieldLabel);label.htmlFor='discussion-body';
     let options=kind==='inquiry'?['question','explain','example','evidence','change_mind']:kind==='argument'&&!reasoning?['challenge','inference','counterexample','fallacy']:kind==='relationship'?['agreement','disagreement']:null;
-    if(reasoning||kind==='argument'||argumentReply)form.append(discussEl('p',target.type==='inference'?'Addresses the reasoning connection, not the statement itself.':`Addresses: ${discussionTargetLabel(this.c.workspace,target)}`,'discussion-target-note'));
+    if(reasoning||kind==='argument'||argumentReply)form.append(discussEl('p',target.type==='inference'?'Addresses the reasoning connection, not the node itself.':`Addresses: ${discussionTargetLabel(this.c.workspace,target)}`,'discussion-target-note'));
     if(old&&options&&!options.includes(action))options=[...options,action];
     const select=discussEl('select');select.id='discussion-action';select.setAttribute('aria-label','Contribution type');if(options){for(const value of options){const o=discussEl('option',value==='change_mind'?'What would change your mind?':contributionLabel({kind,action:value}));o.value=value;select.append(o);}select.value=action;if(kind!=='argument')form.append(select);}
     const body=discussEl('textarea');body.id='discussion-body';body.rows=5;body.maxLength=10000;body.value=old?.body||'';body.required=!['counterpart','adoption','relationship'].includes(kind);
@@ -338,8 +338,8 @@ export class DiscussionUI{
     }
     this.counterparts.draw();
     this.reasoning.draw();this.search?.sync();
-    canvas.hint.textContent=this.mode()==='inquiry'?'Select another person’s statement or connection to ask or offer something.':this.mode()==='compare'?'Select another person’s statement or connection to record your position.':'Select another person’s statement or reasoning connection to dispute it.';
-    document.querySelector('.comparison-canvas-footer').textContent=this.mode()==='inquiry'?'Ask, clarify, or offer · Drag empty space to pan · Scroll to zoom':this.mode()==='compare'?'Record your position · Drag empty space to pan · Scroll to zoom':'Dispute a statement or connection · Drag empty space to pan · Scroll to zoom';
+    canvas.hint.textContent=this.mode()==='inquiry'?'Select another person’s node or connection to ask or offer something.':this.mode()==='compare'?'Select another person’s node or connection to record your position.':'Select another person’s node or reasoning connection to dispute it.';
+    document.querySelector('.comparison-canvas-footer').textContent=this.mode()==='inquiry'?'Ask, clarify, or offer · Drag empty space to pan · Scroll to zoom':this.mode()==='compare'?'Record your position · Drag empty space to pan · Scroll to zoom':'Dispute a node or connection · Drag empty space to pan · Scroll to zoom';
     canvas.linkStatus.textContent=`${conversationThreads(this.allEntries()).length} conversations in this comparison`;
     document.querySelector('.comparison-heading').hidden=!!this.thread();
     discussUI('comparison-form').hidden=!this.c.editingRecord;

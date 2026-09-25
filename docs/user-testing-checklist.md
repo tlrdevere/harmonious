@@ -1,5 +1,13 @@
 # Harmonious: what to check on your next visit
 
+## Current: node wording and map editor
+
+- [ ] Check that menus use node, including creation, references, map-change previews and validation messages. Your own authored wording should be unchanged.
+- [ ] Open your map: the bottom-left Frame/type labels should be absent, with no replacement author name. Confidence and expansion/add buttons should still work.
+- [ ] Select a node: its on-map menu should open. Edit should open the optional panel; Close should return keyboard focus. Saving on-map confidence should keep a closed panel closed.
+- [ ] In a shared comparison, the controls should read Inquiry, Compare, Argument from left to right; each should retain its actions and parked drafts.
+- [ ] If two browsers still show different agreement edges, capture both windows with their address bars and View options. App Refresh retains expansion, while older proposal links can restore different selections. See [the investigation](ui-followup-2026-09-25.md).
+
 ## Current: mode consistency
 
 See [deployment status](deployment-status.md) for publication. Reload both PCs before testing the consistency release.
@@ -18,12 +26,12 @@ See [deployment status](deployment-status.md) for publication. Reload both PCs b
 
 Reload both PCs after the current release, then open a shared comparison. Use fresh maps if you want a clean start.
 
-- [ ] **Map/Create:** add ordinary statements and Create reason. A reason should connect toward its conclusion, with one visible edge per pair. Try reason, cause, addresses and enables connections.
-- [ ] **Compare:** select the other person's statement and record Endorse, Disagree, or No position. It should appear as an attributed attachment without automatically editing either map or requiring a co-sign.
+- [ ] **Map/Create:** add ordinary nodes and Create reason. A reason should connect toward its conclusion, with one visible edge per pair. Try reason, cause, addresses and enables connections.
+- [ ] **Compare:** select the other person's node and record Endorse, Disagree, or No position. It should appear as an attributed attachment without automatically editing either map or requiring a co-sign.
 - [ ] **Inquiry:** try Request reason, Request explanation, Propose alternative, and Offer reason. The other account should receive Respond in Inquiry; the sender should not have that response control.
 - [ ] **Argument:** choose Dispute reasoning on each frame and a typed connection. Check that the available grounds match the source, citation grounds appear only for cited nodes, Other opens a text field, and internal Signals are absent.
-- [ ] Submit a dispute with only one selected ground. Try optional comments and one optional node reference. Choosing an existing reference should not copy it; explicitly creating a reference statement should add it to your own map.
-- [ ] Respond with one outcome. Accept alone should leave maps unchanged. Use a separate Review/Apply action to make an owned copy, add a reason, or revise your own wording. Copied statements should default to their original frame.
+- [ ] Submit a dispute with only one selected ground. Try optional comments and one optional node reference. Choosing an existing reference should not copy it; explicitly creating a reference node should add it to your own map.
+- [ ] Respond with one outcome. Accept alone should leave maps unchanged. Use a separate Review/Apply action to make an owned copy, add a reason, or revise your own wording. Copied nodes should default to their original frame.
 - [ ] Collapse a branch and reopen its attached interactions. Switch modes while drafting and return to the draft. Check that the controls remain usable in a narrower window.
 - [ ] Confirm confidence, central definitions/standards, and counterpart requests still work. A linked node should not offer Request counterpart.
 

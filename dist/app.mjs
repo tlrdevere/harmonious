@@ -17,7 +17,6 @@ function connectedEdges(id){return relations.filter(e=>e.from===id||e.to===id);}
 function svg(tag,attrs={}){const el=document.createElementNS(svgNS,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;}
 function option(value,label){const el=document.createElement('option');el.value=value;el.textContent=label;return el;}
 function allowLeave(){return (!dirty&&!connectionDirty)||confirm('Discard unsaved changes to this node or connection?');}
-function kindLabel(n){return n.parent===null?'Frame':NODE_KINDS[n.kind].label;}
 function relationSentence(edge){return `${nodeById(edge.from).title} ${RELATION_TYPES[edge.type].label.toLowerCase()} ${nodeById(edge.to).title}`;}
 function makeLabel(text,structural=false){const group=svg('g',{class:`edge-label${structural?' structural-label':''}`}),width=text.length*7.2+20;group.append(svg('rect',{x:-width/2,y:-12,width,height:24}));const label=svg('text',{x:0,y:0});label.textContent=text;group.append(label);return group;}
 function makeCard(n){
@@ -26,30 +25,28 @@ function makeCard(n){
   const title=document.createElement('div');title.className='node-title';
   const summary=document.createElement('div');summary.className='node-summary';main.append(title,summary);
   const bottom=document.createElement('div');bottom.className='node-bottom';
-  const meta=document.createElement('span');meta.className='node-meta';
   const toggle=document.createElement('button');toggle.type='button';toggle.className='toggle';
   const sign=document.createElement('span'),count=document.createElement('span');count.className='child-count';toggle.append(sign,count);
-  const leaf=document.createElement('span');leaf.className='leaf';
   const add=document.createElement('button');add.type='button';add.className='node-add-child';add.textContent='+';add.setAttribute('aria-label',`Add a child to “${n.title}”`);add.title='Add child';
   add.onclick=e=>{e.stopPropagation();selectNode(n.id);if(selected===n.id){nodeActions.show(nodeById(n.id),'child');nodeActions.position(positions.get(n.id),camera);}};
   const confidence=document.createElement('span');confidence.className='node-confidence-slot';
-  bottom.append(meta,confidence,toggle,leaf,add);card.append(main,bottom);
+  const controls=document.createElement('div');controls.className='node-controls';controls.append(toggle,add);
+  bottom.append(confidence,controls);card.append(main,bottom);
   main.addEventListener('click',()=>selectNode(n.id));
   toggle.addEventListener('click',()=>{if(expanded.has(n.id)){if(selected&&descendants(n.id).includes(selected)&&!allowLeave())return;expanded.delete(n.id);}else expanded.add(n.id);update({anchor:n.id});});
-  $('cards').append(card);const el={card,main,title,summary,meta,confidence,toggle,sign,count,leaf,add};elements.set(n.id,el);return el;
+  $('cards').append(card);const el={card,main,title,summary,confidence,toggle,sign,count,add};elements.set(n.id,el);return el;
 }
 function syncCards(){
   workspaceController.captureActive();
   const neighbors=new Set(connectedEdges(selected).flatMap(e=>[e.from,e.to]));
   for(const [id,el]of elements)if(!result.positions.has(id)){el.card.remove();elements.delete(id);}
   for(const [id,p]of result.positions){
-    const n=nodeById(id),el=elements.get(id)||makeCard(n),kids=result.children.get(id),links=connectedEdges(id);
+    const n=nodeById(id),el=elements.get(id)||makeCard(n),kids=result.children.get(id);
     el.card.dataset.frame=p.frame;el.card.classList.toggle('root',roots.includes(id));el.card.classList.toggle('selected',selected===id);el.card.classList.toggle('related-node',selected!==id&&neighbors.has(id)&&$('relation-view').value!=='none');
-    el.title.textContent=n.title;el.summary.textContent=n.summary;el.main.setAttribute('aria-label',`Edit ${kindLabel(n).toLowerCase()}: ${n.title}`);el.main.title=n.summary||n.title;
+    el.title.textContent=n.title;el.summary.textContent=n.summary;el.main.setAttribute('aria-label',`Select node: ${n.title}`);el.main.title=n.summary||n.title;
     el.add.hidden=!workspaceController.canEditMap(workspaceController.activeMap());el.add.setAttribute('aria-label',`Add a child to “${n.title}”`);
-    el.meta.textContent=kindLabel(n);el.meta.dataset.kind=n.kind;el.meta.title=kindLabel(n);
     const map=workspaceController.activeMap(),owner=workspaceController.workspace.participants.find(person=>person.id===map?.ownerId)?.name||map?.person||'Author',badge=confidenceBadge(n,owner,workspaceController.canEditMap(map)?()=>showConfidence(n.id):null);el.confidence.replaceChildren(...(badge?[badge]:[]));
-    el.sign.textContent=expanded.has(id)?'−':'＋';el.count.textContent=String(kids.length);el.toggle.style.display=kids.length?'flex':'none';el.leaf.hidden=!!kids.length;el.leaf.textContent=links.length?`${links.length} ${links.length===1?'link':'links'}`:'Leaf node';
+    el.sign.textContent=expanded.has(id)?'−':'＋';el.count.textContent=String(kids.length);el.toggle.style.display=kids.length?'flex':'none';
     el.toggle.setAttribute('aria-expanded',String(expanded.has(id)));el.toggle.setAttribute('aria-label',`${expanded.has(id)?'Collapse':'Expand'} ${n.title}, ${kids.length} child nodes`);
   }
   $('connections').replaceChildren();const defs=svg('defs');
@@ -130,7 +127,7 @@ function refreshKindFields(){
 }
 function loadInspector(){
   const n=nodeById(selected);if(!n)return;dirty=false;connectionDirty=false;$('inspector').hidden=false;
-  $('kind').replaceChildren(option(n.kind,n.parent===null?'Frame':'Statement'));$('kind').value=n.kind;$('title').value=n.title;$('title').disabled=n.parent===null;$('summary').value=n.summary;$('details').value=n.details;
+  $('kind').replaceChildren(option(n.kind,'Node'));$('kind').value=n.kind;$('title').value=n.title;$('title').disabled=n.parent===null;$('summary').value=n.summary;$('details').value=n.details;
   $('source-title').value=n.sourceTitle||'';$('source-url').value=n.sourceUrl||'';$('time-scope').value=n.timeScope||'present';$('confidence').value=n.confidence===null?'':String(n.confidence);$('confidence').setCustomValidity('');
   $('structural-type').replaceChildren();$('structural-type').append(option(n.structuralType||'nesting',''));$('structural-type').value=n.structuralType||'nesting';refreshKindFields();
   $('saved').textContent='';$('saved').classList.remove('error');$('remove').hidden=n.parent===null;$('add-reason').hidden=n.parent===null||!workspaceController.canEditMap(workspaceController.activeMap());$('connect').hidden=n.parent===null;$('connection-form').hidden=true;editingRelation=null;
@@ -141,7 +138,7 @@ function loadInspector(){
 }
 function selectNode(id){
   if(selected===id){nodeActions.show(nodeById(id));nodeActions.position(positions.get(id),camera);return;}if(!allowLeave())return;
-  selected=id;activeRelation=null;loadInspector();if(matchMedia('(max-width: 780px)').matches)$('inspector').hidden=true;nodeActions.show(nodeById(id));syncCards();draw();
+  const panelOpen=!$('inspector').hidden;selected=id;activeRelation=null;loadInspector();$('inspector').hidden=!panelOpen;nodeActions.show(nodeById(id));syncCards();draw();
 }
 function showConfidence(id){
   if(!workspaceController.canEditMap(workspaceController.activeMap())||nodeById(id)?.kind!=='position')return;
@@ -216,7 +213,7 @@ $('edit-form').addEventListener('submit',event=>{
   try{
     if(!title)throw Error('Enter a title.');
     const next={...n,title,summary:$('summary').value.trim(),details:$('details').value.trim(),sourceTitle:$('source-title').value.trim(),sourceUrl:$('source-url').value.trim(),confidence:$('confidence').value===''?null:Number($('confidence').value)};
-    const candidate=nodes.map(node=>node.id===selected?next:node);validateGraph(candidate,roots,relations);nodes=candidate;dirty=false;loadInspector();syncCards();draw();$('saved').textContent='Node updated. Save the workspace to keep changes.';
+    const candidate=nodes.map(node=>node.id===selected?next:node);validateGraph(candidate,roots,relations);nodes=candidate;dirty=false;const panelOpen=!$('inspector').hidden;loadInspector();$('inspector').hidden=!panelOpen;syncCards();draw();$('saved').textContent=workspaceController.accountMode?'Node updated.':'Node updated. Save the workspace to keep changes.';
   }catch(error){$('saved').textContent=error.message;$('saved').classList.add('error');}
 });
 $('add-child').addEventListener('click',()=>addChild());$('add-reason').addEventListener('click',()=>addChild(true));

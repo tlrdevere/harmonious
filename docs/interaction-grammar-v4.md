@@ -12,8 +12,8 @@ The specification is the revised `Interaction_Grammar_v4 (1).csv`, `Interaction_
 
 Copies of the revised uploads are preserved in [the design references](design/interaction-grammar-v4/Interaction_Grammar_v4.csv), [dispute menu reference](design/interaction-grammar-v4/Interaction_Grammar_v4_DisputeMenus.csv), and [terminology key](design/interaction-grammar-v4/Interaction_Grammar_v4_Key.csv). The implementation follows the decisions below wherever those reference files differ.
 
-- Compare records a position toward another person's statement or connection. Inquiry includes asking, eliciting, proposing, and offering. Argument is the place for critique.
-- Every new ordinary node is a statement. The frame containers are **Status Quo**, **Transformative Action**, and **Goal State**. Topic, Question, and Explainer are no longer creation choices. Legacy files remain readable; no bulk deletion or rewriting of saved maps is performed.
+- Compare records a position toward another person's node or connection. Inquiry includes asking, eliciting, proposing, and offering. Argument is the place for critique.
+- The interface calls these items **nodes**. An ordinary node can contain a claim, reason, example, evidence, or proposed course of action. The frame containers are **Status Quo**, **Transformative Action**, and **Goal State**. Topic, Question, and Explainer are no longer creation choices. Legacy files remain readable; no bulk deletion or rewriting of saved maps is performed.
 - Dispute reasoning shows a node frame's Base options plus every applicable Add-on, or the selected edge type's options. A citation title or URL supplies the source Add-on. Likely Future is excluded from this prototype.
 - Eligible dispute choices are grouped into “About the claim,” “About the source,” or “About the connection.” Fallacy names appear in explanatory helper text, not as a second list of standalone actions.
 - An addresses connection uses “It won't address the problem”; enables uses “It won't achieve the goal.” There is no combined fallback menu for unknown or organizational edge types.
@@ -26,7 +26,7 @@ Copies of the revised uploads are preserved in [the design references](design/in
 
 | Place | Actions | Scope |
 | --- | --- | --- |
-| Map / Create | Add statement, Create reason, connect statements, edit wording and sources | Author's own map |
+| Map / Create | Add node, Create reason, connect nodes, edit wording and sources | Author's own map |
 | Compare | Endorse, Disagree, No position | Another participant's ordinary node or connection |
 | Inquiry | Request reason, Request explanation, Propose alternative, Offer reason | Another participant's ordinary node or connection |
 | Argument | Dispute reasoning | Another participant's ordinary node or eligible typed connection |
@@ -34,7 +34,7 @@ Copies of the revised uploads are preserved in [the design references](design/in
 
 Map editing retains its Maps destination. Compare, Inquiry, and Argument share a comparison canvas, source maps, and camera. Changing modes parks an unfinished form; returning restores it. Changing targets or leaving the form uses the discard safeguard.
 
-**No position** withholds a stance rather than asserting disagreement. Its choices are “I don't know,” “I need more information,” “I haven't considered this,” and Other. Counterpart links identify comparable statements independently of anyone's stance. Endorse, Disagree, and No position do not automatically create, remove, or merge counterparts.
+**No position** withholds a stance rather than asserting disagreement. Its choices are “I don't know,” “I need more information,” “I haven't considered this,” and Other. Counterpart links identify comparable nodes independently of anyone's stance. Endorse, Disagree, and No position do not automatically create, remove, or merge counterparts.
 
 | Received interaction | Mutually exclusive response outcomes |
 | --- | --- |
@@ -44,7 +44,7 @@ Map editing retains its Maps destination. Compare, Inquiry, and Argument share a
 
 Only the intended recipient can Respond. Response is contextual, not another mode. Compare stances do not acquire a generic response action.
 
-## Statements, connections, and references
+## Nodes, connections, and references
 
 New semantic connections have an explicit type at creation:
 
@@ -56,11 +56,11 @@ New semantic connections have an explicit type at creation:
 | `enables` | Transformative Action → Goal State |
 | `nesting` | Organizational parent/child structure; no Dispute menu |
 
-Create reason adds a statement beneath the selected statement and an explicit `reason` connection from child to conclusion. Merely nesting a statement does not assert reasoning. Frame headings are containers, not endpoints for new semantic claims. Legacy `causal`, `motivates`, and `aims_for` connections have canonical interpretation for new menus without silently rewriting saved content.
+Create reason adds a node beneath the selected node and an explicit `reason` connection from child to conclusion. Merely nesting a node does not assert reasoning. Frame headings are containers, not endpoints for new semantic claims. Legacy `causal`, `motivates`, and `aims_for` connections have canonical interpretation for new menus without silently rewriting saved content.
 
 The canvas shows one visible route per node pair. A semantic connection replaces a redundant parent line in the Map editor. Existing connection records remain distinguishable through their saved details.
 
-Point to a node selects **one** ordinary node from a map both participants can access, including an accessible third-party map. Alternatively, the author can create a new statement on one of their shared maps and choose its frame. The form explicitly says that submitting creates and references this statement. Selecting an existing reference does not endorse, copy, or merge it.
+Point to a node selects **one** ordinary node from a map both participants can access, including an accessible third-party map. Alternatively, the author can create a new node on one of their shared maps and choose its frame. The form explicitly says that submitting creates and references this node. Selecting an existing reference does not endorse, copy, or merge it.
 
 Records capture classification, source wording, and referenced wording. Changed or unavailable material is identified; stale submissions are rejected. Revoking sharing must not expose a private reference or its saved wording through an interaction or a descendant response.
 
@@ -70,17 +70,17 @@ Recording Endorse or accepting an interaction does not automatically edit a map.
 
 | Recorded choice | Optional reviewed application |
 | --- | --- |
-| Endorse a statement | Create an independent statement or use an existing statement; optionally link counterparts |
-| Endorse “For my own reason” | Use a referenced own reason, or add an independent reason, and connect it to the endorsed statement |
-| Endorse a typed semantic connection | Copy both endpoint statements and their typed connection independently |
-| Accept / Partly accept a proposal or dispute | Revise the owner's statement wording or semantic connection note |
-| Accept an offered reason | Create or select an owned statement; connect it as a reason to the owner's target statement |
+| Endorse a node | Create an independent node or use an existing node; optionally link counterparts |
+| Endorse “For my own reason” | Use a referenced own reason, or add an independent reason, and connect it to the endorsed node |
+| Endorse a typed semantic connection | Copy both endpoint nodes and their typed connection independently |
+| Accept / Partly accept a proposal or dispute | Revise the owner's node wording or semantic connection note |
+| Accept an offered reason | Create or select an owned node; connect it as a reason to the owner's target node |
 | Answer a reason request | Optionally add the answer as a reason on the owner's map |
 | Answer an explanation request | Optionally revise the owner's explanation after review |
 
 Organizational edges do not offer unsupported copy or wording-revision operations. Application receipts prevent repeated submission from creating duplicates. Applications recheck the reviewed interaction and sources. Copies retain independent authorship and their original frame by default; they do not merge identities or transfer the source author's confidence.
 
-**Edge-targeted offered reasons:** the interaction remains attached to the precise original edge. After accepting, the recipient can optionally add or identify a statement on their map. This prototype does not invent a node-to-edge inference or an arbitrary substitute node-to-node connection. A fuller representation of reasons supporting connections remains future design work.
+**Edge-targeted offered reasons:** the interaction remains attached to the precise original edge. After accepting, the recipient can optionally add or identify a node on their map. This prototype does not invent a node-to-edge inference or an arbitrary substitute node-to-node connection. A fuller representation of reasons supporting connections remains future design work.
 
 ## Retained and deferred features
 
@@ -96,17 +96,17 @@ Organizational edges do not offer unsupported copy or wording-revision operation
 
 Open `review/Harmonious-interactions-preview.html`. Use **Preview as** to switch between Alex and Blair. These are disposable sample identities, not signed-in accounts. Reopening resets the samples; Download backup retains a copy of your experiments.
 
-1. As Alex, select a Blair statement and switch among Compare, Inquiry, and Argument. Confirm each mode offers its own actions and that an unfinished form returns when you revisit its mode.
+1. As Alex, select a Blair node and switch among Compare, Inquiry, and Argument. Confirm each mode offers its own actions and that an unfinished form returns when you revisit its mode.
 2. In Compare, record a position. Confirm it stays attached to the source and leaves both maps unchanged. Endorse can separately preview a copy into your map; its default frame matches the source.
 3. In Inquiry, send a request, proposal, or offered reason. Switch to Blair while viewing it, choose Respond, and select one outcome. Acceptance alone should leave the map unchanged; Review and Apply perform a separate owner-controlled edit.
-4. In Argument, inspect statements in all three frames and the sample typed connections. A sample citation adds source-related grounds. Other opens a text field, and no internal Signals labels appear.
-5. Try Point to a node with no selection, one existing selection, and a newly created statement. Confirm only the explicit new-statement option adds a node.
-6. Collapse a branch containing interactions and open its count badge. Check that the attached conversations remain reachable. In Maps, create a statement and a reason; check the direction and single visible connection.
+4. In Argument, inspect nodes in all three frames and the sample typed connections. A sample citation adds source-related grounds. Other opens a text field, and no internal Signals labels appear.
+5. Try Point to a node with no selection, one existing selection, and a newly created node. Confirm only the explicit option to create a node adds it to your map.
+6. Collapse a branch containing interactions and open its count badge. Check that the attached conversations remain reachable. In Maps, create a node and a reason; check the direction and single visible connection.
 
 - `dist/interaction-grammar.mjs`: vocabulary, target-derived menus, Signals, references, recipient and edit validation.
 - `dist/interaction-ui.mjs`: source actions, grouped forms, responses, and interaction lists.
 - `dist/interaction-application.mjs` and `dist/interaction-application-ui.mjs`: reviewed owner-controlled map changes and receipts.
-- `dist/discussion-ui.mjs`: canvas attachments and mode integration. The Map editor uses `dist/model.mjs`, `dist/app.mjs`, and `dist/node-actions.mjs` for statements and typed connections.
+- `dist/discussion-ui.mjs`: canvas attachments and mode integration. The Map editor uses `dist/model.mjs`, `dist/app.mjs`, and `dist/node-actions.mjs` for nodes and typed connections.
 - `supabase/migrations/20260923002452_interaction_grammar_v4.sql`: applied database-side checks. Database tests exercise it in a disposable database. The original local timestamp was renamed to match the connector's applied history.
 
 Active browser suites are `map-grammar-browser`, `interaction-grammar-browser`, `interaction-retry-browser`, `confidence-browser`, and `counterpart-browser`. They cover Map creation, typed reasons, modes/drafts, minimal submissions, recipient responses, source Add-ons, hidden tags, references, explicit application, counterpart independence, persistence, narrow screens, lost save acknowledgments, and concurrent edits. `interaction-grammar.test.mjs`, `interaction-application.test.mjs`, and `interaction-database.test.mjs` cover model/account behavior, source freshness, ownership, privacy, and application identity. The database suite compares SQL options/tags with the client grammar and checks direct write enforcement.

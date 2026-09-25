@@ -19,7 +19,7 @@
 <div class="inspector-top"><span class="eyebrow">NODE DETAILS</span><button id="close" class="icon-button" aria-label="Close node details">×</button></div>
 <div id="breadcrumb"></div><div id="shared-node-note" class="shared-node-note" hidden></div><button id="inspect-cosigns" class="text-button" hidden>View this node’s co-signs</button>
 <form id="edit-form">
-<div id="kind-group" hidden><select id="kind" aria-label="Node kind"><option value="position">Statement</option></select><div id="kind-hint" class="field-help"></div></div>
+<div id="kind-group" hidden><select id="kind" aria-label="Node kind"><option value="position">Node</option></select><div id="kind-hint" class="field-help"></div></div>
 <label for="title">Title</label><input id="title" maxlength="90" required>
 <label for="summary">Short description</label><textarea id="summary" rows="3" maxlength="180"></textarea><div class="field-help">Visible on the map.</div>
 <div id="structural-group" hidden><label for="structural-type">Relationship to parent</label><select id="structural-type"></select><div id="parent-hint" class="field-help"></div></div>
@@ -31,7 +31,7 @@
 <section class="connection-section" aria-labelledby="connection-heading"><div class="section-heading"><h2 id="connection-heading">Connections</h2><span id="connection-count"></span></div><p id="connection-note" class="field-help"></p><div id="connection-list"></div><button id="connect" class="wide">＋ Connect an existing node</button>
 <form id="connection-form" hidden><label for="connection-direction">Direction</label><select id="connection-direction"><option value="out">From this node</option><option value="in">To this node</option></select><label for="connection-target">Other node</label><select id="connection-target"></select><label for="connection-type">Relationship</label><select id="connection-type" required></select><div id="connection-hint" class="field-help"></div><label for="connection-note-input">Connection note</label><textarea id="connection-note-input" rows="2" placeholder="Why are these ideas connected?"></textarea><div class="form-actions"><button id="connection-submit" type="submit" class="primary">Add connection</button><button id="cancel-connect" type="button">Cancel</button></div><div id="connection-error" role="alert"></div></form>
 </section>
-<div class="node-actions"><button id="add-child">＋ Add statement</button><button id="add-reason">＋ Create reason</button><button id="remove" class="danger">Delete node & branch</button></div>
+<div class="node-actions"><button id="add-child">＋ Add node</button><button id="add-reason">＋ Create reason</button><button id="remove" class="danger">Delete node & branch</button></div>
 </aside>
 </main><section id="comparison-workspace" hidden aria-label="Compare two worldviews">
 <div class="comparison-heading"><div><div class="eyebrow">TWO-PERSON COMPARISON</div><h1>Compare worldviews</h1><p>Overlay two worldviews. Check counterparts, then clarify the open questions.</p></div><div class="comparison-register-actions"><button id="start-comparison" class="primary">Start / open comparison</button><button id="new-comparison">New judgment</button></div></div>

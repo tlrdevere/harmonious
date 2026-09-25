@@ -33,20 +33,29 @@ try{
   const data=async()=>((await view(store,alice)).workspace.maps.find(m=>m.id===map.id));
   const choose=async id=>{const button=page.locator(`#cards .node[data-id="${id}"] .node-main`);await button.focus();await page.keyboard.press('Enter');};
   await page.goto(origin+'/#map='+map.id);await page.locator('#editor-main').waitFor();await page.locator('#all').click();await choose(claim.id);
+  assert.equal(await page.locator('#cards .node-meta').count(),0,'Own-map cards have no redundant kind or author footer');
+  assert.equal(await page.locator('#inspector').isVisible(),false,'Selection opens the on-map menu without automatically opening the panel');
+  await page.locator('.on-map-actions').getByRole('button',{name:'Edit',exact:true}).click();assert.equal(await page.locator('#inspector').isVisible(),true,'The optional panel remains available from Edit');
+  await page.locator('#close').click();await choose(claim.id);
+  assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Add node',exact:true}).count(),1);
+  await page.locator('.on-map-actions').getByRole('button',{name:'My confidence',exact:true}).click();
+  await page.locator('.on-map-actions .confidence-form').getByRole('spinbutton').fill('61');await page.locator('.on-map-actions').getByRole('button',{name:'Save confidence',exact:true}).click();await saved();
+  assert.equal(await page.locator('#inspector').isVisible(),false,'Saving confidence on the map does not force open the optional panel');
   for(const id of ['kind-group','structural-group','time-group'])assert.equal(await page.locator('#'+id).isVisible(),false);
   assert.equal(await page.locator('#add-example,#child-kind,#on-map-child-kind').count(),0);
   // Native buttons remain keyboard-operable, and a reason is an explicit child→claim connection.
   const create=page.locator('.on-map-actions').getByRole('button',{name:'Create reason',exact:true});await create.focus();await page.keyboard.press('Enter');
   await page.locator('#title').fill('A verifiable reason');await page.locator('#source-title').fill('Reference citation');await page.locator('#source-url').fill('https://example.org/source');await page.locator('#edit-form button[type=submit]').click();await saved();
+  assert.equal(await page.locator('#saved').innerText(),'Node updated.','Account mode does not incorrectly demand a manual workspace save');
   let current=await data();const reason=current.nodes.find(n=>n.title==='A verifiable reason'),edge=current.relations.find(e=>e.from===reason.id&&e.to===claim.id);
   assert.equal(reason.kind,'position');assert.equal(reason.structuralType,'nesting');assert.equal(reason.parent,claim.id);assert.equal(edge.type,'reason');assert.equal(reason.sourceUrl,'https://example.org/source');
   assert.equal(await page.locator('#relationships .semantic-edge').count(),1);
   assert.equal(await page.locator('#connections .edge:not(.spine)').count(),2,'Semantic reason replaces its duplicate parent line; only the two frame→claim structural lines remain');
-  await page.locator('#add-child').click();await page.locator('#title').fill('An ordinary nested statement');await page.locator('#edit-form button[type=submit]').click();await saved();
+  await page.locator('#add-child').click();assert.equal(await page.locator('#title').inputValue(),'New node');await page.locator('#title').fill('An ordinary nested statement');await page.locator('#edit-form button[type=submit]').click();await saved();
   current=await data();const nested=current.nodes.find(n=>n.title==='An ordinary nested statement');assert.equal(nested.kind,'position');assert.equal(nested.structuralType,'nesting');assert.equal(current.relations.some(e=>e.from===nested.id||e.to===nested.id),false,'Plain nesting adds no semantic claim');
   await page.locator('#connect').click();assert.equal(await page.locator('#connection-target option[value="goal"]').count(),0);await page.locator('#connection-target').selectOption(goal.id);assert.deepEqual(await page.locator('#connection-type option').evaluateAll(options=>options.map(o=>o.value)),['reason','cause']);
   page.once('dialog',d=>d.accept());await page.locator('#cancel-connect').click();await page.locator('#close').click();if(await page.locator('#all').isEnabled())await page.locator('#all').click();await choose('status');assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Create reason',exact:true}).count(),0,'Frames are containers, not claims to justify');assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Connect',exact:true}).count(),0);
-  await page.locator('#close').click();await page.setViewportSize({width:390,height:844});await page.locator('#fit').click();await choose(reason.id);const bounds=await page.locator('.on-map-actions').boundingBox();assert(bounds.x>=0&&bounds.x+bounds.width<=390);
+  await page.locator('.on-map-actions').getByRole('button',{name:'Close',exact:true}).click();assert.equal(await page.locator('#cards .node[data-id="status"] .node-main').evaluate(el=>el===document.activeElement),true,'Closing the on-map menu returns focus to its node');await page.setViewportSize({width:390,height:844});await page.locator('#fit').click();await choose(reason.id);const bounds=await page.locator('.on-map-actions').boundingBox();assert(bounds.x>=0&&bounds.x+bounds.width<=390);assert.equal(await page.locator('#inspector').isVisible(),false);
   await mkdir('build/design-review',{recursive:true});await page.screenshot({path:'build/design-review/map-grammar-mobile.png',fullPage:true});await page.reload();await page.locator('#editor-main').waitFor();current=await data();assert.equal(current.relations.find(e=>e.id===edge.id).type,'reason');assert.deepEqual(errors,[]);
   console.log('Map grammar browser checks passed: simple statement creation, keyboard-created directed reasons, one visible edge per pair, preserved citations, cross-frame types, frame containers, reload and narrow layout.');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

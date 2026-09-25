@@ -42,7 +42,7 @@ export function applyInteractionToMap(ws,input,actor){
   const id=suffix=>`${input.operationId}-${suffix}`;
   const newNode=(source,parent,nodeId,title=source?.title)=>{
     if(!map.nodes.some(n=>n.id===parent))throw Error('Choose a parent in your map.');
-    if(!title?.trim())throw Error('Write the statement you want to add.');
+    if(!title?.trim())throw Error('Enter a title for the node you want to add.');
     const node={id:nodeId,parent,title:title.trim(),summary:source?.summary||'',details:source?.details||'',kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:source?.sourceTitle||'',sourceUrl:source?.sourceUrl||'',confidence:null};
     map.nodes.push(node);nodeIds.push(node.id);return node;
   };
@@ -50,13 +50,13 @@ export function applyInteractionToMap(ws,input,actor){
   if(preview.operation==='revise'){
     if(preview.source.map.id!==map.id)throw Error('Only the source owner can revise it.');
     if(preview.origin.target.type==='node'){
-      const node=map.nodes.find(n=>n.id===preview.source.item.id);if(!input.title?.trim())throw Error('Write the revised statement.');node.title=input.title.trim();node.summary=input.summary||'';node.details=input.details||'';nodeIds.push(node.id);
+      const node=map.nodes.find(n=>n.id===preview.source.item.id);if(!input.title?.trim())throw Error('Enter the revised node title.');node.title=input.title.trim();node.summary=input.summary||'';node.details=input.details||'';nodeIds.push(node.id);
     }else{
       const connection=map.relations.find(e=>e.id===preview.source.item.id);if(!connection)throw Error('Organizational connections cannot be revised here.');connection.note=input.details?.trim()||'';edgeIds.push(connection.id);
     }
   }else if(preview.operation==='copy'&&preview.origin.target.type==='node'){
     let node;
-    if(input.mode==='existing'){node=map.nodes.find(n=>n.id===input.nodeId&&n.parent!==null);if(!node)throw Error('Choose an existing statement in your map.');nodeIds.push(node.id);}
+    if(input.mode==='existing'){node=map.nodes.find(n=>n.id===input.nodeId&&n.parent!==null);if(!node)throw Error('Choose an existing node in your map.');nodeIds.push(node.id);}
     else node=newNode({...preview.source.item,summary:input.summary||'',details:input.details||''},input.parentId,id('node'),input.title);
     if(preview.origin.interaction.options.includes('own_reason')){
       let premise=preview.reference?.map.id===map.id?map.nodes.find(n=>n.id===preview.reference.item.id):null;
@@ -74,7 +74,7 @@ export function applyInteractionToMap(ws,input,actor){
     const sourceMap=preview.source.map,from=sourceMap.nodes.find(n=>n.id===original.from),to=sourceMap.nodes.find(n=>n.id===original.to);
     const a=newNode(from,frameOf(sourceMap.nodes,from.id),id('from')),b=newNode(to,frameOf(sourceMap.nodes,to.id),id('to'));edge(a.id,b.id,type,original.note||'');
   }else{
-    let node;if(input.mode==='existing'){node=map.nodes.find(n=>n.id===input.nodeId&&n.parent!==null);if(!node)throw Error('Choose an existing statement in your map.');nodeIds.push(node.id);}
+    let node;if(input.mode==='existing'){node=map.nodes.find(n=>n.id===input.nodeId&&n.parent!==null);if(!node)throw Error('Choose an existing node in your map.');nodeIds.push(node.id);}
     else node=newNode({...preview.reference?.item,summary:input.summary||'',details:input.details||''},input.parentId,id('reason'),input.title);
     if(preview.origin.target.type==='node')edge(node.id,preview.source.item.id,'reason');
     // For an explanation of an edge, the original offer retains the precise

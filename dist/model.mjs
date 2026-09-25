@@ -1,11 +1,11 @@
 import {validateForest} from './layout.mjs';
 
 export const NODE_KINDS={
-  position:{label:'Statement',hint:'A claim, reason, example, or proposed course of action.'},
+  position:{label:'Node',hint:'A claim, reason, example, or proposed course of action.'},
   // Older files can still be opened, but new nodes all use the statement kind.
-  topic:{label:'Statement',legacy:true},
-  question:{label:'Statement',legacy:true},
-  explainer:{label:'Statement',legacy:true}
+  topic:{label:'Node',legacy:true},
+  question:{label:'Node',legacy:true},
+  explainer:{label:'Node',legacy:true}
 };
 export const STRUCTURAL_TYPES={
   nesting:{label:'Nested under parent',forward:'contains'},
@@ -52,8 +52,8 @@ export function validateRelationship(nodes,relations,edge,ignoreId=null){
 export function createChildStatement(nodes,parent,id,{reasonId=null}={}){
   const source=nodes.find(n=>n.id===parent);if(!source)throw Error('Choose a parent node.');
   if(nodes.some(n=>n.id===id))throw Error('Duplicate node ID.');
-  if(reasonId&&source.parent===null)throw Error('Choose a statement to give a reason for.');
-  const node={id,parent,title:reasonId?'New reason':'New statement',summary:'',details:'',confidence:null,kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:''};
+  if(reasonId&&source.parent===null)throw Error('Choose a node to give a reason for.');
+  const node={id,parent,title:reasonId?'New reason':'New node',summary:'',details:'',confidence:null,kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:''};
   return {node,relation:reasonId?{id:reasonId,from:id,to:parent,type:'reason',note:''}:null};
 }
 export function validateGraph(nodes,roots,relations){
