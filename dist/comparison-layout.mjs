@@ -104,6 +104,19 @@ export function visibleComparisonEndpoint(layout,side,id){
   return null;
 }
 
+// Rich visibility is for connection projection; ordinary attachment badges can
+// still use visibleComparisonEndpoint's nearest visible ancestor.
+export function comparisonEndpoint(layout,side,id){
+  const view=layout.maps[side],base={side,mapId:view?.map.id,nodeId:id,actualKey:JSON.stringify([view?.map.id,id]),visibleId:null,key:null,proxy:false};
+  if(!view||view.map.unavailable)return {...base,status:'unavailable'};
+  const byId=new Map(view.map.nodes.map(n=>[n.id,n]));let node=byId.get(id);
+  if(!node)return {...base,status:'missing'};
+  const seen=new Set();while(node.parent&&!seen.has(node.id)){seen.add(node.id);node=byId.get(node.parent);if(!node)return {...base,status:'missing'};}
+  if(!view.positions.has(node.id))return {...base,status:'filtered'};
+  const visible=visibleComparisonEndpoint(layout,side,id);
+  return visible?{...base,...visible,status:visible.proxy?'collapsed':'visible'}:{...base,status:'unavailable'};
+}
+
 export function comparisonRecordEnds(record,states){
   if(record.aMapId===states.a.map?.id&&record.bMapId===states.b.map?.id)return {a:record.aNodeId,b:record.bNodeId};
   if(record.bMapId===states.a.map?.id&&record.aMapId===states.b.map?.id)return {a:record.bNodeId,b:record.aNodeId};

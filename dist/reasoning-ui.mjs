@@ -3,7 +3,7 @@ import {conversationAnchor,challengeState} from './conversation-tree.mjs';
 import {buildReasoningIndex,projectReasoning,reasoningTargetKey,ReasoningViewState} from './reasoning-view.mjs';
 import {definitionReference} from './definitions.mjs';
 import {CARD_W,CARD_H} from './layout.mjs';
-import {routeReasoningConnection} from './reasoning-layout.mjs';
+import {createConnectionRouter} from './comparison-routing.mjs';
 import {isReflection} from './reflection.mjs';
 
 const reasoningEl=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;e.className=cls;return e;};
@@ -13,7 +13,7 @@ const reasoningRole=r=>isReason(r)?'Reason':isChallenge(r)?'Challenge':r.kind===
 // This view projects the existing discussions. It never saves a second graph
 // or changes a source map's layout, hierarchy or text.
 export class ReasoningUI{
-  constructor(d){this.d=d;this.mode='compare';this.anchor=null;this.positions=new Map();this.inferences=new Map();this.cards=[];this.links=[];this.scope=null;this.views=new ReasoningViewState();this.scopes=new Map();
+  constructor(d){this.d=d;this.mode='compare';this.anchor=null;this.positions=new Map();this.inferences=new Map();this.cards=[];this.links=[];this.scope=null;this.views=new ReasoningViewState();this.scopes=new Map();this.routeConnection=createConnectionRouter();
     this.modes=reasoningEl('span','','reasoning-modes');this.modes.setAttribute('role','group');this.modes.setAttribute('aria-label','Conversation mode');
     for(const mode of ['inquiry','compare','argument']){const b=reasoningButton({compare:'Compare',inquiry:'Inquiry',argument:'Argument'}[mode],()=>this.setFocus(mode));b.id='reasoning-'+mode+'-mode';b.setAttribute('aria-pressed',String(mode===this.mode));this.modes.append(b)}d.controls.prepend(this.modes);
     this.tools=reasoningEl('div','','reasoning-tools');this.fitButton=reasoningButton('Fit argument',()=>this.fit(),'reasoning-fit');this.backButton=reasoningButton('Back to source',()=>this.back(),'reasoning-back');this.collapseButton=reasoningButton('Collapse argument',()=>{if(d.dirty){d.c.message('Finish or close this draft before collapsing the argument.');return;}this.anchor=null;d.draw()},'reasoning-collapse');this.returnButton=reasoningButton('Back to selected contribution',()=>this.reveal(this.returnId,{remember:false}));this.returnButton.hidden=true;this.tools.append(this.fitButton,this.backButton,this.collapseButton,this.returnButton);this.tools.hidden=true;d.canvas.surface.append(this.tools);
@@ -100,10 +100,12 @@ export class ReasoningUI{
     // support connection, never on an unrelated source card beneath it.
     for(const link of [...this.links.filter(l=>l.badge),...this.links.filter(l=>!l.badge)]){
       const a=this.positions.get(link.r.id),b=link.r.target.type==='inference'?this.inferences.get(link.r.target.entryId):point(link.r.target);
-      const clearance=link.badge?Math.max((link.marker.offsetWidth||90)/2,link.marker.offsetHeight||30)+4:undefined;
-      const route=a&&b?routeReasoningConnection(a,b,obstacles,clearance?{clearance}:undefined):null;
+      if(link.marker)link.marker.hidden=false;
+      const size=link.badge?{w:link.marker.offsetWidth||90,h:link.marker.offsetHeight||30}:{w:0,h:0};
+      const route=a&&b?this.routeConnection(a,b,obstacles,size):null;
+      link.route=route;
       link.path.setAttribute('d',route?.d||'');
-      if(link.badge){link.marker.hidden=!route?.midpoint;if(route?.midpoint){const p={...route.midpoint,w:link.badge.offsetWidth||90,h:link.badge.offsetHeight||30};this.inferences.set(link.r.id,p);link.marker.style.transform=`translate(${p.x}px,${p.y-p.h/2}px) translateX(-50%)`}}
+      if(link.badge){link.marker.hidden=!route?.label;if(route?.label){const label=route.label;link.marker.style.transform=`translate(${label.x}px,${label.y-label.h/2}px) translateX(-50%)`;for(const child of link.marker.children){const w=child.offsetWidth,h=child.offsetHeight,p={x:label.x-label.w/2+child.offsetLeft+w/2,y:label.y-label.h/2+child.offsetTop+h/2,w,h};obstacles.push(p);if(child===link.badge)this.inferences.set(link.r.id,p);}}}
     }
     for(const item of this.continuations||[]){const p=this.positions.get(item.entryId);if(p)item.button.style.transform=`translate(${p.x-p.w/2}px,${p.y-p.h/2-40}px)`}
     if(this.more)this.more.style.transform=`translate(${baseX}px,${baseY}px)`;

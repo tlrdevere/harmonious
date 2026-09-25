@@ -1,7 +1,7 @@
 // Routes one displayed connection around cards without changing their positions.
 // All input rectangles use center coordinates: {x, y, w, h}. The endpoints are
 // included as obstacles internally; callers need only supply other visible cards.
-const EPS=1e-7,CLEARANCE=12,BEND_COST=16;
+const EPS=1e-7,CLEARANCE=12,BEND_COST=16,MAX_GRID_CELLS=262144,MAX_GRID_VISITS=50000;
 const samePoint=(a,b)=>Math.abs(a.x-b.x)<EPS&&Math.abs(a.y-b.y)<EPS;
 const length=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 const sameRect=(a,b)=>a.x===b.x&&a.y===b.y&&a.w===b.w&&a.h===b.h;
@@ -13,11 +13,26 @@ function rectangle(value){
 const bounds=(r,pad=0)=>({left:r.x-r.w/2-pad,right:r.x+r.w/2+pad,top:r.y-r.h/2-pad,bottom:r.y+r.h/2+pad});
 const contains=(r,p)=>p.x>r.left+EPS&&p.x<r.right-EPS&&p.y>r.top+EPS&&p.y<r.bottom-EPS;
 function crosses(a,b,r){
-  if(Math.abs(a.y-b.y)<EPS)return a.y>r.top+EPS&&a.y<r.bottom-EPS&&Math.min(a.x,b.x)<r.right-EPS&&Math.max(a.x,b.x)>r.left+EPS;
-  if(Math.abs(a.x-b.x)<EPS)return a.x>r.left+EPS&&a.x<r.right-EPS&&Math.min(a.y,b.y)<r.bottom-EPS&&Math.max(a.y,b.y)>r.top+EPS;
-  throw Error('A reasoning route segment must be horizontal or vertical.');
+  // Slab intersection handles diagonal as well as axis-aligned corridors.
+  // Touching an expanded boundary is safe; entering its interior is not.
+  let low=0,high=1;
+  for(const [origin,delta,min,max]of [[a.x,b.x-a.x,r.left+EPS,r.right-EPS],[a.y,b.y-a.y,r.top+EPS,r.bottom-EPS]]){
+    if(min>=max)return false;
+    if(Math.abs(delta)<EPS){if(origin<=min||origin>=max)return false;continue;}
+    const first=(min-origin)/delta,last=(max-origin)/delta;
+    low=Math.max(low,Math.min(first,last));high=Math.min(high,Math.max(first,last));
+    if(low>=high)return false;
+  }
+  return high>0&&low<1;
 }
 const clear=(a,b,obstacles)=>!obstacles.some(r=>crosses(a,b,r));
+function directRoute(from,to,others,clearance){
+  const dx=to.x-from.x,dy=to.y-from.y;if(Math.abs(dx)<EPS&&Math.abs(dy)<EPS)return null;
+  const fraction=r=>Math.min(Math.abs(dx)<EPS?Infinity:r.w/2/Math.abs(dx),Math.abs(dy)<EPS?Infinity:r.h/2/Math.abs(dy));
+  const a=fraction(from),b=fraction(to);if(!Number.isFinite(a)||!Number.isFinite(b)||a+b>=1-EPS)return null;
+  const start={x:from.x+dx*a,y:from.y+dy*a},end={x:to.x-dx*b,y:to.y-dy*b};
+  return clear(start,end,[bounds(from),bounds(to),...others.map(r=>bounds(r,clearance))])?[start,end]:null;
+}
 function simplify(points){
   const result=[];
   for(const point of points){
@@ -61,6 +76,7 @@ function gridRoute(starts,ends,obstacles,pad){
   const outer=Math.max(24,pad*2);
   xs.add(Math.min(...xs)-outer);xs.add(Math.max(...xs)+outer);ys.add(Math.min(...ys)-outer);ys.add(Math.max(...ys)+outer);
   const x=[...xs].sort((a,b)=>a-b),y=[...ys].sort((a,b)=>a-b),width=x.length,size=width*y.length;
+  if(size>MAX_GRID_CELLS)return null;
   const xIndex=new Map(x.map((v,i)=>[v,i])),yIndex=new Map(y.map((v,i)=>[v,i]));
   const index=p=>yIndex.get(p.y)*width+xIndex.get(p.x),point=id=>({x:x[id%width],y:y[Math.floor(id/width)]});
   const startById=new Map(starts.map(p=>[index(p.exit),p])),endById=new Map(ends.map(p=>[index(p.exit),p]));
@@ -84,13 +100,14 @@ function gridRoute(starts,ends,obstacles,pad){
     return a<ranges.length&&ranges[a][0]<high-EPS;
   };
   for(const [id,start]of startById){const h=heuristic(start.exit);score[id]=length(start.point,start.exit);push({id,g:score[id],h,f:score[id]+h});}
-  while(heap.length){
+  let visits=0;
+  while(heap.length&&visits<MAX_GRID_VISITS){
     const current=pop(),id=current.id;if(closed[id]||current.g>score[id]+EPS)continue;
     if(endById.has(id)){
       const path=[];let cursor=id;while(cursor!==-1){path.push(point(cursor));if(previous[cursor]===-1)break;cursor=previous[cursor];}
       const start=startById.get(cursor),end=endById.get(id);return simplify([start.point,...path.reverse(),end.point]);
     }
-    closed[id]=1;const col=id%width,row=Math.floor(id/width),here=point(id),parent=previous[id]===-1?startById.get(id)?.point:point(previous[id]);
+    closed[id]=1;visits++;const col=id%width,row=Math.floor(id/width),here=point(id),parent=previous[id]===-1?startById.get(id)?.point:point(previous[id]);
     const options=[];if(col)options.push(id-1);if(col+1<width)options.push(id+1);if(row)options.push(id-width);if(row+1<y.length)options.push(id+width);
     for(const nextId of options){
       if(closed[nextId])continue;const next=point(nextId),horizontal=next.y===here.y;
@@ -101,6 +118,22 @@ function gridRoute(starts,ends,obstacles,pad){
     }
   }
   return null;
+}
+
+// A bounded outside fallback avoids an unbounded grid allocation on dense,
+// irregular maps. Every candidate is still checked against every obstacle.
+function outsideRoute(starts,ends,obstacles,pad){
+  const left=Math.min(...obstacles.map(r=>r.left))-pad,right=Math.max(...obstacles.map(r=>r.right))+pad,top=Math.min(...obstacles.map(r=>r.top))-pad,bottom=Math.max(...obstacles.map(r=>r.bottom))+pad;
+  let best=null,bestCost=Infinity;
+  for(const start of starts)for(const end of ends){
+    const candidates=[... [left,right].map(x=>[start.exit,{x,y:start.exit.y},{x,y:end.exit.y},end.exit]),... [top,bottom].map(y=>[start.exit,{x:start.exit.x,y},{x:end.exit.x,y},end.exit])];
+    for(const candidate of candidates){
+      const middle=simplify(candidate);if(middle.slice(1).some((point,index)=>!clear(middle[index],point,obstacles)))continue;
+      const points=simplify([start.point,...middle,end.point]),cost=points.slice(1).reduce((sum,p,index)=>sum+length(points[index],p),0)+(points.length-2)*BEND_COST;
+      if(cost<bestCost-EPS){best=points;bestCost=cost;}
+    }
+  }
+  return best;
 }
 
 const number=value=>String(Number(value.toFixed(4)));
@@ -128,16 +161,19 @@ function drawing(points,clearance){
  * reduced for a narrow passage; an explicit clearance (e.g. for a support badge)
  * is never reduced. Truly enclosed/overlapping endpoints yield an
  * empty, explicitly blocked route rather than a line through an unrelated card.
+ * Direct facing-boundary routes are preferred. `direct:false` is reserved for
+ * callers that must make space for an attached label outside a narrow gap.
  */
 export function routeReasoningConnection(fromRect,toRect,obstacles=[],options={}){
   const from=rectangle(fromRect),to=rectangle(toRect),others=obstacles.map(rectangle).filter(r=>!sameRect(r,from)&&!sameRect(r,to));
   const preferred=options.clearance??CLEARANCE;
   if(!Number.isFinite(preferred)||preferred<2||preferred>256)throw Error('Reasoning route clearance must be between 2 and 256.');
   for(const clearance of options.clearance===undefined?[CLEARANCE,2]:[preferred]){
+    const direct=options.direct===false?null:directRoute(from,to,others,clearance);if(direct)return drawing(direct,clearance);
     const otherBounds=others.map(r=>bounds(r,clearance)),fromBounds=bounds(from,clearance),toBounds=bounds(to,clearance),all=[...otherBounds,fromBounds,toBounds];
     const starts=ports(from,clearance,[...otherBounds,toBounds]),ends=ports(to,clearance,[...otherBounds,fromBounds]);
     if(!starts.length||!ends.length)continue;
-    const points=simpleRoute(starts,ends,all)||gridRoute(starts,ends,all,clearance);
+    const points=simpleRoute(starts,ends,all)||gridRoute(starts,ends,all,clearance)||outsideRoute(starts,ends,all,clearance);
     if(points?.length>1)return drawing(points,clearance);
   }
   return {d:'',midpoint:null,points:[],segments:[],clearance:0,blocked:true};

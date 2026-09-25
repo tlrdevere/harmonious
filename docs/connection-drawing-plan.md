@@ -1,6 +1,17 @@
 # Connection drawing and collapsed branches
 
-Prepared September 25, 2026, after the owner's `harmonious3.png` screenshot. **Status: planned; no application changes or deployment in this step.** Baseline: `f45e6c4`, live Worker version 43. This replaces the open browser-discrepancy investigation and prioritizes connection meaning and drawing over changes to radial node placement.
+Prepared September 25, 2026, after the owner's `harmonious3.png` screenshot. **Status: implemented; 46/46 release checks passed.** Baseline: `f45e6c4`, Worker version 43. [Deployment status](deployment-status.md) identifies the published version. This replaces the open browser-discrepancy investigation and prioritizes connection meaning and drawing over changes to radial node placement.
+
+## Implementation record
+
+The two proposed increments were completed together in parallel and verified as one release. This avoids a temporary mixture of old and shared routing without delaying the collapsed-connection fix. Final report: `build/verification/2026-09-25T20-33-53-484Z-66488/summary.json`. Desktop and narrow branch lists, the Map/Create edge menu, and the computed routing preview were visually inspected.
+
+- Projection groups exact saved pairs before classifying visible, collapsed, filtered, missing or unavailable endpoints. Only actual visible pairs draw edges. Folded branches provide accessible counts, actual-pair details, retained historical records and a two-endpoint reveal.
+- The shared bounded router is used by Map/Create, ComparisonCanvas, source discussion edges and historical reasoning. Clear diagonals are direct; detours have small rounded corners. Source geometry is independent of the camera and the shared mode. The [computed before/after preview](design/connection-routing.html) preserves identical sparse, branching and deep radial coordinates.
+- Source edge details preserve multiple meanings and actual direction; opposing semantic directions use arrows at both ends of one path. Structural organization remains explicit in detail. Map/Create exposes inspection and owner Edit/Remove, with a quiet all-visible default inside View options.
+- Browser coverage exercises the screenshot's two hidden pairs, genuine visible pairs, both-side collapse, repeated titles/paths, withdrawn history and follow-ups, filtered reveal, unchanged saved data, retained zoom/folds, keyboard focus, counterpart state, on-map edge editing, mobile bounds and cancelled draft removal. Routing/model coverage includes mixed visibility, missing/unavailable sources, blocked endpoints, caching, unchanged coordinates and exact inference targets.
+
+The sections below preserve the agreed plan and acceptance criteria. No migration or saved-map rewrite is required.
 
 ## What the screenshot establishes
 

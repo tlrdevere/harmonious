@@ -1,5 +1,18 @@
 # Harmonious: what to check on your next visit
 
+## Current: connection drawing and inspection
+
+Reload both PCs after the release in [deployment status](deployment-status.md).
+
+- [ ] Open the comparison from `harmonious3.png` with the same branches folded. The long **2 connections · Collapsed branches** line should be gone. A quiet **↔ 2** badge should identify the hidden connections on the collapsed branch.
+- [ ] Open that badge. Check that it lists the real node pairs, their owners and parent paths. Multiple judgments on one pair should count as one connection; agreement, counterpart links and earlier comparisons should retain their separate meanings/history.
+- [ ] Choose **Show connected nodes**. Both real nodes should become visible at the existing zoom, with unrelated branches still folded. Closing the detail should return keyboard focus to an available connection or node.
+- [ ] Expand and collapse several levels. No connection should attach to an ancestor in place of a hidden descendant. A genuine connection between visible nodes should remain. A linked node should still have no Request counterpart option.
+- [ ] Check direct lines and small rounded detours in Map/Create, Inquiry, Compare and Argument. Lines should avoid cards. Switching shared modes should preserve source positions and source-edge geometry; radial node placement should remain familiar.
+- [ ] In your own map, select a connection using the pointer or keyboard. Its on-map detail should show the real endpoints, meaning and direction. Edit should open the optional panel; removing a reason should retain any separate parent–child organization.
+- [ ] Try **View options → Additional connections**. All visible is the default. Hiding additional connections should not replace them with a misleading parent line. Unrelated parent–child branches remain visible.
+- [ ] Repeat edge inspection in a narrow window. Close/Escape, Show connected nodes, Edit, and draft-discard cancellation should behave consistently.
+
 ## Current: node wording and map editor
 
 - [ ] Check that menus use node, including creation, references, map-change previews and validation messages. Your own authored wording should be unchanged.
@@ -7,7 +20,7 @@
 - [ ] Select a node: its on-map menu should open. Edit should open the optional panel; Close should return keyboard focus. Saving on-map confidence should keep a closed panel closed.
 - [ ] In a shared comparison, the controls should read Inquiry, Compare, Argument from left to right; each should retain its actions and parked drafts.
 
-Known issue: a collapsed branch can produce a misleading cross-map line between visible ancestors. The owner supplied `harmonious3.png` and confirmed both browsers behave alike. [The connection drawing plan](connection-drawing-plan.md) addresses that line first; this behavior is not yet fixed in the live release.
+The collapsed-ancestor connection issue is covered by the new checks above. [The connection drawing plan](connection-drawing-plan.md) records its diagnosis and implementation.
 
 ## Current: mode consistency
 

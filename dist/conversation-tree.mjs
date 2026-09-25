@@ -10,10 +10,27 @@ export function groupSourceConnections(edges){
   for(const edge of edges){const key=visibleNodePairKey(edge.from,edge.to);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(edge);}
   return [...groups.values()];
 }
+export const actualNodePairKey=(a,b)=>visibleNodePairKey(JSON.stringify([a?.mapId,a?.nodeId]),JSON.stringify([b?.mapId,b?.nodeId]));
 export function groupComparisonConnections(records,endpoint){
   const groups=new Map();
-  for(const r of records){const a=endpoint(r.target),b=endpoint(r.other);if(!a||!b||a===b)continue;const key=visibleNodePairKey(a,b);if(!groups.has(key))groups.set(key,{key,records:[]});groups.get(key).records.push(r);}
-  return [...groups.values()];
+  for(const r of records){
+    if(!r.target?.nodeId||!r.other?.nodeId)continue;
+    const key=actualNodePairKey(r.target,r.other);if(!groups.has(key))groups.set(key,{key,target:r.target,other:r.other,records:[]});
+    groups.get(key).records.push(r);
+  }
+  return [...groups.values()].map(group=>{
+    const ends=[endpoint(group.target),endpoint(group.other)],states=ends.map(e=>e?.status||'unavailable');
+    const status=states.includes('unavailable')?'unavailable':states.includes('missing')?'missing':states.includes('filtered')?'filtered':states.includes('collapsed')?'collapsed':'visible';
+    return {...group,ends,status};
+  }).sort((a,b)=>a.key.localeCompare(b.key));
+}
+export function projectComparisonConnections(records,endpoint){
+  const groups=groupComparisonConnections(records,endpoint),branches=new Map();
+  for(const group of groups.filter(g=>g.status==='collapsed'))for(const end of group.ends.filter(e=>e.status==='collapsed')){
+    if(!branches.has(end.key))branches.set(end.key,{key:end.key,endpoint:end,groups:[]});
+    const branch=branches.get(end.key);if(!branch.groups.some(g=>g.key===group.key))branch.groups.push(group);
+  }
+  return {groups,visible:groups.filter(g=>g.status==='visible'),branches:[...branches.values()]};
 }
 
 export function conversationAnchor(records,entry){

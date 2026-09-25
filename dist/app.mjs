@@ -1,14 +1,19 @@
 import {WorkspaceController} from './workspace-ui.mjs';
 import {NodeActions} from './node-actions.mjs';
+import {MapConnectionsUI} from './map-connections-ui.mjs';
+import {createConnectionRouter} from './comparison-routing.mjs';
+import {groupSourceConnections,visibleNodePairKey} from './conversation-tree.mjs';
 import {confidenceBadge} from './confidence-ui.mjs';
 import {newId} from './workspace.mjs';
-import {CARD_W,CARD_H,layoutForest,connectorRoute,edgeEndpoints} from './layout.mjs';
+import {CARD_W,CARD_H,layoutForest} from './layout.mjs';
 import {roots,exampleMap,exampleRelations} from './data.mjs';
-import {NODE_KINDS,STRUCTURAL_TYPES,RELATION_TYPES,frameOf,allowedRelationTypes,validateGraph,validateRelationship,createChildStatement,revealPath,removeBranch} from './model.mjs';
+import {NODE_KINDS,STRUCTURAL_TYPES,RELATION_TYPES,graphEdges,frameOf,allowedRelationTypes,validateGraph,validateRelationship,createChildStatement,revealPath,removeBranch} from './model.mjs';
 const $=id=>document.getElementById(id),viewport=$('viewport'),world=$('world');
 const svgNS='http://www.w3.org/2000/svg';
 let nodes=exampleMap(),relations=exampleRelations(),expanded=new Set(),selected=null,result,positions=new Map(),camera={x:0,y:0,z:1},animation=0,serial=0;
 let dirty=false,connectionDirty=false,activeRelation=null,editingRelation=null,relationDrawables=[];
+let activeConnectionKey=null,routedPositions=null;
+const mapRoute=createConnectionRouter(),connectionRoutes=new Map();
 const elements=new Map(),colors=['#008575','#3263cc','#8250bd'];
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function nodeById(id){return nodes.find(n=>n.id===id);}
@@ -18,7 +23,15 @@ function svg(tag,attrs={}){const el=document.createElementNS(svgNS,tag);for(cons
 function option(value,label){const el=document.createElement('option');el.value=value;el.textContent=label;return el;}
 function allowLeave(){return (!dirty&&!connectionDirty)||confirm('Discard unsaved changes to this node or connection?');}
 function relationSentence(edge){return `${nodeById(edge.from).title} ${RELATION_TYPES[edge.type].label.toLowerCase()} ${nodeById(edge.to).title}`;}
-function makeLabel(text,structural=false){const group=svg('g',{class:`edge-label${structural?' structural-label':''}`}),width=text.length*7.2+20;group.append(svg('rect',{x:-width/2,y:-12,width,height:24}));const label=svg('text',{x:0,y:0});label.textContent=text;group.append(label);return group;}
+function makeLabel(text,structural=false){const group=svg('g',{class:`edge-label${structural?' structural-label':''}`}),width=text.length*7.2+20;group.dataset.width=width;group.append(svg('rect',{x:-width/2,y:-12,width,height:24}));const label=svg('text',{x:0,y:0});label.textContent=text;group.append(label);return group;}
+function inspectionPath(parent,path,edges){
+  const edge=edges[0],key=visibleNodePairKey(edge.from,edge.to),group=svg('g',{class:`map-edge-group${key===activeConnectionKey?' active':''}`});
+  path.dataset.nodePair=key;
+  const hit=svg('path',{class:'map-edge-hit',fill:'none',tabindex:'0',role:'button','aria-label':`Inspect connection: ${nodeById(edge.from).title} to ${nodeById(edge.to).title}`});hit.dataset.nodePair=key;
+  const labelText=edges.length>1?`${edges.length} connection meanings`:edge.structural?(STRUCTURAL_TYPES[edge.type]?.label||'Branch'):(RELATION_TYPES[edge.type]?.label||'Connection'),label=makeLabel(labelText,edge.structural);
+  const select=()=>inspectConnection(key,edges);hit.onclick=select;hit.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();select();}};
+  hit.onpointerdown=event=>event.stopPropagation();group.append(path,hit,label);parent.append(group);return {hit,label,key,edges};
+}
 function makeCard(n){
   const card=document.createElement('article');card.className='node';card.dataset.id=n.id;
   const main=document.createElement('button');main.className='node-main';main.type='button';
@@ -37,6 +50,7 @@ function makeCard(n){
   $('cards').append(card);const el={card,main,title,summary,confidence,toggle,sign,count,add};elements.set(n.id,el);return el;
 }
 function syncCards(){
+  routedPositions=null;
   workspaceController.captureActive();
   const neighbors=new Set(connectedEdges(selected).flatMap(e=>[e.from,e.to]));
   for(const [id,el]of elements)if(!result.positions.has(id)){el.card.remove();elements.delete(id);}
@@ -49,19 +63,18 @@ function syncCards(){
     el.sign.textContent=expanded.has(id)?'−':'＋';el.count.textContent=String(kids.length);el.toggle.style.display=kids.length?'flex':'none';
     el.toggle.setAttribute('aria-expanded',String(expanded.has(id)));el.toggle.setAttribute('aria-label',`${expanded.has(id)?'Collapse':'Expand'} ${n.title}, ${kids.length} child nodes`);
   }
-  $('connections').replaceChildren();const defs=svg('defs');
-  for(let i=0;i<4;i++){const marker=svg('marker',{id:`arrow-${i}`,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:6,markerHeight:6,orient:'auto'});marker.append(svg('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:i===3?'#718398':colors[i]}));defs.append(marker);}
-  $('connections').append(defs);
+  $('connections').replaceChildren();
   rebuildRelations();
   for(const edge of result.edges){
-    edge.element=null;edge.label=null;
+    edge.element=null;edge.label=null;edge.hit=null;
     // A semantic connection replaces the organizational line for this pair.
-    if(relationDrawables.some(({edge:e})=>(e.from===edge.from&&e.to===edge.to)||(e.from===edge.to&&e.to===edge.from)))continue;
+    // Hiding a semantic connection must not invent a substitute structural line.
+    if(relations.some(e=>visibleNodePairKey(e.from,e.to)===visibleNodePairKey(edge.from,edge.to)))continue;
     const focused=selected&&(edge.from===selected||edge.to===selected)&&edge.kind!=='spine';
     const path=svg('path',{class:`edge${edge.kind==='spine'?' spine':''}${focused?' focused':''}`,stroke:edge.kind==='spine'?'#718398':colors[edge.frame]});
-    if(edge.kind!=='spine')path.setAttribute('marker-end',`url(#arrow-${edge.frame})`);
-    edge.element=path;edge.label=null;$('connections').append(path);
-    if(focused&&$('relation-view').value!=='none'){edge.label=makeLabel(STRUCTURAL_TYPES[nodeById(edge.to).structuralType].forward,true);$('connections').append(edge.label);}
+    edge.element=path;
+    if(edge.kind==='spine')$('connections').append(path);
+    else Object.assign(edge,inspectionPath($('connections'),path,[{id:'structure:'+edge.to,from:edge.from,to:edge.to,type:nodeById(edge.to).structuralType,structural:true}]));
   }
   $('count').textContent=`${result.positions.size} of ${nodes.length} nodes visible`;
   $('all').disabled=result.positions.size===nodes.length;
@@ -71,51 +84,53 @@ function syncCards(){
   if(selected){renderConnections();$('shared-node-note').textContent=workspaceController.sharedNodeNote(nodeById(selected));$('shared-node-note').hidden=!nodeById(selected)?.ideaId;}
 }
 function rebuildRelations(){
-  $('relationships').replaceChildren();const defs=svg('defs'),marker=svg('marker',{id:'relationship-arrow',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:6,markerHeight:6,orient:'auto'});marker.append(svg('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'#925832'}));defs.append(marker);$('relationships').append(defs);
-  relationDrawables=[];const mode=$('relation-view').value,drawnPairs=new Set();
-  for(const e of [...relations].sort((a,b)=>Number(b.id===activeRelation)-Number(a.id===activeRelation))){
+  $('relationships').replaceChildren();const defs=svg('defs'),marker=svg('marker',{id:'relationship-arrow',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:5,markerHeight:5,orient:'auto-start-reverse'});marker.append(svg('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'#758995'}));defs.append(marker);$('relationships').append(defs);
+  relationDrawables=[];const mode=$('relation-view').value;
+  for(const grouped of groupSourceConnections(graphEdges(nodes,relations))){
+    const meanings=[...grouped].sort((a,b)=>Number(a.structural)-Number(b.structural)||a.id.localeCompare(b.id)),e=meanings[0];if(e.structural)continue;
     if(mode==='none'||(mode==='selected'&&e.from!==selected&&e.to!==selected)||!result.positions.has(e.from)||!result.positions.has(e.to))continue;
-    const pair=JSON.stringify([e.from,e.to].sort());if(drawnPairs.has(pair))continue;drawnPairs.add(pair);
-    const path=svg('path',{class:`semantic-edge${e.id===activeRelation?' active':''}`});if(RELATION_TYPES[e.type].directed)path.setAttribute('marker-end','url(#relationship-arrow)');
-    const title=svg('title');title.textContent=relationSentence(e);path.append(title);$('relationships').append(path);
-    const label=(e.from===selected||e.to===selected||e.id===activeRelation)?makeLabel(RELATION_TYPES[e.type].label):null;if(label)$('relationships').append(label);
-    relationDrawables.push({edge:e,path,label});
+    const path=svg('path',{class:`semantic-edge${meanings.some(item=>item.id===activeRelation)?' active':''}`});
+    if(meanings.some(item=>!item.structural&&RELATION_TYPES[item.type].directed&&item.from===e.from))path.setAttribute('marker-end','url(#relationship-arrow)');
+    if(meanings.some(item=>!item.structural&&RELATION_TYPES[item.type].directed&&item.from===e.to))path.setAttribute('marker-start','url(#relationship-arrow)');
+    relationDrawables.push({edge:e,path,...inspectionPath($('relationships'),path,meanings)});
   }
 }
 function draw(){
   world.style.transform=`translate(${camera.x}px,${camera.y}px) scale(${camera.z})`;
   for(const [id,p]of positions){const el=elements.get(id);if(el)el.card.style.transform=`translate(${p.x}px,${p.y}px)`;}
-  for(const e of result.edges){const a=positions.get(e.from),b=positions.get(e.to);if(!a||!b||!e.element)continue;const route=connectorRoute(a,b,e.kind==='spine'?null:positions.get(roots[e.frame]),!!e.label);e.element.setAttribute('d',route.d);if(e.label){const index=Math.floor(route.points.length/2),q=route.points[index],p=route.points[index-1]||q;e.label.setAttribute('transform',`translate(${(p.x+q.x)/2},${(p.y+q.y)/2})`);}}
-  for(const r of relationDrawables){
-    const a=positions.get(r.edge.from),b=positions.get(r.edge.to);if(!a||!b)continue;
-    const {x1,y1,x2,y2}=edgeEndpoints(a,b),dx=x2-x1,dy=y2-y1,len=Math.max(1,Math.hypot(dx,dy));
-    const centerY=positions.get(roots[0])?.y??0,sign=(y1+y2)/2<centerY?-1:1,bend=Math.min(170,Math.max(45,len*.14));
-    const nx=-dy/len*bend*sign,ny=dx/len*bend*sign,c1x=x1+dx/3+nx,c1y=y1+dy/3+ny,c2x=x1+dx*2/3+nx,c2y=y1+dy*2/3+ny;
-    r.path.setAttribute('d',`M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
-    if(r.label)r.label.setAttribute('transform',`translate(${(x1+3*c1x+3*c2x+x2)/8},${(y1+3*c1y+3*c2y+y2)/8})`);
+  // Camera-only redraws reuse the completed graph even when the graph is
+  // larger than the bounded route cache. Layout animation replaces positions.
+  if(routedPositions!==positions){
+  const boxes=new Map([...positions].map(([id,p])=>[id,{x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H}]));connectionRoutes.clear();
+  const routeEdge=(edge,path,hit,label,key)=>{const a=boxes.get(edge.from),b=boxes.get(edge.to);if(!a||!b||!path)return;const obstacles=[...boxes].filter(([id])=>id!==edge.from&&id!==edge.to).map(([,box])=>box),route=mapRoute(a,b,obstacles);path.setAttribute('d',route.d);hit?.setAttribute('d',route.d);if(hit){hit.style.display=route.blocked?'none':'';hit.setAttribute('tabindex',route.blocked?'-1':'0');}if(key)connectionRoutes.set(key,route);if(label){const labelRoute=mapRoute(a,b,obstacles,{w:Number(label.dataset.width),h:24});const point=labelRoute.d===route.d?labelRoute.label:null;label.style.display=point?'':'none';if(point)label.setAttribute('transform',`translate(${point.x},${point.y})`);}};
+  for(const edge of result.edges)routeEdge(edge,edge.element,edge.hit,edge.label,edge.key);
+  for(const item of relationDrawables)routeEdge(item.edge,item.path,item.hit,item.label,item.key);
+  routedPositions=positions;
   }
   $('zoom').textContent=`${Math.round(camera.z*100)}%`;
   nodeActions.position(positions.get(selected),camera);
+  connectionMenu.position(connectionRoutes.get(connectionMenu.key)?.midpoint,camera);
 }
 function fitCamera(){const w=viewport.clientWidth,h=viewport.clientHeight;const z=Math.min(1,(w-90)/result.width,(h-140)/result.height);return {z:Math.max(.02,z),x:(w-result.width*Math.max(.02,z))/2,y:Math.max(62,(h-result.height*Math.max(.02,z))/2-10)};}
 function transition(targets,targetCamera,instant=false){
   cancelAnimationFrame(animation);const old=new Map(positions),startCam={...camera};
   for(const [id,p] of targets)if(!old.has(id)){let parent=nodeById(id)?.parent;while(parent&&!old.has(parent))parent=nodeById(parent)?.parent;old.set(id,parent?{...old.get(parent)}:{...p});}
   const start=performance.now(),duration=instant||reduced?0:340;
-  function step(now){const t=duration?Math.min(1,(now-start)/duration):1,e=1-Math.pow(1-t,3);positions=new Map();for(const [id,p] of targets){const a=old.get(id);positions.set(id,{...p,x:a.x+(p.x-a.x)*e,y:a.y+(p.y-a.y)*e});}camera={x:startCam.x+(targetCamera.x-startCam.x)*e,y:startCam.y+(targetCamera.y-startCam.y)*e,z:startCam.z+(targetCamera.z-startCam.z)*e};draw();if(t<1)animation=requestAnimationFrame(step);else animation=0;}
+  function step(now){const t=duration?Math.min(1,(now-start)/duration):1,e=1-Math.pow(1-t,3);positions=new Map();for(const [id,p] of targets){const a=old.get(id);positions.set(id,{...p,x:a.x+(p.x-a.x)*e,y:a.y+(p.y-a.y)*e});}camera={x:startCam.x+(targetCamera.x-startCam.x)*e,y:startCam.y+(targetCamera.y-startCam.y)*e,z:startCam.z+(targetCamera.z-startCam.z)*e};if(t===1)positions=targets;draw();if(t<1)animation=requestAnimationFrame(step);else animation=0;}
   animation=requestAnimationFrame(step);
 }
 function update({anchor=null,fit=false,instant=false}={}){
   const oldAnchor=anchor?positions.get(anchor):null;
   result=layoutForest(nodes,roots,expanded);
   if(selected&&!result.positions.has(selected))closeInspector(true);
+  if(activeConnectionKey){const edge=connectionMeanings(activeConnectionKey)[0];if(!edge||!result.positions.has(edge.from)||!result.positions.has(edge.to)){connectionMenu.hide();activeConnectionKey=null;activeRelation=null;}}
   syncCards();let target={...camera};
   if(fit)target=fitCamera();else if(oldAnchor&&result.positions.has(anchor)){const p=result.positions.get(anchor);target.x+=(oldAnchor.x-p.x)*camera.z;target.y+=(oldAnchor.y-p.y)*camera.z;}
   transition(result.positions,target,instant);
 }
 
 function settle(){if(animation){cancelAnimationFrame(animation);animation=0;}}
-function closeInspector(force=false){if(!force&&!allowLeave())return false;selected=null;dirty=false;connectionDirty=false;activeRelation=null;nodeActions.hide();$('inspector').hidden=true;$('connection-form').hidden=true;if(result){syncCards();draw();}return true;}
+function closeInspector(force=false){if(!force&&!allowLeave())return false;selected=null;dirty=false;connectionDirty=false;activeRelation=null;activeConnectionKey=null;connectionMenu.hide();nodeActions.hide();$('inspector').hidden=true;$('connection-form').hidden=true;if(result){syncCards();draw();}return true;}
 function refreshKindFields(){
   if(!selected)return;const n=nodeById(selected),kind=$('kind').value,isRoot=n.parent===null;
   $('kind-group').hidden=true;$('structural-group').hidden=true;$('time-group').hidden=true;$('confidence-group').hidden=kind!=='position'||isRoot;
@@ -137,7 +152,8 @@ function loadInspector(){
   renderConnections();
 }
 function selectNode(id){
-  if(selected===id){nodeActions.show(nodeById(id));nodeActions.position(positions.get(id),camera);return;}if(!allowLeave())return;
+  if(selected===id){connectionMenu.hide();activeConnectionKey=null;nodeActions.show(nodeById(id));syncCards();draw();return;}if(!allowLeave())return;
+  connectionMenu.hide();activeConnectionKey=null;
   const panelOpen=!$('inspector').hidden;selected=id;activeRelation=null;loadInspector();$('inspector').hidden=!panelOpen;nodeActions.show(nodeById(id));syncCards();draw();
 }
 function showConfidence(id){
@@ -160,6 +176,27 @@ function revealConnection(id,otherOnly=false){
   if($('relation-view').value==='none')$('relation-view').value='selected';
   update();requestAnimationFrame(()=>focusNodes(otherOnly?[other]:[e.from,e.to]));
 }
+function connectionMeanings(key){return (groupSourceConnections(graphEdges(nodes,relations)).find(edges=>visibleNodePairKey(edges[0].from,edges[0].to)===key)||[]).sort((a,b)=>Number(a.structural)-Number(b.structural)||a.id.localeCompare(b.id));}
+function focusConnection(key){const hit=[...document.querySelectorAll('#world .map-edge-hit')].find(el=>el.dataset.nodePair===key&&el.style.display!=='none');(hit||elements.get(selected)?.main||viewport).focus({preventScroll:true});}
+function inspectConnection(key,edges=connectionMeanings(key)){
+  if(!edges.length||!allowLeave())return;const panelOpen=!$('inspector').hidden;
+  selected=edges[0].from;activeRelation=edges.find(edge=>!edge.structural)?.id||null;activeConnectionKey=key;
+  loadInspector();$('inspector').hidden=!panelOpen;nodeActions.hide();syncCards();draw();
+  connectionMenu.show(key,edges,nodes,workspaceController.canEditMap(workspaceController.activeMap()));connectionMenu.position(connectionRoutes.get(key)?.midpoint,camera);
+}
+function closeConnection(key){connectionMenu.hide();activeConnectionKey=null;activeRelation=null;syncCards();draw();focusConnection(key);}
+function editConnection(id){
+  const edge=relations.find(item=>item.id===id);if(!edge||!workspaceController.canEditMap(workspaceController.activeMap())||!allowLeave())return;
+  selected=edge.from;activeRelation=id;loadInspector();connectionMenu.hide();nodeActions.hide();openConnectionForm(edge);syncCards();draw();
+}
+function removeConnection(id,key){
+  if(!workspaceController.canEditMap(workspaceController.activeMap())||!allowLeave())return;
+  relations=relations.filter(edge=>edge.id!==id);activeRelation=null;
+  // The single leave check above accepted discarding the current draft. Reload
+  // it before capture and before opening any remaining meaning for this pair.
+  const panelOpen=!$('inspector').hidden;loadInspector();$('inspector').hidden=!panelOpen;
+  syncCards();draw();const remaining=connectionMeanings(key);if(remaining.length)inspectConnection(key,remaining);else closeConnection(key);
+}
 function renderConnections(){
   if(!selected)return;const edges=connectedEdges(selected);$('connection-count').textContent=String(edges.length);$('connection-list').replaceChildren();
   const hidden=edges.filter(e=>!result.positions.has(e.from)||!result.positions.has(e.to)).length;
@@ -173,9 +210,9 @@ function renderConnections(){
     if(edge.note){const note=document.createElement('p');note.className='connection-note-text';note.textContent=edge.note;item.append(note);}
     const actions=document.createElement('div');actions.className='connection-actions';
     const show=document.createElement('button');show.textContent='Show on map';show.type='button';show.addEventListener('click',()=>revealConnection(edge.id));
-    const edit=document.createElement('button');edit.textContent='Edit';edit.type='button';edit.addEventListener('click',()=>openConnectionForm(edge));
-    const remove=document.createElement('button');remove.textContent='Remove';remove.type='button';remove.className='delete-connection';remove.setAttribute('aria-label',`Remove connection: ${relationSentence(edge)}`);remove.addEventListener('click',()=>{relations=relations.filter(e=>e.id!==edge.id);if(activeRelation===edge.id)activeRelation=null;if(editingRelation===edge.id){$('connection-form').hidden=true;connectionDirty=false;}syncCards();draw();});
-    actions.append(show,edit,remove);item.append(actions);$('connection-list').append(item);
+    const edit=document.createElement('button');edit.textContent='Edit';edit.type='button';edit.addEventListener('click',()=>editConnection(edge.id));
+    const remove=document.createElement('button');remove.textContent='Remove';remove.type='button';remove.className='delete-connection';remove.setAttribute('aria-label',`Remove connection: ${relationSentence(edge)}`);remove.addEventListener('click',()=>removeConnection(edge.id,visibleNodePairKey(edge.from,edge.to)));
+    actions.append(show);if(workspaceController.canEditMap(workspaceController.activeMap()))actions.append(edit,remove);item.append(actions);$('connection-list').append(item);
   }
 }
 function openConnectionForm(edge=null){
@@ -225,32 +262,36 @@ $('connection-form').addEventListener('submit',event=>{
   try{validateRelationship(nodes,relations,edge,editingRelation);relations=editingRelation?relations.map(e=>e.id===editingRelation?edge:e):[...relations,edge];activeRelation=edge.id;connectionDirty=false;$('connection-form').hidden=true;editingRelation=null;syncCards();draw();}
   catch(error){$('connection-error').textContent=error.message;}
 });
-$('relation-view').addEventListener('change',()=>{syncCards();draw();});
+$('relation-view').addEventListener('change',()=>{connectionMenu.hide();activeConnectionKey=null;syncCards();draw();});
 $('remove').addEventListener('click',()=>{if(!selected||roots.includes(selected))return;const id=selected,branch=removeBranch(nodes,relations,id),parent=nodeById(id).parent;if(!confirm(`Delete “${nodeById(id).title}”${branch.removed.size>1?` and its ${branch.removed.size-1} descendant nodes`:''}? Connections to these nodes will also be removed.`))return;nodes=branch.nodes;relations=branch.relations;for(const key of branch.removed)expanded.delete(key);selected=null;dirty=false;connectionDirty=false;activeRelation=null;$('inspector').hidden=true;update({anchor:parent});});
 $('next').addEventListener('click',()=>{const visible=[...result.positions.keys()];for(const id of visible)if(result.children.get(id).length)expanded.add(id);update({fit:true});});
 $('all').addEventListener('click',()=>{expanded=new Set(nodes.filter(n=>result.children.get(n.id).length).map(n=>n.id));update({fit:true});});
 $('collapse').addEventListener('click',()=>{if(!allowLeave())return;expanded.clear();closeInspector(true);update({fit:true});});
-$('reset').addEventListener('click',()=>{if(!confirm('Reset to the illustrative map? This will discard your edits.'))return;nodes=exampleMap();relations=exampleRelations();expanded.clear();selected=null;dirty=false;connectionDirty=false;activeRelation=null;$('inspector').hidden=true;$('relation-view').value='selected';update({fit:true});});
+$('reset').addEventListener('click',()=>{if(!confirm('Reset to the illustrative map? This will discard your edits.'))return;nodes=exampleMap();relations=exampleRelations();expanded.clear();selected=null;dirty=false;connectionDirty=false;activeRelation=null;activeConnectionKey=null;connectionMenu.hide();$('inspector').hidden=true;$('relation-view').value='all';update({fit:true});});
 $('fit').addEventListener('click',()=>transition(result.positions,fitCamera()));
-function zoom(factor,x=viewport.clientWidth/2,y=viewport.clientHeight/2,absolute=false){settle();const z=Math.min(2,Math.max(.02,absolute?factor:camera.z*factor)),ratio=z/camera.z;camera={x:x-(x-camera.x)*ratio,y:y-(y-camera.y)*ratio,z};positions=new Map(result.positions);draw();}
+function zoom(factor,x=viewport.clientWidth/2,y=viewport.clientHeight/2,absolute=false){settle();const z=Math.min(2,Math.max(.02,absolute?factor:camera.z*factor)),ratio=z/camera.z;camera={x:x-(x-camera.x)*ratio,y:y-(y-camera.y)*ratio,z};positions=result.positions;draw();}
 $('plus').addEventListener('click',()=>zoom(1.2));$('minus').addEventListener('click',()=>zoom(1/1.2));$('zoom').addEventListener('click',()=>zoom(1,viewport.clientWidth/2,viewport.clientHeight/2,true));
 viewport.addEventListener('wheel',event=>{if(event.target.closest('.viewport-controls'))return;event.preventDefault();const rect=viewport.getBoundingClientRect();zoom(Math.exp(-event.deltaY*.0015),event.clientX-rect.left,event.clientY-rect.top);},{passive:false});
 const pointers=new Map();let drag=null,pinch=null;
-viewport.addEventListener('pointerdown',event=>{if(event.target.closest('button,.node')||event.button>0)return;settle();positions=new Map(result.positions);draw();viewport.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pointers.size===1)drag={x:event.clientX,y:event.clientY,cx:camera.x,cy:camera.y};if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),z:camera.z};drag=null;}viewport.classList.add('panning');});
+viewport.addEventListener('pointerdown',event=>{if(event.target.closest('button,.node')||event.button>0)return;settle();positions=result.positions;draw();viewport.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pointers.size===1)drag={x:event.clientX,y:event.clientY,cx:camera.x,cy:camera.y};if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),z:camera.z};drag=null;}viewport.classList.add('panning');});
 viewport.addEventListener('pointermove',event=>{if(!pointers.has(event.pointerId))return;pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()],rect=viewport.getBoundingClientRect();zoom(pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance),(a.x+b.x)/2-rect.left,(a.y+b.y)/2-rect.top,true);}else if(drag){camera.x=drag.cx+event.clientX-drag.x;camera.y=drag.cy+event.clientY-drag.y;draw();}});
 function endPointer(event){pointers.delete(event.pointerId);pinch=null;drag=null;if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,cx:camera.x,cy:camera.y};}if(!pointers.size)viewport.classList.remove('panning');}
 viewport.addEventListener('pointerup',endPointer);viewport.addEventListener('pointercancel',endPointer);
-viewport.addEventListener('keydown',event=>{if(event.target!==viewport)return;const steps={ArrowLeft:[60,0],ArrowRight:[-60,0],ArrowUp:[0,60],ArrowDown:[0,-60]};if(steps[event.key]){event.preventDefault();settle();positions=new Map(result.positions);camera.x+=steps[event.key][0];camera.y+=steps[event.key][1];draw();}else if(event.key==='+'||event.key==='=')zoom(1.2);else if(event.key==='-')zoom(1/1.2);else if(event.key.toLowerCase()==='f')transition(result.positions,fitCamera());});
+viewport.addEventListener('keydown',event=>{if(event.target!==viewport)return;const steps={ArrowLeft:[60,0],ArrowRight:[-60,0],ArrowUp:[0,60],ArrowDown:[0,-60]};if(steps[event.key]){event.preventDefault();settle();positions=result.positions;camera.x+=steps[event.key][0];camera.y+=steps[event.key][1];draw();}else if(event.key==='+'||event.key==='=')zoom(1.2);else if(event.key==='-')zoom(1/1.2);else if(event.key.toLowerCase()==='f')transition(result.positions,fitCamera());});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeInspector();});
 let oldWidth=viewport.clientWidth,oldHeight=viewport.clientHeight;
-new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(result&&(w!==oldWidth||h!==oldHeight)){settle();positions=new Map(result.positions);if(!oldWidth||!oldHeight)camera=fitCamera();else{camera.x+=(w-oldWidth)/2;camera.y+=(h-oldHeight)/2;}draw();}oldWidth=w;oldHeight=h;}).observe(viewport);
+new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(result&&(w!==oldWidth||h!==oldHeight)){settle();positions=result.positions;if(!oldWidth||!oldHeight)camera=fitCamera();else{camera.x+=(w-oldWidth)/2;camera.y+=(h-oldHeight)/2;}draw();}oldWidth=w;oldHeight=h;}).observe(viewport);
 const workspaceController=new WorkspaceController({
   getMapData:()=>({nodes,relations}),beforeLeave:allowLeave,hasDraft:()=>dirty||connectionDirty,
   discardDraft:()=>closeInspector(true),
   updateConfidence:(id,value)=>{const n=nodeById(id);if(!n)return;n.confidence=value;if(selected===id)$('confidence').value=value===null?'':String(value);syncCards();draw();},
   flushDraft:()=>{if(connectionDirty)$('connection-form').requestSubmit();if(connectionDirty)return false;if(dirty)$('edit-form').requestSubmit();return !dirty;},
-  setMap:map=>{nodeActions.hide();selected=null;dirty=false;connectionDirty=false;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
+  setMap:map=>{nodeActions.hide();connectionMenu.hide();activeConnectionKey=null;mapRoute.clear();selected=null;dirty=false;connectionDirty=false;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
   focusNode:id=>{expanded=revealPath(nodes,id,expanded);selected=id;update();loadInspector();requestAnimationFrame(()=>focusNodes([id]));}
+});
+const connectionMenu=new MapConnectionsUI(viewport,{
+  close:closeConnection,edit:editConnection,remove:removeConnection,
+  reveal:(from,to)=>{if(!allowLeave())return;expanded=revealPath(nodes,to,revealPath(nodes,from,expanded));update({instant:true});requestAnimationFrame(()=>{const a=positions.get(from),b=positions.get(to);if(a&&b){camera.x=viewport.clientWidth/2-((a.x+b.x+CARD_W)/2)*camera.z;camera.y=viewport.clientHeight/2-((a.y+b.y+CARD_H)/2)*camera.z;draw();}});}
 });
 const nodeActions=new NodeActions(viewport,{
   canEdit:()=>workspaceController.canEditMap(workspaceController.activeMap()),

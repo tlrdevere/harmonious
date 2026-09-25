@@ -1,4 +1,5 @@
-import {CARD_W,CARD_H,connectorRoute,edgeEndpoints} from './layout.mjs';
+import {CARD_W,CARD_H} from './layout.mjs';
+import {createConnectionRouter} from './comparison-routing.mjs';
 import {roots} from './data.mjs';
 import {NODE_KINDS,revealPath} from './model.mjs';
 import {confidenceBadge} from './confidence-ui.mjs';
@@ -9,7 +10,7 @@ export class ComparisonCanvas{
   constructor(host,onSelect,onRecord,options={}){
     this.options=options;
     this.onSelect=onSelect;this.onRecord=onRecord;this.states={a:{map:null,expanded:new Set(),selected:null,frame:'all'},b:{map:null,expanded:new Set(),selected:null,frame:'all'}};
-    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=['#008575','#3263cc','#8250bd'];this.animation=null;
+    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=['#008575','#3263cc','#8250bd'];this.animation=null;this.routeConnection=createConnectionRouter();
     this.surface=document.createElement('div');this.surface.className='comparison-canvas';this.surface.tabIndex=0;this.surface.setAttribute('role','region');this.surface.setAttribute('aria-label','Both worldview maps on one canvas. Select a node in each map. Drag empty space to pan; scroll to zoom; use F to fit both maps.');
     this.world=document.createElement('div');this.world.className='comparison-world';this.surface.append(this.world);
     this.hint=document.createElement('div');this.hint.className='comparison-canvas-hint';this.hint.textContent='Choose a node in A, then one in B.';this.surface.append(this.hint);
@@ -106,19 +107,20 @@ export class ComparisonCanvas{
     // A question can belong to a single source while its counterpart is unknown.
     // Keep it discoverable even though there is no two-ended line to draw yet.
     for(const record of this.records){if(record.questionStatus!=='needs_elicitation')continue;const ends=comparisonRecordEnds(record,this.states);if(!ends)continue;for(const side of ['a','b']){const endpoint=visibleComparisonEndpoint(this.layout,side,ends[side]);if(!endpoint)continue;const card=this.cards.get(endpoint.key),button=document.createElement('button');button.type='button';button.className='elicitation-marker';button.textContent='?';button.title=record.question;button.setAttribute('aria-label',`Review elicitation question: ${record.question}`);button.onclick=()=>this.onRecord(record.id);card.querySelector('.node-bottom').append(button);}}
-    let relevant=0,drawn=0,proxied=0;
+    let relevant=0,drawn=0,collapsed=0;
     for(const record of this.records){const ends=comparisonRecordEnds(record,this.states);if(!ends)continue;relevant++;const a=visibleComparisonEndpoint(this.layout,'a',ends.a),b=visibleComparisonEndpoint(this.layout,'b',ends.b);if(!a||!b)continue;
+      if(a.proxy||b.proxy){collapsed++;continue;}
       const baseStatus=record.needsReview?'Needs review':record.answerStatus?ANSWER_STATUSES[record.answerStatus]:QUESTION_STATUSES[record.questionStatus];
       const agreed=record.consensus?.state==='agreed';
       const status=agreed?`Both agree · ${baseStatus}`:baseStatus;
-      this.addLink(svg,a,b,{id:record.id,label:status,question:record.question,status:record.needsReview?'review':agreed?'agreed':record.answerStatus||record.questionStatus,active:record.id===this.activeRecord});drawn++;if(a.proxy||b.proxy)proxied++;
+      this.addLink(svg,a,b,{id:record.id,label:status,question:record.question,status:record.needsReview?'review':agreed?'agreed':record.answerStatus||record.questionStatus,active:record.id===this.activeRecord});drawn++;
     }
     const a=visibleComparisonEndpoint(this.layout,'a',this.states.a.selected),b=visibleComparisonEndpoint(this.layout,'b',this.states.b.selected);
     const active=this.records.find(r=>r.id===this.activeRecord),activeEnds=active&&comparisonRecordEnds(active,this.states);
     const same=activeEnds&&activeEnds.a===this.states.a.selected&&activeEnds.b===this.states.b.selected;
-    if(a&&b&&!same)this.addLink(svg,a,b,{label:'Selected pair · not recorded',status:'draft',active:true});
+    if(a&&b&&!a.proxy&&!b.proxy&&!same)this.addLink(svg,a,b,{label:'Selected pair · not recorded',status:'draft',active:true});
     this.hint.textContent=a&&b?'Candidate pair selected. Decide on counterparts or record an elicitation question.':a||b?`Choose a counterpart in ${this.states[a?'b':'a'].map?.name||'the other map'}, or record a question for this node.`:'Shared frame layout · Nearby nodes are not yet confirmed counterparts.';
-    this.linkStatus.textContent=relevant?`${drawn} of ${relevant} recorded links shown${proxied?' · Dashed ends include collapsed nodes':''}`:'Recorded comparisons will connect these maps.';
+    this.linkStatus.textContent=relevant?`${drawn} of ${relevant} recorded links shown${collapsed?` · ${collapsed} inside collapsed branches`:''}`:'Recorded comparisons will connect these maps.';
     this.focusButton.disabled=!a&&!b;
     if(this.options.single){this.hint.textContent=this.options.hint||'Choose a node to read, co-sign, or copy it.';this.linkStatus.hidden=true;}
     this.options.afterBuild?.();
@@ -135,8 +137,14 @@ export class ComparisonCanvas{
   drawGeometry(lanes=this.layout.lanes){
     for(const [key,card]of this.cards){const p=this.positions.get(key);card.style.transform=`translate(${p.x}px,${p.y}px)`;}
     for(const lane of lanes){const el=this.laneElements.get(lane.side);el.style.transform=`translate(${lane.x}px,${lane.y}px)`;el.style.width=lane.width+'px';el.style.height=lane.height+'px';}
-    for(const {path,edge,side}of this.branches){const a=this.positions.get(comparisonNodeKey(side,edge.from)),b=this.positions.get(comparisonNodeKey(side,edge.to)),root=this.positions.get(comparisonNodeKey(side,roots[edge.frame]));path.setAttribute('d',connectorRoute(a,b,edge.kind==='spine'?null:root).d);}
-    for(const link of this.links){const a=this.positions.get(link.a.key),b=this.positions.get(link.b.key);if(!a||!b)continue;const {x1,y1,x2,y2}=edgeEndpoints(a,b),horizontal=Math.abs(y1-y2)<CARD_H,middle=horizontal?Math.min(a.y,b.y)-36:(y1+y2)/2,d=`M ${x1} ${y1} C ${x1} ${middle} ${x2} ${middle} ${x2} ${y2}`;link.path.setAttribute('d',d);link.hit?.setAttribute('d',d);if(link.badge)link.badge.style.transform=`translate(${(x1+x2)/2}px,${horizontal?middle-10:middle}px) translate(-50%,-50%)`;}
+    const center=p=>p&&({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});
+    const obstacles=[...this.positions.values(),...(this.layout.placeholders||[])].map(center);
+    for(const branch of this.branches){const {path,edge,side}=branch,a=center(this.positions.get(comparisonNodeKey(side,edge.from))),b=center(this.positions.get(comparisonNodeKey(side,edge.to)));branch.route=a&&b?this.routeConnection(a,b,obstacles):null;path.setAttribute('d',branch.route?.d||'');}
+    for(const link of this.links){
+      const a=center(this.positions.get(link.a.key)),b=center(this.positions.get(link.b.key));link.route=a&&b?this.routeConnection(a,b,obstacles):null;const route=link.route;
+      link.path.setAttribute('d',route?.d||'');link.hit?.setAttribute('d',route?.d||'');
+      if(link.badge){link.badge.hidden=false;const labeled=route&&this.routeConnection(a,b,obstacles,{w:link.badge.offsetWidth,h:link.badge.offsetHeight}),label=labeled?.d===route?.d?labeled?.label:null;link.badge.hidden=!label;if(label)link.badge.style.transform=`translate(${label.x}px,${label.y}px) translate(-50%,-50%)`;}
+    }
     this.options.afterGeometry?.();
   }
   fitCamera(points=null){

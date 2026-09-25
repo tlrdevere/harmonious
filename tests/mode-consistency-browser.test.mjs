@@ -262,6 +262,67 @@ try{
   await a.screenshot({path:'build/design-review/mode-consistency-mobile.png',fullPage:true});
   await close(a);await find(a,'outdated');
   const searchBounds=await search(a).boundingBox();assert(searchBounds.x>=0&&searchBounds.x+searchBounds.width<=390,'Find fits the narrow viewport');
+  await search(a).getByRole('button',{name:'Close',exact:true}).click();await a.setViewportSize({width:1440,height:1000});
+  // The screenshot regression: two different real pairs must never become an
+  // apparent connection from their shared collapsed ancestor to another node.
+  const nested={type:'node',mapId:aMap.id,nodeId:ids['Nested source']},conclusion={type:'node',mapId:aMap.id,nodeId:ids['Earlier conclusion']},survey={type:'node',mapId:bMap.id,nodeId:ids['Survey results']};
+  const agreement=await seed(alice,{kind:'relationship',action:'agreement',target:nested,other:bSource,body:''});
+  const linked=await seed(alice,{kind:'correspondence',action:'counterpart_link',target:conclusion,other:survey,body:'Comparable material, without an agreement judgment.'});
+  const withdrawnJudgment=await seed(bob,{kind:'relationship',action:'disagreement',target:bSource,other:nested,body:'An earlier judgment kept in history.'});
+  await edit(store,bob,ws=>{const old=ws.discussions.find(r=>r.id===withdrawnJudgment.id);ws.discussions=ws.discussions.map(r=>r.id===old.id?makeDiscussion(ws,{...old,status:'withdrawn'},bob.id,old):r);const map=ws.maps.find(m=>m.id===bMap.id),node=addNode(ws,bob,'Survey detail');node.kind='position';node.parent=ids['Survey results'];synchronizeIdeas(ws,map);});
+  await seed(alice,{kind:'relationship',action:'agreement',target:{type:'node',mapId:aMap.id,nodeId:'status'},other:{type:'node',mapId:bMap.id,nodeId:'status'},body:'A genuine frame-level connection.'});
+  const connectionReply=await seed(bob,{kind:'reply',action:'reply',target:{type:'entry',entryId:agreement.id},layer:'map',body:'Earlier discussion attached to the actual pair.'});
+  const {recordComparison}=await import('../dist/workspace.mjs');let earlierPair;
+  await edit(store,alice,ws=>{earlierPair=recordComparison(ws,{aMapId:aMap.id,bMapId:bMap.id,aNodeId:nested.nodeId,bNodeId:bSource.nodeId,questionStatus:'matched',question:'Earlier pair wording',answerStatus:'aligned',notes:''},null,alice.id);ws.comparisons.push(earlierPair);});
+  const unchanged=JSON.stringify((await view(store,alice)).workspace);
+  await load(a);await mode(a,'compare');
+  const bobSide=await a.locator('#compare-map-a').inputValue()===bMap.id?'a':'b',aliceSide=bobSide==='a'?'b':'a';
+  await a.getByRole('button',{name:`Collapse Survey results in map ${bobSide.toUpperCase()}`,exact:true}).click();
+  const options=async()=>a.locator('.comparison-view-options>summary').click();
+  await options();await a.locator('#compare-collapse-'+bobSide).click();await options();
+  assert.equal(await a.locator('.discussion-relationship').count(),1,'A real visible pair keeps its own edge while hidden pairs have no ancestor edge');
+  const hiddenBadge=()=>a.locator(`.node[data-side="${bobSide}"] .collapsed-connection-badge`);
+  assert.equal(await hiddenBadge().getAttribute('aria-label'),'2 connections inside this branch','Multiple meanings on one pair do not inflate branch counts');
+  await hiddenBadge().focus();await a.keyboard.press('Enter');
+  assert.equal(await pop(a).locator('.collapsed-connection-pair').count(),2);
+  for(const r of [agreement,linked,earlierPair,withdrawnJudgment])assert(await pop(a).locator(`[data-entry="${r.id}"]`).isVisible());
+  assert.match(await pop(a).locator(`[data-entry="${withdrawnJudgment.id}"]`).innerText(),/Withdrawn/);
+  assert.match(await pop(a).innerText(),/Alice · Status Quo › Evening meeting › Nested source/);
+  assert.match(await pop(a).innerText(),/Bob · Status Quo › Daytime meeting/);
+  await a.screenshot({path:'build/design-review/collapsed-connections.png',fullPage:true});
+  const zoomBefore=await a.locator('#compare-canvas .comparison-zoom').innerText();
+  await close(a);assert(await hiddenBadge().evaluate(el=>document.activeElement===el),'Closing a branch list restores keyboard focus to its rebuilt badge');
+  await mode(a,'inquiry');
+  await a.getByRole('button',{name:`Expand Status Quo in map ${bobSide.toUpperCase()}`,exact:true}).click();
+  await node(a,'Daytime meeting');await click(a,'Request reason');
+  await a.locator('#interaction-comment').fill('Keep this inquiry draft');
+  await a.getByRole('button',{name:`Collapse Status Quo in map ${bobSide.toUpperCase()}`,exact:true}).focus();await a.keyboard.press('Enter');
+  a.once('dialog',dialog=>dialog.dismiss());await hiddenBadge().focus();await a.keyboard.press('Enter');
+  assert.equal(await a.locator('#interaction-comment').inputValue(),'Keep this inquiry draft','Opening collapsed pair details honors the existing draft safeguard');
+  a.once('dialog',dialog=>dialog.accept());await close(a);await mode(a,'compare');
+  await hiddenBadge().focus();await a.keyboard.press('Enter');
+  await pop(a).locator('.collapsed-connection-pair').filter({has:a.locator(`[data-entry="${agreement.id}"]`)}).getByRole('button',{name:'Show connected nodes',exact:true}).click();
+  assert.equal(await a.locator('#compare-canvas .comparison-zoom').innerText(),zoomBefore,'Revealing both actual endpoints preserves zoom');
+  for(const title of ['Nested source','Daytime meeting'])assert(await a.locator('#compare-canvas .node-main').filter({has:a.getByText(title,{exact:true})}).isVisible());
+  assert.equal(await a.getByRole('button',{name:`Expand Survey results in map ${bobSide.toUpperCase()}`,exact:true}).getAttribute('aria-expanded'),'false','Unrelated branches stay folded');
+  assert.equal(await a.locator('.discussion-relationship').count(),3,'Revealed true pairs draw independently');
+  await close(a);assert(await a.locator('.discussion-relationship-hit:focus,.node-main:focus').count(),'Removed ancestor badge yields focus to a real connection or source');
+  await node(a,'Nested source');assert.equal(await button(a,'Request counterpart').count(),0,'Collapsed presentation never changes counterpart state');await close(a);
+  await options();for(const side of ['a','b'])await a.locator('#compare-collapse-'+side).click();await options();
+  assert.equal(await a.locator('.collapsed-connection-badge').count(),2,'Both collapsed branches provide access without drawing a proxy line');
+  assert.deepEqual(await a.locator('.collapsed-connection-badge').evaluateAll(bs=>bs.map(b=>b.getAttribute('aria-label'))),['2 connections inside this branch','2 connections inside this branch']);
+  await options();await a.locator('#compare-frame-'+aliceSide).selectOption('goal');await options();
+  assert.equal(await a.locator('.collapsed-connection-badge').count(),0,'A filtered endpoint is not represented as a collapsed connection');
+  await open(a,agreement.id,'compare');
+  // Opening a conversation already reveals its sources. Reapply the filter
+  // while its detail stays open to exercise the explicit pair-reveal action.
+  await options();await a.locator('#compare-frame-'+aliceSide).selectOption('goal');await options();
+  await click(a,'Show connected nodes');
+  assert.match(await pop(a).innerText(),/frame filter was cleared/);assert.equal(await a.locator('#compare-frame-'+aliceSide).inputValue(),'all');
+  await pop(a).locator(`[data-entry="${agreement.id}"]`).click();
+  assert(await pop(a).locator(`[data-entry="${connectionReply.id}"]`).isVisible(),'The real pair retains its earlier follow-ups');
+  await pop(a).locator(`[data-entry="${connectionReply.id}"]`).click();assert.match(await pop(a).innerText(),/Earlier discussion attached to the actual pair/);
+  assert.equal(JSON.stringify((await view(store,alice)).workspace),unchanged,'Connection projection and reveal never rewrite saved maps or relationships');
   assert.deepEqual(errors,[]);
   console.log('Mode consistency browser: shared lists/counts, dispute and response search, exact attachment categories, one detail path, recipients, retired controls, mode-local drafts/search, stable radial geometry, persistence, keyboard and narrow screens passed.');
 }catch(error){

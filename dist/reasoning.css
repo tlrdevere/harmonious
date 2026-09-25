@@ -43,3 +43,10 @@
 .discussion-list-item>small{display:block;margin-top:5px;color:#627687;font-weight:400}
 .discussion-list-item[aria-current=true]{border-color:#347d82;background:#edf6f5}
 @media(max-width:700px){.interaction-search{top:8px;max-height:calc(100% - 16px)}}
+
+.collapsed-connection-badge{padding:3px 6px;font-size:11px;line-height:1.35;color:#496779;background:#f5f8fa;border:1px solid #c9d7e0;border-radius:6px;pointer-events:auto}
+.collapsed-connection-badge[aria-expanded=true]{background:#eaf2f6;border-color:#7899ab}
+.collapsed-connection-pair{padding:12px 0;border-top:1px solid #dce5eb}
+.connection-source-label{margin:4px 0;font-size:12px;line-height:1.5;color:#4c6273;overflow-wrap:anywhere}
+.collapsed-connection-pair>.discussion-list-item{margin-top:7px}
+.collapsed-connection-pair>button:last-child{margin-top:8px;font-size:12px}

@@ -4,13 +4,14 @@ const overlaps=(a,b,gap=8)=>Math.abs(a.x-b.x)<(a.w+b.w)/2+gap&&Math.abs(a.y-b.y)
 
 function labelOnRoute(route,size,obstacles){
   if(!route.midpoint)return null;
+  if(!size.w&&!size.h)return {...route.midpoint,...size};
   const candidates=[route.midpoint];
   // Prefer the actual halfway point, then nearby points on straight segments.
   // A label stays attached to its edge rather than floating above another card.
   for(const segment of route.segments){
     if(segment.control)continue;
     const distance=Math.hypot(segment.to.x-segment.from.x,segment.to.y-segment.from.y);
-    const steps=Math.max(2,Math.ceil(distance/24));
+    const steps=Math.min(256,Math.max(2,Math.ceil(distance/24)));
     for(let i=1;i<steps;i++)candidates.push({x:segment.from.x+(segment.to.x-segment.from.x)*i/steps,y:segment.from.y+(segment.to.y-segment.from.y)*i/steps});
   }
   candidates.sort((a,b)=>Math.hypot(a.x-route.midpoint.x,a.y-route.midpoint.y)-Math.hypot(b.x-route.midpoint.x,b.y-route.midpoint.y));
@@ -18,7 +19,8 @@ function labelOnRoute(route,size,obstacles){
   return point?{...point,...size}:null;
 }
 
-/** Route between the displayed card boundaries, including collapsed ancestors.
+/** Route between actual visible card boundaries. Callers must not substitute
+ * a collapsed ancestor for a hidden endpoint.
  * Cards and previously placed labels use center coordinates. Node positions
  * never change. A relationship label is centered on an unobstructed part of
  * its actual route; a larger outside corridor is used only when needed.
@@ -28,7 +30,7 @@ export function routeComparisonConnection(from,to,obstacles=[],labelSize={w:0,h:
   const clearances=[undefined,...new Set([Math.min(256,Math.max(12,size.h/2+12)),Math.min(256,Math.max(12,size.w/2+12))])];
   let fallback=null;
   for(const clearance of clearances){
-    const route=routeReasoningConnection(from,to,obstacles,clearance===undefined?{}:{clearance});
+    const route=routeReasoningConnection(from,to,obstacles,clearance===undefined?{}:{clearance,direct:false});
     if(route.blocked)continue;
     fallback??=route;
     const label=labelOnRoute(route,size,[from,to,...obstacles]);
@@ -37,4 +39,19 @@ export function routeComparisonConnection(from,to,obstacles=[],labelSize={w:0,h:
   // Enclosed cards have no honest connection to draw. Keep the saved record in
   // the conversation list instead of drawing a path through a node's face.
   return {...(fallback||routeReasoningConnection(from,to,obstacles)),label:null};
+}
+
+/** Bounded cache of world-coordinate geometry. Pan/zoom never belongs in the
+ * key; source geometry, obstacles and label dimensions do. Clear at teardown.
+ */
+export function createConnectionRouter({limit=512}={}){
+  const capacity=Math.max(1,Math.min(4096,Math.floor(limit)||512)),cache=new Map();
+  const rect=r=>[r.x,r.y,r.w??0,r.h??0];
+  const route=(from,to,obstacles=[],labelSize={w:0,h:0})=>{
+    const key=JSON.stringify([rect(from),rect(to),obstacles.map(rect),labelSize.w||0,labelSize.h||0]);
+    if(cache.has(key)){const found=cache.get(key);cache.delete(key);cache.set(key,found);return found;}
+    const result=routeComparisonConnection(from,to,obstacles,labelSize);cache.set(key,result);
+    if(cache.size>capacity)cache.delete(cache.keys().next().value);return result;
+  };
+  route.clear=()=>cache.clear();Object.defineProperty(route,'size',{get:()=>cache.size});return route;
 }

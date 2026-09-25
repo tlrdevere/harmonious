@@ -15,6 +15,8 @@ Select a source node or connection to see its available actions. The three frame
 
 In Map/Create, selecting a node opens its on-map menu. Edit opens the optional detail panel; Close returns focus to the node. Node footers omit redundant type and author labels. Confidence and expansion/add controls remain available, and signed-in edits use the global autosave indicator.
 
+Selecting a connection in Map/Create opens its on-map detail with its actual endpoints, direction and saved meanings. Additional connections have Edit/Remove actions for their owner; a parent–child branch describes organization rather than asserting a reason. Removing an additional connection does not remove that branch. View options controls additional connection visibility, with All visible as the default.
+
 ## Read and find interactions
 
 Source badges count initiating conversations, excluding their responses. A badge opens exactly that category of conversations. Collapsing a branch keeps its attachments reachable from the visible ancestor. Select Conversations to browse the current mode; Withdrawn interactions opens historical threads.
@@ -39,6 +41,8 @@ Definitions and standards are maintained centrally in Map Library and invoked at
 
 Counterpart links identify comparable nodes separately from stances. Request counterpart is available in Compare for your own unlinked ordinary node. The other person can create or choose their own counterpart. Empty spots remain visible; a linked node does not offer another counterpart request.
 
+When an earlier relationship or counterpart connection leads inside a collapsed branch, that branch has a compact **↔** count instead of a line to a substitute ancestor. Open it for the actual node pairs, including names and parent paths. The count represents distinct pairs, not people agreeing or individual judgments. **Show connected nodes** opens the necessary branches on both maps while retaining zoom, unrelated folds and saved history. A requested reveal can clear a frame filter; unavailable sources retain permitted history without a fabricated endpoint.
+
 ## Earlier records
 
 Earlier relationships, reasons, challenges, replies, and annotations remain readable with their attributed history. Their old creation, editing, adoption, reflection, and Resolve/Reopen controls are retired. Authorized withdrawal remains available. Counterpart fulfillment and central definitions remain supported workflows.
@@ -48,3 +52,5 @@ Earlier records and Earlier reasoning preserve the previous proposal-based mater
 ## Positioning
 
 The source maps still use radial positioning. Sparse branches with one or two children can look vertical. Counterpart alignment can move a node away from its source branch; [the placement study](design/counterpart-depth-study.html) shows a representative cross-depth case. Manual dragging and a replacement layout remain deferred.
+
+Connection drawing now uses one policy: direct boundary-to-boundary lines where clear, small rounded detours around cards where needed. Ring arcs no longer denote a separate branch convention. One visible edge represents each actual pair, with additional meanings available in detail. Source routes stay stable when changing shared modes or panning/zooming. If no clear route exists, the record remains accessible through its existing list rather than drawing through a card.

@@ -13,12 +13,11 @@ import {isAdoptionReceipt} from './adoption-fulfillment.mjs';
 import {ReasoningUI} from './reasoning-ui.mjs';
 import {makeDiscussion,discussionLayer,discussionSource,discussionTargetLabel,discussionHealth,DISCUSSION_LABELS,isReason,isChallenge,canExplainReasoning} from './discussion.mjs';
 import {comparisonPairKey,validateWorkspace} from './workspace.mjs';
-import {comparisonNodeKey,visibleComparisonEndpoint} from './comparison-layout.mjs';
-import {routeComparisonConnection} from './comparison-routing.mjs';
+import {comparisonNodeKey,visibleComparisonEndpoint,comparisonEndpoint} from './comparison-layout.mjs';
 import {graphEdges,revealPath,STRUCTURAL_TYPES,RELATION_TYPES} from './model.mjs';
-import {CARD_W,CARD_H,connectorRoute} from './layout.mjs';
+import {CARD_W,CARD_H} from './layout.mjs';
 import {stableJSON} from './account-model.mjs';
-import {conversationAnchor,conversationGroups,challengeState,groupSourceConnections,groupComparisonConnections,visibleNodePairKey} from './conversation-tree.mjs';
+import {conversationAnchor,conversationGroups,challengeState,groupSourceConnections,projectComparisonConnections,actualNodePairKey,visibleNodePairKey} from './conversation-tree.mjs';
 const discussEl=(tag,text='',className='')=>{const e=document.createElement(tag);e.textContent=text;e.className=className;return e;};
 const discussButton=(text,fn,className='')=>{const b=discussEl('button',text,className);b.type='button';b.onclick=fn;return b;};
 const discussUI=id=>document.getElementById(id);
@@ -106,8 +105,8 @@ export class DiscussionUI{
     if(['entry','inference'].includes(this.target?.type)){const source=this.c.workspace.discussions.find(r=>r.id===this.target.entryId);this.target=source&&conversationAnchor(this.c.workspace.discussions,source);}
     this.viewId=null;this.groupTarget=null;if(this.target)this.actions();else this.list();
   }
-  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
-  close(){const entry=this.viewId;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.draw();const marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry);(marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
+  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
+  close(){const entry=this.viewId,connectionReturn=this.connectionReturn;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.draw();const marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main'));(connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
   shell(title){this.viewOptions.open=false;this.viewId=null;this.hostMode=this.mode();this.host.replaceChildren();this.host.hidden=false;const header=discussEl('header');header.append(discussEl('strong',title),discussButton('Close',()=>this.close()));this.host.append(header);this.positionPopover();}
   actionGroup(title,buttons){if(!buttons.length)return;const section=discussEl('section','','discussion-action-group'),actions=discussEl('div','','discussion-actions');section.append(discussEl('h3',title));actions.append(...buttons);section.append(actions);this.host.append(section);}
   selectNode(side,id){if(!this.canLeave())return;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
@@ -207,7 +206,7 @@ export class DiscussionUI{
         this.counterparts.requestActions(r);
         if(r.authorId!==this.actor())this.actionGroup('Respond',[discussButton('Respond',()=>this.compose('reply','reply',null,{layer:discussionLayer(r)}))]);
       }
-      if(this.mode()==='compare'&&r.kind==='correspondence')this.actionGroup('Compared nodes',[discussButton('Show linked counterpart',()=>this.counterparts.focus(r))]);
+      if(['relationship','correspondence'].includes(r.kind))this.actionGroup('Connected nodes',[discussButton('Show connected nodes',()=>this.showConnectedNodes({key:actualNodePairKey(r.target,r.other)}))]);
       if(isReason(r))this.actionGroup('Earlier reasoning',[discussButton('Inspect reasoning connection',()=>this.reasoning.openInference(r.id))]);
     }
     this.reflections.attach(this.target);
@@ -248,12 +247,58 @@ export class DiscussionUI{
   }
   listArguments(){this.activateMode('argument');this.interactions.list();}
   list(){this.interactions.list();}
-  openConnection(group,label,anchor){
-
-    if(group.records.length===1){const r=group.records[0];if(r.legacy){if(this.canLeave())this.c.openRecord(r.id);}else this.open(r.id);return;}
-    if(!this.canLeave())return;this.target=anchor;this.shell(label);this.host.append(discussEl('p','One connection, with these saved details.'));
-    for(const r of group.records)this.host.append(discussButton(r.legacy?`Earlier comparison · ${r.question}`:`${contributionLabel(r)} · ${this.name(r.authorId)} · ${r.targetLabel}`,()=>r.legacy?this.c.openRecord(r.id):this.open(r.id),'discussion-list-item'));
-    this.positionPopover();
+  projectConnections(){
+    const previous=this.canvas.records.map(r=>({...r,legacy:true,target:{type:'node',mapId:r.aMapId,nodeId:r.aNodeId},other:{type:'node',mapId:r.bMapId,nodeId:r.bNodeId}}));
+    const endpoint=target=>{const side=['a','b'].find(s=>this.canvas.states[s].map?.id===target?.mapId);return side?comparisonEndpoint(this.canvas.layout,side,target.nodeId):{status:'unavailable'};};
+    return projectComparisonConnections([...this.entries().filter(r=>['relationship','correspondence'].includes(r.kind)),...previous],endpoint);
+  }
+  connectionSourceLabel(target){
+    const source=discussionSource(this.c.workspace,target);if(!source)return 'Source no longer available';
+    const path=[],seen=new Set();let n=source.item;
+    while(n&&!seen.has(n.id)){seen.add(n.id);path.unshift(n.title);n=source.map.nodes.find(item=>item.id===n.parent);}
+    return `${this.name(source.map.ownerId)} · ${path.join(' › ')}`;
+  }
+  connectionRecords(group){
+    const records=[...group.records],seen=new Set(records.map(r=>r.id));
+    for(const r of this.allEntries())if(['relationship','correspondence'].includes(r.kind)&&actualNodePairKey(r.target,r.other)===group.key&&!seen.has(r.id)){seen.add(r.id);records.push(r);}
+    return records.sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||'')||a.id.localeCompare(b.id));
+  }
+  connectionDetails(group,host){
+    host.append(discussEl('p',this.connectionSourceLabel(group.target),'connection-source-label'),discussEl('p',this.connectionSourceLabel(group.other),'connection-source-label'));
+    for(const r of this.connectionRecords(group)){
+      const count=this.allEntries().filter(e=>['entry','inference'].includes(e.target.type)&&e.target.entryId===r.id).length;
+      const label=r.legacy?`Earlier comparison · ${r.question}`:`${r.kind==='correspondence'?'Counterpart link':contributionLabel(r)} · ${this.name(r.authorId)}${r.status==='withdrawn'?' · Withdrawn':''}`;
+      const button=discussButton(label,()=>r.legacy?this.c.openRecord(r.id):this.open(r.id),'discussion-list-item');button.dataset.entry=r.id;
+      if(count)button.append(discussEl('small',`${count} saved ${count===1?'follow-up':'follow-ups'}`));host.append(button);
+    }
+    const show=discussButton('Show connected nodes',()=>this.showConnectedNodes(group));show.dataset.showConnection=group.key;host.append(show);
+  }
+  openConnection(group,label,anchor,{details=false}={}){
+    if(!details&&group.records.length===1){const r=group.records[0];if(r.legacy){if(this.canLeave())this.c.openRecord(r.id);}else this.open(r.id);return;}
+    if(!this.canLeave())return;this.target=anchor;this.shell(label);this.connectionDetails(group,this.host);this.positionPopover();
+  }
+  openCollapsedConnections(key){
+    const branch=this.projectConnections().branches.find(b=>b.key===key);if(!branch||!this.canLeave())return;
+    this.target={type:'node',mapId:branch.endpoint.mapId,nodeId:branch.endpoint.visibleId};this.shell('Connections inside this branch');
+    this.collapsedBranchKey=key;this.connectionReturn={branchKey:key};
+    for(const group of branch.groups){const section=discussEl('section','','collapsed-connection-pair');section.dataset.connectionPair=group.key;this.connectionDetails(group,section);this.host.append(section);}
+    this.draw();this.positionPopover();this.host.querySelector('header button')?.focus({preventScroll:true});
+  }
+  showConnectedNodes(group){
+    const current=this.projectConnections().groups.find(g=>g.key===group.key);if(!current||current.ends.some(e=>!e||['missing','unavailable'].includes(e.status))){this.c.message('These connected sources are no longer available. Their permitted history remains in Conversations or Earlier records.');return;}
+    if(!this.canLeave())return;const canvas=this.canvas,zoom=canvas.camera.z,filtered=current.status==='filtered';
+    for(const target of [current.target,current.other]){
+      const side=['a','b'].find(s=>canvas.states[s].map?.id===target.mapId),state=canvas.states[side];
+      state.expanded=revealPath(state.map.nodes,target.nodeId,state.expanded);state.selected=target.nodeId;state.frame='all';this.c.sides[side].nodeId=target.nodeId;discussUI('compare-frame-'+side).value='all';
+    }
+    this.reasoning.anchor=null;this.reasoning.focusId=null;this.c.renderComparison();
+    const points=[this.point(current.target),this.point(current.other)];canvas.camera.z=zoom;
+    const outside=points.some(p=>p.x*zoom+canvas.camera.x-CARD_W*zoom/2<24||p.x*zoom+canvas.camera.x+CARD_W*zoom/2>canvas.surface.clientWidth-24||p.y*zoom+canvas.camera.y-CARD_H*zoom/2<24||p.y*zoom+canvas.camera.y+CARD_H*zoom/2>canvas.surface.clientHeight-24);
+    if(outside){canvas.camera.x=canvas.surface.clientWidth/2-(points[0].x+points[1].x)*zoom/2;canvas.camera.y=canvas.surface.clientHeight/2-(points[0].y+points[1].y)*zoom/2;}canvas.drawCamera();
+    const anchor={type:'connection',a:current.target,b:current.other,key:current.key};this.openConnection(current,'Connected nodes',anchor,{details:true});
+    if(filtered)this.host.append(discussEl('p','The frame filter was cleared to reveal both connected nodes.','field-help'));
+    const side=['a','b'].find(s=>canvas.states[s].map?.id===current.target.mapId);this.connectionReturn={pairKey:current.key,nodeKey:comparisonNodeKey(side,current.target.nodeId)};
+    this.positionPopover();this.host.querySelector('header button')?.focus({preventScroll:true});
   }
   openEdgeContexts(targets){
     const used=targets.filter(t=>this.c.workspace.discussions.some(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(t)));
@@ -274,6 +319,7 @@ export class DiscussionUI{
     const canvas=this.canvas;if(!canvas.layout)return;this.reasoning?.activateScope();canvas.world.querySelectorAll('.discussion-drawing,.discussion-context-icon').forEach(e=>e.remove());
     for(const link of canvas.links||[]){link.path.remove();link.hit?.remove();link.badge?.remove();}
     this.items=[];const svg=canvas.svgElement('svg',{});svg.classList.add('discussion-drawing','discussion-lines');canvas.world.append(svg);this.svg=svg;
+    const defs=canvas.svgElement('defs',{}),marker=canvas.svgElement('marker',{id:'comparison-source-arrow',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:5,markerHeight:5,orient:'auto-start-reverse'});marker.append(canvas.svgElement('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'#758995'}));defs.append(marker);svg.append(defs);
     for(const card of canvas.cards.values())card.hidden=!this.layers.map;
     canvas.world.querySelectorAll('.comparison-lines,.comparison-map-lane,.comparison-link-label').forEach(e=>e.style.visibility=this.layers.map?'':'hidden');
     // Reuse the tree's existing path where available. A transparent hit area
@@ -281,44 +327,53 @@ export class DiscussionUI{
     this.sourceEdgeKeys=new Map();this.connectionKeys=new Map();
     if(this.layers.map)for(const side of ['a','b']){const map=canvas.states[side].map;if(!map||map.unavailable)continue;
       for(const grouped of groupSourceConnections(graphEdges(map.nodes,map.relations))){
-        const edges=[...grouped].sort((a,b)=>Number(a.structural)-Number(b.structural));
+        const edges=[...grouped].sort((a,b)=>Number(a.structural)-Number(b.structural)||a.id.localeCompare(b.id));
         const edge=edges[0],targets=edges.map(e=>({type:'edge',mapId:map.id,edgeId:e.id})),target=targets[0];
         const a={type:'node',mapId:map.id,nodeId:edge.from},b={type:'node',mapId:map.id,nodeId:edge.to};
         if(!canvas.layout.maps[side]?.positions.has(edge.from)||!canvas.layout.maps[side]?.positions.has(edge.to))continue;
         const key=visibleNodePairKey(comparisonNodeKey(side,edge.from),comparisonNodeKey(side,edge.to));for(const t of targets)this.sourceEdgeKeys.set(stableJSON(t),key);
         const branch=canvas.branches.find(e=>e.side===side&&visibleNodePairKey(e.edge.from,e.edge.to)===visibleNodePairKey(edge.from,edge.to));
         const path=branch?.path||canvas.svgElement('path',{fill:'none'});path.classList.add('discussion-source-edge');path.dataset.nodePair=key;
+        path.removeAttribute('marker-start');path.removeAttribute('marker-end');
+        if(edges.some(e=>!e.structural&&RELATION_TYPES[e.type]?.directed&&e.from===edge.from))path.setAttribute('marker-end','url(#comparison-source-arrow)');
+        if(edges.some(e=>!e.structural&&RELATION_TYPES[e.type]?.directed&&e.from===edge.to))path.setAttribute('marker-start','url(#comparison-source-arrow)');
         const hit=canvas.svgElement('path',{class:'discussion-edge-hit',fill:'none',tabindex:'0',role:'button','aria-label':`Select connection ${discussionTargetLabel(this.c.workspace,target)}`});
         const select=()=>{this.selectTarget(target);if(!this.dirty&&edges.length>1){const details=discussEl('details');details.append(discussEl('summary','Connection details'));for(const e of edges){const t={type:'edge',mapId:map.id,edgeId:e.id};details.append(discussButton((e.structural?STRUCTURAL_TYPES[e.type]:RELATION_TYPES[e.type])?.label||e.type,()=>this.selectTarget(t)));}this.host.append(details);this.positionPopover();}};
-        hit.onclick=select;hit.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();select();}};
+        hit.onclick=select;hit.onpointerdown=e=>e.stopPropagation();hit.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();select();}};
         if(!branch)svg.append(path);svg.append(hit);this.items.push({type:'edge',target,targets,a,b,path,hit,branch});
         if(targets.some(t=>this.c.workspace.discussions.some(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(t))))this.badge('▤',target,()=>this.openEdgeContexts(targets),'Definitions and standards for '+discussionTargetLabel(this.c.workspace,target));
       }
     }
     for(const r of this.c.workspace.discussions||[])if(r.kind==='context'&&r.status==='active'&&r.target.type==='node'&&this.layers.map){const side=['a','b'].find(s=>canvas.states[s].map?.id===r.target.mapId),card=side&&canvas.cards.get(comparisonNodeKey(side,r.target.nodeId));if(card&&!card.querySelector('.discussion-context-icon')){const b=discussButton('▤',()=>this.openContexts(r.target),'discussion-context-icon');b.setAttribute('aria-label','Definitions and standards for '+r.targetLabel);card.querySelector('.node-bottom').append(b);}}
     const groups=conversationGroups(this.allEntries());
-    const previous=canvas.records.map(r=>({...r,legacy:true,target:{type:'node',mapId:r.aMapId,nodeId:r.aNodeId},other:{type:'node',mapId:r.bMapId,nodeId:r.bNodeId}}));
-    const endpoint=t=>{const side=['a','b'].find(s=>canvas.states[s].map?.id===t?.mapId);return side&&visibleComparisonEndpoint(canvas.layout,side,t.nodeId)?.key;};
-    const connections=groupComparisonConnections([...this.entries().filter(r=>['relationship','correspondence'].includes(r.kind)),...previous],endpoint);
-    for(const connection of connections){
+    const connections=this.projectConnections(),foldedRecords=new Set(connections.groups.filter(g=>g.status==='collapsed').flatMap(g=>g.records.filter(r=>!r.legacy).map(r=>r.id)));
+    for(const connection of connections.visible){
       const records=connection.records,judgments=records.filter(r=>!r.legacy&&r.kind==='relationship'),r=judgments[0]||records.find(r=>!r.legacy)||records[0];
-      const actualPairs=new Set(records.map(e=>visibleNodePairKey(stableJSON(e.target),stableJSON(e.other))));
-      const mixed=new Set(judgments.map(e=>e.action)).size>1,action=actualPairs.size>1?'grouped':mixed?'mixed':r.legacy?'earlier':r.action;
-      let label=actualPairs.size>1?`${actualPairs.size} connections · Collapsed branches`:mixed?'Mixed judgments':r.legacy?'Earlier comparison':`${DISCUSSION_LABELS[r.action]} · ${r.kind==='correspondence'?'Linked':'Recorded'} by ${this.name(r.authorId)}`;
-      if(judgments.length>1&&!mixed&&actualPairs.size===1)label=`${DISCUSSION_LABELS[r.action]} · ${judgments.length} judgments`;
+      const mixed=new Set(judgments.map(e=>e.action)).size>1,action=mixed?'mixed':r.legacy?'earlier':r.action;
+      let label=mixed?'Mixed judgments':r.legacy?'Earlier comparison':`${DISCUSSION_LABELS[r.action]} · ${r.kind==='correspondence'?'Linked':'Recorded'} by ${this.name(r.authorId)}`;
+      if(judgments.length>1&&!mixed)label=`${DISCUSSION_LABELS[r.action]} · ${judgments.length} judgments`;
       if(this.mode()==='argument'&&records.some(e=>groups.some(g=>g.target.entryId===e.id&&g.openChallenges)))label+=' · Contested';
       if(records.some(e=>!e.legacy&&discussionHealth(this.c.workspace,e).state==='changed'))label+=' · Review source';
       const path=canvas.svgElement('path',{class:`discussion-relationship ${action}`,fill:'none'});path.dataset.nodePair=connection.key;
       const anchor={type:'connection',a:r.target,b:r.other,key:connection.key},open=()=>this.openConnection(connection,label,anchor);
       const hit=canvas.svgElement('path',{class:'discussion-edge-hit discussion-relationship-hit',fill:'none',tabindex:'0',role:'button','aria-label':`Select ${label}`});
+      hit.dataset.connectionPair=connection.key;
       hit.onclick=open;hit.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();open();}};
       const edge={type:'edge',a:r.target,b:r.other,path,hit,connection:anchor};svg.append(path,hit);this.items.push(edge);
       this.badge(label,anchor,open,label,action);edge.badge=this.items.at(-1);edge.badge.edge=edge;
       this.items.at(-1).aliases=records.filter(e=>!e.legacy).map(e=>e.id);for(const e of records)this.connectionKeys.set(e.id,connection.key);
     }
+    for(const branch of connections.branches){
+      const card=canvas.cards.get(branch.key);if(!card)continue;card.hidden=false;
+      const count=branch.groups.length,button=discussButton(`↔ ${count}`,()=>this.openCollapsedConnections(branch.key),'collapsed-connection-badge discussion-drawing');
+      button.dataset.connectionBranch=branch.key;button.setAttribute('aria-label',`${count} ${count===1?'connection':'connections'} inside this branch`);button.title=button.getAttribute('aria-label');button.setAttribute('aria-expanded',String(!this.host.hidden&&this.collapsedBranchKey===branch.key));card.querySelector('.node-bottom').append(button);
+    }
     // Collapse at the source. Hidden layers retain their counts and are still discoverable.
     const rails=new Map();
     for(const g of groups){
+      // Hidden pair follow-ups remain available through that pair's branch
+      // list and detail, rather than floating beside a fabricated proxy edge.
+      if(g.target.type==='entry'&&foldedRecords.has(g.target.entryId))continue;
       let card=null;
       if(g.target.type==='node'){const side=['a','b'].find(s=>canvas.states[s].map?.id===g.target.mapId),end=side&&visibleComparisonEndpoint(canvas.layout,side,g.target.nodeId);card=end&&canvas.cards.get(end.key);}
       const key=card||(g.target.type==='edge'?this.sourceEdgeKeys.get(stableJSON(g.target)):g.target.type==='entry'?this.connectionKeys.get(g.target.entryId):null)||g.key;if(!rails.has(key))rails.set(key,{card,groups:[],target:g.target});rails.get(key).groups.push(g);
@@ -351,6 +406,7 @@ export class DiscussionUI{
   badge(text,target,action,aria,style=''){const b=discussButton(text,action,`discussion-badge discussion-drawing ${style}`);b.setAttribute('aria-label',aria);b.title=aria;if(target.type==='entry')b.dataset.entry=target.entryId;this.canvas.world.append(b);this.items.push({type:'badge',target,b});}
   position(){
     if(!this.items)return;this.entryPositions=new Map();this.connectionPositions=new Map();const routeBounds=[],occupied=[...this.canvas.positions.values(),...(this.canvas.layout.placeholders||[])].map(p=>({x:p.x,y:p.y,w:CARD_W,h:CARD_H}));
+    const sourceObstacles=occupied.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h}));
     const overlaps=(x,y,w,h)=>occupied.some(r=>x<r.x+r.w+12&&x+w+12>r.x&&y<r.y+r.h+12&&y+h+12>r.y);
     for(const item of this.items){
       if(item.type==='edge'){
@@ -358,11 +414,12 @@ export class DiscussionUI{
         let d;
         if(item.connection){
           const label=item.badge.b;label.hidden=false;
-          item.route=routeComparisonConnection(a,b,occupied.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h})),{w:label.offsetWidth,h:label.offsetHeight});d=item.route.d;
+          item.route=this.canvas.routeConnection(a,b,occupied.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h})),{w:label.offsetWidth,h:label.offsetHeight});d=item.route.d;
           if(item.route.label)this.connectionPositions.set(item.connection.key,item.route.label);
           routeBounds.push(...item.route.points.map(p=>({...p,w:0,h:0})));
-        }else d=item.branch?.path.getAttribute('d')||connectorRoute({x:a.x-CARD_W/2,y:a.y-CARD_H/2},{x:b.x-CARD_W/2,y:b.y-CARD_H/2},null).d;
+        }else{item.route=this.canvas.routeConnection(a,b,sourceObstacles);d=item.route.d;routeBounds.push(...item.route.points.map(p=>({...p,w:0,h:0})));}
         item.path.setAttribute('d',d);item.hit?.setAttribute('d',d);
+        if(item.hit){item.hit.style.display=item.route.blocked?'none':'';item.hit.setAttribute('tabindex',item.route.blocked?'-1':'0');}
       }else {
         const p=item.edge?item.edge.route?.label:this.point(item.target),el=item.b;el.hidden=!p;if(!p)continue;
         const w=el.offsetWidth,h=el.offsetHeight;let x=p.x-w/2,y=item.edge?p.y-h/2:p.y-CARD_H/2-h-18;
