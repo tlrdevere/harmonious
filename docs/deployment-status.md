@@ -1,6 +1,6 @@
 # Deployment status
 
-Updated September 25, 2026 (UTC).
+Updated September 26, 2026 (UTC).
 
 ## Current release
 
@@ -12,11 +12,21 @@ Connection drawing and inspection deployed September 25, 2026 at **20:36:30 UTC*
 - Map/Create connection selection opens a compact on-map menu, with owner Edit/Remove actions and the existing optional edit panel. Additional connections default to All visible in View options. Hiding them never substitutes an apparently different parent line. Keyboard focus, fold cleanup, reveal centering and single draft-discard confirmation are covered.
 - **46/46 release checks passed**, including six browser suites, account/database tests, standalone export, production build and complete module graph. Report: `build/verification/2026-09-25T20-33-53-484Z-66488/summary.json`. New regression coverage includes asymmetric/both-side collapse, exact-pair counts, historical follow-ups, frame-filter reveal, unchanged stored data, counterpart suppression, source-route reuse, card avoidance, direction, Map/Create editing/removal and narrow screens. Desktop/mobile screenshots and the [computed routing preview](design/connection-routing.html) were visually inspected.
 - Public verification at **20:36:47 UTC** confirms all **51 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers intact. Report: `build/public-connection-verification.json`. Worker SHA-256: `68133e87f6545d1ba1d0b538bd8a4afb32c210ae7b40008736fc400331af55a1`.
-- All eight encrypted bindings, compatibility date `2026-09-08`, and empty compatibility flags were preserved. No database migration, live account test write, authentication change, dependency update or registry audit occurred. The two increments in [the plan](connection-drawing-plan.md) were finished and verified together for one release. Source and release notes are checkpointed locally; no GitHub push was made.
+- All eight encrypted bindings, compatibility date `2026-09-08`, and empty compatibility flags were preserved. No database migration, live account test write, authentication change, dependency update or registry audit occurred. The two increments in [the plan](connection-drawing-plan.md) were finished and verified together for one release. Source and release notes were checkpointed locally at publication; subsequent GitHub synchronization is recorded below.
 
 **Reload both PCs before testing.** Start with **Connection drawing and inspection** in [the checklist](user-testing-checklist.md). The preceding v4-compatible release is Worker 43/source `885280d`; the pre-redesign stable tag remains unchanged. Owner usability acceptance remains outstanding.
 
-The owner selected GitHub synchronization and the prepared manual **Release checks** workflow as the next task, with automatic deployment kept disabled. Cross-depth counterpart placement refinement and Compass design/implementation (including axes and endpoint wording) are explicitly deferred by the owner; see the [current deferral list](next-work-plan.md#deferred-work). The existing radial layout remains in place, and the Compass preview remains illustrative.
+Cross-depth counterpart placement refinement and Compass design/implementation (including axes and endpoint wording) are explicitly deferred by the owner; see the [current deferral list](next-work-plan.md#deferred-work). The existing radial layout remains in place, and the Compass preview remains illustrative.
+
+## GitHub synchronization and hosted verification
+
+Completed September 26, 2026 at **02:10:34 UTC** (September 25 at 10:10 p.m. in New York).
+
+- The existing `redesign/node-interactions` history was pushed to GitHub and its exact commit `e42f83ab9fb97b8484bda96fd935ce0481a105e5` verified remotely. Its application code, tests, dependencies and workflow match the previously verified application source `5f8a6f7`; the intervening changes are documentation.
+- With the owner's approval, remote `main` received only `.github/workflows/checks.yml` in commit `459f9d59ad7307165d705c75d045d44b615e0c0f`, registering the manual workflow. No application files on remote `main` changed. Local `main` and the stable tag remain at the protected baseline.
+- [Release checks run 1](https://github.com/tlrdevere/harmonious/actions/runs/36210750517) passed **46/46 checks** on `e42f83ab9fb97b8484bda96fd935ce0481a105e5`, using a clean Ubuntu 24.04 checkout, locked dependencies and Chromium. This includes all six browser suites, disposable account/database tests, portable export, production build and asset/access checks. The successful job log confirms the complete count; a local evidence summary is saved at `build/hosted-release-verification.json`.
+- The workflow uses `workflow_dispatch` only and read-only repository permissions, with no production credentials or deployment step. Automatic push/PR checks and automatic deployment remain disabled. Worker 44 remains the live release; no deployment or database change was performed during synchronization.
+- Subsequent commits recording this result change documentation only and are separate from the exact tested revision above. Owner usability acceptance remains outstanding.
 
 ## Preceding node wording release
 

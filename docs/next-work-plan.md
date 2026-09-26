@@ -1,12 +1,12 @@
 # Harmonious next-work plan
 
-## Current priorities — September 25, 2026
+## Current priorities — September 26, 2026 (UTC)
 
 The [connection drawing plan](connection-drawing-plan.md), informed by `harmonious3.png`, is implemented: truthful collapsed-branch access to real pairs, shared connection routing and on-map Map/Create connection inspection. [Deployment status](deployment-status.md) records publication and verification. The browser-specific investigation is closed. Radial node positions remain; further cross-depth counterpart placement work is deferred by the owner. [The preceding UI follow-up](ui-followup-2026-09-25.md) records the node wording, Inquiry-first ordering and map-editor cleanup.
 
 The consistency increment of the [Compare, Inquiry, and Argument plan](mode-consistency-plan.md) is live: shared interaction summaries and counts, consistent opening and search, and retirement of old authoring routes. The [v4 interaction grammar](interaction-grammar-v4.md) defines the current actions; older reason/challenge, reflection/outcome, and standalone adoption workflows below are historical context, not the current acceptance checklist.
 
-The owner selected GitHub synchronization and hosted verification as the next task: push the reviewed `redesign/node-interactions` branch and run the prepared manual **Release checks** workflow on that exact revision. Keep automatic deployment disabled. [Deployment status](deployment-status.md) records the outcome separately from the completed local checks. The owner's [connection and interaction walkthrough](user-testing-checklist.md) on both accounts remains an acceptance follow-up.
+GitHub synchronization and hosted verification are complete: the existing `redesign/node-interactions` history is published, and the manual [Release checks run](https://github.com/tlrdevere/harmonious/actions/runs/36210750517) passed all **46 checks** on exact revision `e42f83ab9fb97b8484bda96fd935ce0481a105e5`. The owner approved a workflow-only addition to remote `main` to register that manual run. Automatic deployment and automatic push/PR checks remain disabled. [Deployment status](deployment-status.md#github-synchronization-and-hosted-verification) records the evidence. Next is the owner's [connection and interaction walkthrough](user-testing-checklist.md) on both accounts and any resulting feedback; the deferred features below are not active work.
 
 ### Deferred work
 
