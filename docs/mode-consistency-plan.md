@@ -1,6 +1,6 @@
 # Compare, Inquiry, and Argument consistency plan
 
-Prepared September 25, 2026, following the code review and disposable browser reproduction. **Implementation status:** steps 1–4 are live in Worker version 42, source `82997e6`, with shared summaries/counts, search in each mode, consistent attachment navigation, and retirement of older authoring routes. All 46 release checks and public asset/access checks passed; [deployment status](deployment-status.md) records the release. Step 6's consistency increment is complete; owner usability acceptance remains. Step 5 has a [representative placement study](design/counterpart-depth-study.html); the radial layout remains unchanged and a different counterpart displacement policy awaits design review. Reviewed baseline: `41b186fa47fc547a9c03ad76e68d1768757e7123`, on `redesign/node-interactions`.
+Prepared September 25, 2026, following the code review and disposable browser reproduction. **Implementation status:** steps 1–4 are live in Worker version 42, source `82997e6`, with shared summaries/counts, search in each mode, consistent attachment navigation, and retirement of older authoring routes. All 46 release checks and public asset/access checks passed; [deployment status](deployment-status.md) records the release. Step 6's consistency increment is complete; owner usability acceptance remains. Step 5 has a [representative placement study](design/counterpart-depth-study.html); further counterpart placement work is now explicitly deferred by the owner, and the radial layout remains unchanged. See the [current deferral list](next-work-plan.md#deferred-work). Reviewed baseline: `41b186fa47fc547a9c03ad76e68d1768757e7123`, on `redesign/node-interactions`.
 
 The [interaction grammar](interaction-grammar-v4.md) remains the product specification. This plan fixes its integration with lists, search, canvas attachments, and historical views. It supersedes conflicting next-work priorities in older plans, not the agreed grammar.
 
@@ -88,6 +88,8 @@ Primary files: `dist/discussion-ui.mjs`, `dist/reasoning-ui.mjs`, historical ent
 **Done when:** every creation path in the current interface follows the agreed grammar or an explicitly retained workflow, while old content and response history remain reachable.
 
 ## 5. Investigate and refine counterpart placement separately
+
+**Deferred by the owner.** The study is retained for future review; the investigation and implementation steps below are not active work.
 
 The review established that `layout.mjs`, `comparison-layout.mjs`, and `compare-canvas.mjs` are unchanged from the protected stable version. Sparse branches can look vertical, counterpart slots can distort apparent depth, and historical argument rows were never radial. The particular live map behind the owner's observation has not yet been diagnosed.
 

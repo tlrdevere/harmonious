@@ -14,7 +14,9 @@ Connection drawing and inspection deployed September 25, 2026 at **20:36:30 UTC*
 - Public verification at **20:36:47 UTC** confirms all **51 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers intact. Report: `build/public-connection-verification.json`. Worker SHA-256: `68133e87f6545d1ba1d0b538bd8a4afb32c210ae7b40008736fc400331af55a1`.
 - All eight encrypted bindings, compatibility date `2026-09-08`, and empty compatibility flags were preserved. No database migration, live account test write, authentication change, dependency update or registry audit occurred. The two increments in [the plan](connection-drawing-plan.md) were finished and verified together for one release. Source and release notes are checkpointed locally; no GitHub push was made.
 
-**Reload both PCs before testing.** Start with **Connection drawing and inspection** in [the checklist](user-testing-checklist.md). The preceding v4-compatible release is Worker 43/source `885280d`; the pre-redesign stable tag remains unchanged. Owner usability acceptance and the separate cross-depth counterpart-placement decision remain next.
+**Reload both PCs before testing.** Start with **Connection drawing and inspection** in [the checklist](user-testing-checklist.md). The preceding v4-compatible release is Worker 43/source `885280d`; the pre-redesign stable tag remains unchanged. Owner usability acceptance remains outstanding.
+
+The owner selected GitHub synchronization and the prepared manual **Release checks** workflow as the next task, with automatic deployment kept disabled. Cross-depth counterpart placement refinement and Compass design/implementation (including axes and endpoint wording) are explicitly deferred by the owner; see the [current deferral list](next-work-plan.md#deferred-work). The existing radial layout remains in place, and the Compass preview remains illustrative.
 
 ## Preceding node wording release
 

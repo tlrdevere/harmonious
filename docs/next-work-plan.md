@@ -2,11 +2,18 @@
 
 ## Current priorities — September 25, 2026
 
-The [connection drawing plan](connection-drawing-plan.md), informed by `harmonious3.png`, is implemented: truthful collapsed-branch access to real pairs, shared connection routing and on-map Map/Create connection inspection. [Deployment status](deployment-status.md) records publication and verification. The browser-specific investigation is closed. Radial node positions remain; the cross-depth counterpart placement study is separate. [The preceding UI follow-up](ui-followup-2026-09-25.md) records the node wording, Inquiry-first ordering and map-editor cleanup.
+The [connection drawing plan](connection-drawing-plan.md), informed by `harmonious3.png`, is implemented: truthful collapsed-branch access to real pairs, shared connection routing and on-map Map/Create connection inspection. [Deployment status](deployment-status.md) records publication and verification. The browser-specific investigation is closed. Radial node positions remain; further cross-depth counterpart placement work is deferred by the owner. [The preceding UI follow-up](ui-followup-2026-09-25.md) records the node wording, Inquiry-first ordering and map-editor cleanup.
 
 The consistency increment of the [Compare, Inquiry, and Argument plan](mode-consistency-plan.md) is live: shared interaction summaries and counts, consistent opening and search, and retirement of old authoring routes. The [v4 interaction grammar](interaction-grammar-v4.md) defines the current actions; older reason/challenge, reflection/outcome, and standalone adoption workflows below are historical context, not the current acceptance checklist.
 
-Next, run the owner's [connection and interaction walkthrough](user-testing-checklist.md) on both accounts. Use concrete visual feedback to decide whether cross-depth counterpart placement needs refinement; do not replace the radial solver or add dragging preemptively. GitHub synchronization/hosted CI, Compass axis wording and the deferred dependency-disclosure review remain separate follow-ups.
+The owner selected GitHub synchronization and hosted verification as the next task: push the reviewed `redesign/node-interactions` branch and run the prepared manual **Release checks** workflow on that exact revision. Keep automatic deployment disabled. [Deployment status](deployment-status.md) records the outcome separately from the completed local checks. The owner's [connection and interaction walkthrough](user-testing-checklist.md) on both accounts remains an acceptance follow-up.
+
+### Deferred work
+
+- **Cross-depth counterpart placement:** explicitly deferred by the owner. Keep the radial solver and current placement policy; retain the [representative study](design/counterpart-depth-study.html) for a later decision based on concrete visual feedback.
+- **Compass design and implementation:** explicitly deferred by the owner, including axis choices, endpoint wording and discovery self-placement. The existing preview remains illustrative; it is not a live feature.
+- Manual dragging/rearranging, the future pod model, automatic merging, multiple pinned windows, arbitrary reasoning links and richer disagreement-resolution tools remain deferred.
+- The [dependency disclosure/advisory review](dependency-review.md) remains a separate deferred maintenance follow-up.
 
 ## Earlier priorities — September 22, 2026 (UTC)
 
