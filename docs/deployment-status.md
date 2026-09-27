@@ -2,11 +2,21 @@
 
 Updated September 27, 2026 (UTC).
 
-## Local review changes — not deployed
-
-The [September 27 code and view-consistency review](code-review-2026-09-27.md) fixes five defects in the local `redesign/node-interactions` working tree: omitted source-map connections, interaction edits after source classification changes, imported confidence attribution, deleted-node control cleanup and legacy-node confidence eligibility. All **46 release checks passed** on this working tree; report: `build/verification/2026-09-27T01-44-43-379Z-78148/summary.json`. These changes have not been committed, pushed or deployed. Worker 44 below remains the published release.
-
 ## Current release
+
+Code and view-consistency fixes deployed September 27, 2026 at **02:45:36 UTC** (September 26 at 10:45 p.m. in New York). Application source: `b3f9a2a2d469f9467e49f1bd0c85245bf17174e7` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **45**: `aa9fc78b-c1cb-4287-a9b7-79babe954060`, serving **100%** of traffic. Deployment: `da7868c2-b204-4544-8a73-9432d5550b03`.
+- The [code review](code-review-2026-09-27.md) fixes omitted source-map connections, interaction edits after source classification changes, imported confidence attribution, deleted-node control cleanup and legacy-node confidence eligibility. Source browsing uses grouped, directed, read-only connection details; existing shared-mode actions remain distinct.
+- **46/46 local release checks passed** on the application changes, including all six browser suites, account/database tests, standalone export, production build and asset checks. Report: `build/verification/2026-09-27T01-44-43-379Z-78148/summary.json`.
+- **46/46 hosted release checks passed** on the exact pushed application commit in [Release checks run 2](https://github.com/tlrdevere/harmonious/actions/runs/36289166920), completed at **02:41:45 UTC**. The clean Ubuntu 24.04 run used Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Its log confirms all 46 checks; local evidence is saved in `build/review-release-hosted.json` and `build/review-release-evidence.json`.
+- Public verification at **02:46:26 UTC** confirms all **52 client files** and the homepage exactly match the tested checkout. Configured sign-in, anonymous account denial, private-configuration denial and security headers pass. Report: `build/public-review-verification.json`. Worker SHA-256: `694dcca9524d9856fe616a6917264922fe212494eea051e078af84f0bc154be0`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were preserved and checked after deployment. No database migration, live account test write, authentication change, dependency update or registry audit was needed. Automatic push/PR checks and automatic deployment remain disabled.
+- Subsequent release-note commits change documentation only and are separate from the exact tested and deployed application commit above. The protected baseline and `main` were not changed by this release.
+
+**Reload both PCs before testing.** Start with **Code review and view consistency** in [the checklist](user-testing-checklist.md). Worker 44 is the preceding compatible release. The three newly deferred suggestions and all earlier deferrals remain in [the next-work plan](next-work-plan.md#deferred-work).
+
+## Preceding connection-drawing release
 
 Connection drawing and inspection deployed September 25, 2026 at **20:36:30 UTC** (4:36 p.m. in New York). Application source: `5f8a6f78846b57ecf300207a161a30859c375a6f` on `redesign/node-interactions`.
 
@@ -29,7 +39,7 @@ Completed September 26, 2026 at **02:10:34 UTC** (September 25 at 10:10 p.m. in 
 - The existing `redesign/node-interactions` history was pushed to GitHub and its exact commit `e42f83ab9fb97b8484bda96fd935ce0481a105e5` verified remotely. Its application code, tests, dependencies and workflow match the previously verified application source `5f8a6f7`; the intervening changes are documentation.
 - With the owner's approval, remote `main` received only `.github/workflows/checks.yml` in commit `459f9d59ad7307165d705c75d045d44b615e0c0f`, registering the manual workflow. No application files on remote `main` changed. Local `main` and the stable tag remain at the protected baseline.
 - [Release checks run 1](https://github.com/tlrdevere/harmonious/actions/runs/36210750517) passed **46/46 checks** on `e42f83ab9fb97b8484bda96fd935ce0481a105e5`, using a clean Ubuntu 24.04 checkout, locked dependencies and Chromium. This includes all six browser suites, disposable account/database tests, portable export, production build and asset/access checks. The successful job log confirms the complete count; a local evidence summary is saved at `build/hosted-release-verification.json`.
-- The workflow uses `workflow_dispatch` only and read-only repository permissions, with no production credentials or deployment step. Automatic push/PR checks and automatic deployment remain disabled. Worker 44 remains the live release; no deployment or database change was performed during synchronization.
+- The workflow uses `workflow_dispatch` only and read-only repository permissions, with no production credentials or deployment step. Automatic push/PR checks and automatic deployment remain disabled. Worker 44 remained the live release during that synchronization; no deployment or database change was performed then.
 - Subsequent commits recording this result change documentation only and are separate from the exact tested revision above. Owner usability acceptance remains outstanding.
 
 ## Preceding node wording release

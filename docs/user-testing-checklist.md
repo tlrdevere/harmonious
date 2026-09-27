@@ -1,5 +1,15 @@
 # Harmonious: what to check on your next visit
 
+## Current: code review and view consistency
+
+Reload both PCs for Worker 45; [deployment status](deployment-status.md) records the release.
+
+- [ ] Open **View source map** and expand nodes with reason/cause connections, including one across frames. Connections should retain their direction and saved meanings, with one route per actual pair and read-only detail. Close/Escape and narrow-window inspection should remain usable.
+- [ ] On disposable source nodes, edit a saved dispute after the other participant changes its frame or removes its citation. Incompatible saved grounds should appear under **Earlier choices**, with an explanation requiring you to clear them before saving current choices. Earlier revisions should retain the original grounds.
+- [ ] Delete a disposable branch using the optional editor panel. Cancel should retain it; confirming deletion should close its old menu and return keyboard focus to the surviving parent.
+- [ ] When importing a backup as private copies, another author's confidence should be unassessed on your new copy. Your own backup scores, including zero, should remain yours.
+- [ ] Older topic, question and explainer nodes should have no **My confidence** action in any view. Your ordinary position nodes should continue to offer it.
+
 ## Current: connection drawing and inspection
 
 Reload both PCs after the release in [deployment status](deployment-status.md).

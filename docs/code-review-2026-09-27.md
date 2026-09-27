@@ -1,6 +1,6 @@
 # Code and view-consistency review — September 27, 2026 (UTC)
 
-Reviewed the existing `redesign/node-interactions` checkout following the owner's request on September 26 in New York. The review started from `2cda1f550556f70414e402ea31584af91ea5c5e2`; Worker 44 remains the published release.
+Reviewed the existing `redesign/node-interactions` checkout following the owner's request on September 26 in New York. The review started from `2cda1f550556f70414e402ea31584af91ea5c5e2`, while Worker 44 was live. The owner subsequently approved committing, pushing, hosted verification and publication; the corrections are now live in Worker 45.
 
 ## Scope
 
@@ -38,4 +38,6 @@ The [current deferral list](next-work-plan.md#deferred-work) now also includes r
 
 ## Release boundary
 
-These are local review changes. No deployment, GitHub push, database migration, dependency update, registry audit or production account write is part of this review. [Deployment status](deployment-status.md) remains the authority for the published version.
+Application commit `b3f9a2a2d469f9467e49f1bd0c85245bf17174e7` was pushed to `redesign/node-interactions`. [Release checks run 2](https://github.com/tlrdevere/harmonious/actions/runs/36289166920) passed all 46 checks on that exact revision before publication. Worker 45 was deployed at **02:45:36 UTC**; public verification at **02:46:26 UTC** matched all 52 client files and the homepage and passed sign-in/account/configuration checks. The eight encrypted bindings and existing compatibility settings were retained. [Deployment status](deployment-status.md) records the version identifiers and evidence.
+
+No database migration, dependency update, registry audit or production account write was needed. Later release-note commits contain documentation only; they do not change the tested application source.
