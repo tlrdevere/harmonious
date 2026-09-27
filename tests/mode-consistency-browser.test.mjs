@@ -323,8 +323,53 @@ try{
   assert(await pop(a).locator(`[data-entry="${connectionReply.id}"]`).isVisible(),'The real pair retains its earlier follow-ups');
   await pop(a).locator(`[data-entry="${connectionReply.id}"]`).click();assert.match(await pop(a).innerText(),/Earlier discussion attached to the actual pair/);
   assert.equal(JSON.stringify((await view(store,alice)).workspace),unchanged,'Connection projection and reveal never rewrite saved maps or relationships');
+
+  // Editing after a frame, citation, or edge-type change must never retain
+  // invisible selected options. Reconcile them explicitly and preserve history.
+  await edit(store,bob,ws=>{const map=ws.maps.find(m=>m.id===bMap.id),source=map.nodes.find(n=>n.id===bSource.nodeId);source.parent='goal';source.sourceTitle='';source.sourceUrl='';map.relations.find(edge=>edge.id==='survey-reason').type='cause';synchronizeIdeas(ws,map);});
+  await load(a);await open(a,dispute.id,'argument');await click(a,'Edit');
+  const earlierChoices=pop(a).getByRole('group',{name:'Earlier choices',exact:true});
+  assert(await earlierChoices.getByRole('checkbox',{name:"It's false",exact:true}).isChecked());
+  assert(await earlierChoices.getByRole('checkbox',{name:'The data is outdated',exact:true}).isChecked());
+  assert.match(await pop(a).innerText(),/The source changed since this interaction was saved/);
+  await pop(a).locator('input[value="other"]').uncheck();await pop(a).locator('input[value="unachievable"]').check();
+  await a.locator('#interaction-comment').fill('Updated after reviewing the changed source.');await click(a,'Save changes');
+  assert.equal(await pop(a).getByRole('alert').innerText(),'Clear the earlier choices that are no longer offered for this source before saving.');
+  assert.equal((await view(store,alice)).workspace.discussions.find(r=>r.id===dispute.id).version,dispute.version,'Earlier choices are not silently discarded or saved');
+  await earlierChoices.getByRole('checkbox',{name:"It's false",exact:true}).uncheck();await earlierChoices.getByRole('checkbox',{name:'The data is outdated',exact:true}).uncheck();
+  await click(a,'Save changes');await button(a,'Edit').waitFor();
+  const revisedDispute=(await view(store,alice)).workspace.discussions.find(r=>r.id===dispute.id);
+  assert.deepEqual(revisedDispute.interaction.options,['unachievable']);assert.equal(revisedDispute.interaction.classification.frame,'goal');assert.equal(revisedDispute.interaction.classification.hasSource,false);
+  assert.deepEqual(revisedDispute.history.at(-1).interaction,dispute.interaction,'The earlier revision retains its original grounds and classification');
+  await open(a,edgeDispute.id,'argument');await click(a,'Edit');
+  assert(await earlierChoices.locator('input[value="circular"]').isChecked());await pop(a).locator('input[value="correlation"]').check();
+  await click(a,'Save changes');assert.match(await pop(a).getByRole('alert').innerText(),/Clear the earlier choices/);
+  await earlierChoices.locator('input[value="circular"]').uncheck();await click(a,'Save changes');await button(a,'Edit').waitFor();
+  const revisedEdge=(await view(store,alice)).workspace.discussions.find(r=>r.id===edgeDispute.id);
+  assert.deepEqual(revisedEdge.interaction.options,['correlation']);assert.equal(revisedEdge.interaction.classification.edgeType,'cause');assert.deepEqual(revisedEdge.history.at(-1).interaction,edgeDispute.interaction);
+  await edit(store,bob,ws=>{const map=ws.maps.find(m=>m.id===bMap.id);map.relations=map.relations.filter(edge=>edge.id!=='survey-reason');});
+  await load(a);await open(a,edgeDispute.id,'argument');await click(a,'Edit');
+  assert.match(await pop(a).innerText(),/This source no longer offers dispute choices/);assert.equal(await button(a,'Save changes').count(),0,'A removed connection does not offer an impossible edit');
+  await click(a,'Back to interaction');assert(await button(a,'Withdraw').isVisible(),'The saved interaction remains readable and withdrawable');
+  assert.deepEqual((await view(store,alice)).workspace.discussions.find(r=>r.id===edgeDispute.id),revisedEdge,'Opening an unavailable edit does not rewrite history');
+
+  // Legacy non-position nodes stay readable without advertising a confidence
+  // action the model does not support, consistently with Map/Create.
+  const legacyTitles=['topic','question','explainer'].map(kind=>'Legacy '+kind);
+  await edit(store,alice,ws=>{const map=ws.maps.find(m=>m.id===aMap.id);for(const kind of ['topic','question','explainer']){const n=addNode(ws,alice,'Legacy '+kind);n.kind=kind;n.parent='status';n.confidence=null;}synchronizeIdeas(ws,map);});
+  await load(a);
+  for(const which of ['inquiry','compare','argument']){
+    await mode(a,which);
+    for(const title of legacyTitles){await node(a,title);assert.equal(await button(a,'My confidence').count(),0,`${which} omits unsupported confidence for ${title}`);assert(await button(a,'Edit in my map').isVisible());}
+    await node(a,'Evening meeting');await click(a,'My confidence');assert(await pop(a).locator('.confidence-form').isVisible(),`${which} retains confidence for an owned position`);await close(a);
+  }
+  await a.goto(origin+'/#map='+aMap.id);await a.locator('#editor-main').waitFor();await a.locator('#all').click();
+  for(const title of [...legacyTitles,'Evening meeting']){
+    const card=a.locator('#cards .node-main').filter({has:a.getByText(title,{exact:true})});await card.focus();await a.keyboard.press('Enter');
+    assert.equal(await a.locator('.on-map-actions').getByRole('button',{name:'My confidence',exact:true}).count(),title==='Evening meeting'?1:0,`Map/Create has the same confidence eligibility for ${title}`);
+  }
   assert.deepEqual(errors,[]);
-  console.log('Mode consistency browser: shared lists/counts, dispute and response search, exact attachment categories, one detail path, recipients, retired controls, mode-local drafts/search, stable radial geometry, persistence, keyboard and narrow screens passed.');
+  console.log('Mode consistency browser: shared lists/counts, dispute and response search, exact attachment categories, one detail path, recipients, retired controls, mode-local drafts/search, stable radial geometry, persistence, source-change edits with preserved history, keyboard and narrow screens passed.');
 }catch(error){
   for(const [i,ctx]of browser.contexts().entries())for(const p of ctx.pages()){
     await p.screenshot({path:`build/design-review/mode-consistency-failure-${i}.png`,fullPage:true});

@@ -3,6 +3,7 @@ import {createConnectionRouter} from './comparison-routing.mjs';
 import {roots} from './data.mjs';
 import {NODE_KINDS,revealPath} from './model.mjs';
 import {confidenceBadge} from './confidence-ui.mjs';
+import {SourceConnectionsUI} from './source-connections-ui.mjs';
 import {QUESTION_STATUSES,ANSWER_STATUSES} from './workspace.mjs';
 import {comparisonNodeKey,layoutComparison,visibleComparisonEndpoint,comparisonRecordEnds} from './comparison-layout.mjs';
 
@@ -26,6 +27,7 @@ export class ComparisonCanvas{
       host.before(this.layerControls);
     }
     if(options.single){this.surface.classList.add('single-map-canvas');this.surface.setAttribute('aria-label','Radial map. Select a node for its wording and co-signs. Drag to pan and scroll to zoom.');controls.children[3].textContent='Fit map';controls.children[3].setAttribute('aria-label','Fit map');this.focusButton.textContent='Focus node';this.focusButton.setAttribute('aria-label','Focus selected node');}
+    if(options.single)this.sourceConnections=new SourceConnectionsUI(this);
     const pointers=new Map();let drag=null,pinch=null;
     this.surface.addEventListener('wheel',e=>{if(e.target.closest('button'))return;e.preventDefault();const r=this.surface.getBoundingClientRect();this.zoom(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
     this.surface.addEventListener('pointerdown',e=>{
@@ -123,7 +125,7 @@ export class ComparisonCanvas{
     this.linkStatus.textContent=relevant?`${drawn} of ${relevant} recorded links shown${collapsed?` · ${collapsed} inside collapsed branches`:''}`:'Recorded comparisons will connect these maps.';
     this.focusButton.disabled=!a&&!b;
     if(this.options.single){this.hint.textContent=this.options.hint||'Choose a node to read, co-sign, or copy it.';this.linkStatus.hidden=true;}
-    this.options.afterBuild?.();
+    this.sourceConnections?.build();this.options.afterBuild?.();
   }
   addLink(svg,a,b,item){
     const proxy=a.proxy||b.proxy,path=this.svgElement('path',{fill:'none',class:`comparison-link ${item.status}${item.active?' active':''}${proxy?' proxy':''}`});svg.append(path);
@@ -145,7 +147,7 @@ export class ComparisonCanvas{
       link.path.setAttribute('d',route?.d||'');link.hit?.setAttribute('d',route?.d||'');
       if(link.badge){link.badge.hidden=false;const labeled=route&&this.routeConnection(a,b,obstacles,{w:link.badge.offsetWidth,h:link.badge.offsetHeight}),label=labeled?.d===route?.d?labeled?.label:null;link.badge.hidden=!label;if(label)link.badge.style.transform=`translate(${label.x}px,${label.y}px) translate(-50%,-50%)`;}
     }
-    this.options.afterGeometry?.();
+    this.sourceConnections?.position();this.options.afterGeometry?.();
   }
   fitCamera(points=null){
     const w=this.surface.clientWidth,h=this.surface.clientHeight;if(!w||!h)return this.camera;
@@ -156,5 +158,5 @@ export class ComparisonCanvas{
   fit(){if(!this.layout)return;this.stopAnimation();this.positions=new Map(this.layout.positions);this.camera=this.fitCamera();this.drawGeometry();this.drawCamera();}
   fitSelection(){const points=['a','b'].map(side=>visibleComparisonEndpoint(this.layout,side,this.states[side].selected)).filter(Boolean).map(end=>this.layout.positions.get(end.key));if(!points.length)return;this.stopAnimation();this.positions=new Map(this.layout.positions);this.camera=this.fitCamera(points);this.drawGeometry();this.drawCamera();}
   zoom(factor,x=this.surface.clientWidth/2,y=this.surface.clientHeight/2){this.stopAnimation();const z=Math.min(2,Math.max(.02,this.camera.z*factor)),ratio=z/this.camera.z;this.camera={z,x:x-(x-this.camera.x)*ratio,y:y-(y-this.camera.y)*ratio};this.drawCamera();}
-  drawCamera(){this.world.style.transform=`translate(${this.camera.x}px,${this.camera.y}px) scale(${this.camera.z})`;this.zoomLabel.textContent=Math.round(this.camera.z*100)+'%';this.options.afterCamera?.();}
+  drawCamera(){this.world.style.transform=`translate(${this.camera.x}px,${this.camera.y}px) scale(${this.camera.z})`;this.zoomLabel.textContent=Math.round(this.camera.z*100)+'%';this.sourceConnections?.positionMenu();this.options.afterCamera?.();}
 }

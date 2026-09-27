@@ -28,7 +28,11 @@ export class InteractionUI{
       d.actionGroup({compare:'Your position',inquiry:'Ask or offer',argument:'Critique'}[d.mode()],actions.map(action=>interactionButton(action.label,()=>this.compose(action.id))));
       if(d.mode()==='argument'&&!actions.length)d.host.append(interactionEl('p','This is an organizational connection. Select a node or a typed reasoning connection to dispute.','field-help'));
     }
-    if(own&&target.type==='node'&&ordinary)d.actionGroup('Your node',[interactionButton('Edit in my map',()=>{if(d.canLeave())this.c.library.openMap(source.map.id,source.item.id);}),interactionButton('My confidence',()=>d.confidence())]);
+    if(own&&target.type==='node'&&ordinary){
+      const actions=[interactionButton('Edit in my map',()=>{if(d.canLeave())this.c.library.openMap(source.map.id,source.item.id);})];
+      if(source.item.kind==='position')actions.push(interactionButton('My confidence',()=>d.confidence()));
+      d.actionGroup('Your node',actions);
+    }
     const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));
     const definitions=[];if(context)definitions.push(interactionButton('View definitions & standards',()=>d.openContexts(target)));if(own&&ordinary)definitions.push(interactionButton('Use definitions & standards',()=>this.c.library.definitions.choose(target)));d.actionGroup('Meaning',definitions);
     if(d.mode()==='compare'&&target.type==='node'&&ordinary){
@@ -46,10 +50,13 @@ export class InteractionUI{
     const mode=old?interactionMode(old):action==='respond'?interactionMode(parent):d.mode();
     d.activateMode(mode);d.target=target;d.shell(old?'Edit '+interactionLabel(old):interactionLabel(action));
     const form=interactionEl('form','','interaction-form'),choices=interactionOptions(ws,target,action,parent),selected=new Set(old?.interaction.options||[]);
+    if(old&&action==='dispute'&&!choices.length){d.host.append(interactionEl('p','This source no longer offers dispute choices. You can keep the saved interaction or withdraw it from its details.','review-warning'),interactionButton('Back to interaction',()=>this.open(old.id)));d.positionPopover();return;}
     const reviewed=discussionSourceSnapshot(ws,target),recordId=old?.id||'discussion-'+crypto.randomUUID(),nodeId='node-'+crypto.randomUUID();
     let stagedEdit=null,stagedDraft=null;
     form.append(interactionEl('p',`About: ${discussionTargetLabel(ws,target)}`,'discussion-target-note'));
-    const groups=new Map();for(const option of choices){const group=option.group||'Options';if(!groups.has(group))groups.set(group,[]);groups.get(group).push(option);}
+    const previousChoices=old?optionsForClassification(old.interaction.classification,action):[],earlierChoices=[...selected].filter(id=>!choices.some(option=>option.id===id)).map(id=>previousChoices.find(option=>option.id===id)||{id,label:id.replaceAll('_',' ')});
+    const groups=new Map();if(earlierChoices.length){form.append(interactionEl('p','The source changed since this interaction was saved. Clear the earlier choices below before saving an updated interaction. The previous version keeps its original choices.','review-warning'));groups.set('Earlier choices',earlierChoices);}
+    for(const option of choices){const group=option.group||'Options';if(!groups.has(group))groups.set(group,[]);groups.get(group).push(option);}
     const other=interactionEl('textarea');other.rows=3;other.maxLength=10000;other.value=old?.interaction.otherText||'';const otherWrap=interactionEl('div');interactionField(otherWrap,'Other',other,'interaction-other');
     const syncOther=()=>{otherWrap.hidden=!selected.has('other');d.positionPopover();};
     for(const [name,options]of groups){const fieldset=interactionEl('fieldset','','interaction-options');fieldset.append(interactionEl('legend',name));
@@ -71,7 +78,7 @@ export class InteractionUI{
     newFields.append(interactionEl('p','Saving creates this node in your map and references it here.','field-help'));referenceWrap.append(newFields);form.append(referenceWrap);
     const syncReference=()=>{newFields.hidden=reference.value!=='new';nodeTitle.required=!newFields.hidden;mapSelect.required=!newFields.hidden;d.positionPopover();};reference.onchange=()=>{d.dirty=true;syncReference();};syncReference();if(oldReference)referenceWrap.open=true;
     const submit=interactionEl('button',old?'Save changes':action==='respond'?'Send response':mode==='compare'?'Record position':'Send '+(action==='dispute'?'dispute':action==='offer_reason'?'offer':action==='propose_alternative'?'proposal':'request'),'primary');submit.type='submit';form.append(submit);d.host.append(form);
-    form.onsubmit=async e=>{e.preventDefault();if(d.saving)return;d.saving=true;d.dirty=true;d.host.inert=true;
+    form.onsubmit=async e=>{e.preventDefault();if(d.saving)return;if(earlierChoices.some(option=>selected.has(option.id))){this.error(form,'Clear the earlier choices that are no longer offered for this source before saving.');d.positionPopover();return;}d.saving=true;d.dirty=true;d.host.inert=true;
       try{
         if(!this.c.editor.flushDraft())throw Error('Finish your map edit first.');this.c.captureActive();
         const thread=await this.c.ensureComparison(),input={id:recordId,kind:'interaction',action,target,comparisonId:thread.id,body:comment.value,interaction:{mode,options:[...selected],otherText:other.value,reference:reference.value&&reference.value!=='new'?JSON.parse(reference.value):null}};

@@ -1,6 +1,6 @@
 # Harmonious next-work plan
 
-## Current priorities — September 26, 2026 (UTC)
+## Current priorities — September 27, 2026 (UTC)
 
 The [connection drawing plan](connection-drawing-plan.md), informed by `harmonious3.png`, is implemented: truthful collapsed-branch access to real pairs, shared connection routing and on-map Map/Create connection inspection. [Deployment status](deployment-status.md) records publication and verification. The browser-specific investigation is closed. Radial node positions remain; further cross-depth counterpart placement work is deferred by the owner. [The preceding UI follow-up](ui-followup-2026-09-25.md) records the node wording, Inquiry-first ordering and map-editor cleanup.
 
@@ -8,10 +8,15 @@ The consistency increment of the [Compare, Inquiry, and Argument plan](mode-cons
 
 GitHub synchronization and hosted verification are complete: the existing `redesign/node-interactions` history is published, and the manual [Release checks run](https://github.com/tlrdevere/harmonious/actions/runs/36210750517) passed all **46 checks** on exact revision `e42f83ab9fb97b8484bda96fd935ce0481a105e5`. The owner approved a workflow-only addition to remote `main` to register that manual run. Automatic deployment and automatic push/PR checks remain disabled. [Deployment status](deployment-status.md#github-synchronization-and-hosted-verification) records the evidence. Next is the owner's [connection and interaction walkthrough](user-testing-checklist.md) on both accounts and any resulting feedback; the deferred features below are not active work.
 
+The owner's subsequent [code and view-consistency review](code-review-2026-09-27.md) records local corrections to source-map connections, interaction editing, confidence attribution/eligibility and deleted-node controls. These changes are separate from the published Worker 44 release. The three product suggestions from the preceding discussion are explicitly deferred below.
+
 ### Deferred work
 
 - **Cross-depth counterpart placement:** explicitly deferred by the owner. Keep the radial solver and current placement policy; retain the [representative study](design/counterpart-depth-study.html) for a later decision based on concrete visual feedback.
 - **Compass design and implementation:** explicitly deferred by the owner, including axis choices, endpoint wording and discovery self-placement. The existing preview remains illustrative; it is not a live feature.
+- **Return-visit catch-up:** explicitly deferred by the owner. The proposed “What changed since my last visit?” comparison summary, seen/unread tracking and links to new contributions or changed source wording are not active work.
+- **Participant introduction and worked example:** explicitly deferred by the owner. Optional first-session guidance, meaningful-node guidance and a worked exchange using the current interaction modes or an example from the presentation are not active work.
+- **Change-context discoverability follow-up:** explicitly deferred by the owner. The proposed review/improvement of how people recover earlier wording and the discussion behind a change is not active work. Existing histories, source snapshots and changed-source warnings remain supported.
 - Manual dragging/rearranging, the future pod model, automatic merging, multiple pinned windows, arbitrary reasoning links and richer disagreement-resolution tools remain deferred.
 - The [dependency disclosure/advisory review](dependency-review.md) remains a separate deferred maintenance follow-up.
 

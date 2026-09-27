@@ -1,6 +1,10 @@
 # Deployment status
 
-Updated September 26, 2026 (UTC).
+Updated September 27, 2026 (UTC).
+
+## Local review changes — not deployed
+
+The [September 27 code and view-consistency review](code-review-2026-09-27.md) fixes five defects in the local `redesign/node-interactions` working tree: omitted source-map connections, interaction edits after source classification changes, imported confidence attribution, deleted-node control cleanup and legacy-node confidence eligibility. All **46 release checks passed** on this working tree; report: `build/verification/2026-09-27T01-44-43-379Z-78148/summary.json`. These changes have not been committed, pushed or deployed. Worker 44 below remains the published release.
 
 ## Current release
 
