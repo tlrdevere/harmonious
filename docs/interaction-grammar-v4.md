@@ -4,7 +4,7 @@ The original v4 grammar was implemented on `redesign/node-interactions` and depl
 
 ## September 28 node-face editing and copying follow-up
 
-The accepted [node-face editing follow-up](node-face-editing.md) is **implemented locally and pending final release verification**. **Worker 46 remains the latest live release**; its menu cleanup is recorded below. The new authoring behavior retains the existing interaction and connection semantics:
+The accepted [node-face editing follow-up](node-face-editing.md) is **live in Worker 47**, after all 47 local and 47 hosted checks and public verification. [Deployment status](deployment-status.md) records the exact source and publication. Worker 46's preceding menu cleanup is recorded below. The new authoring behavior retains the existing interaction and connection semantics:
 
 - **Edit** expands the selected node face. Title, short description, and confidence are directly available; **Details** expands longer context and sources on the same face. **Save changes** keeps the face open; **Done** saves valid changes and returns to the map. Existing-node autosave preserves the field and caret. Frame names stay fixed.
 - **Add child node** immediately puts an unfinished child in the map layout and focuses its title. The preview is separate from saved map data. Only final submission adds the node and any chosen reason connection; Cancel removes the preview. Draft-discard, Save now, download, and autosave safeguards continue to apply.
@@ -14,7 +14,7 @@ The accepted [node-face editing follow-up](node-face-editing.md) is **implemente
 
 ## September 28 menu and creation release
 
-The accepted [node-menu cleanup plan](node-menu-cleanup-plan.md) is live in **Worker 46**, after all 46 local and 46 hosted release checks and public verification. [Deployment status](deployment-status.md) records the exact application commit and version. These placement and wording changes retain the v4 interaction and connection semantics:
+The accepted [node-menu cleanup plan](node-menu-cleanup-plan.md) shipped in **Worker 46**, after all 46 local and 46 hosted release checks and public verification. [Deployment status](deployment-status.md) records the exact application commit and version. These placement and wording changes retain the v4 interaction and connection semantics:
 
 - New comparisons show two real source selectors and **Start / open comparison** directly; **Change maps** reopens setup after a pair is open. View options contains display controls. Existing-pair reopening and map sharing rules are unchanged.
 - Map/Create separates **Edit**, **Add child node**, **Inspect details**, and the **More actions / Fewer actions** disclosure containing **Delete branch**. The frame containers use **Edit frame details** and omit ordinary-node-only actions.

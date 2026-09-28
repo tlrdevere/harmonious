@@ -2,13 +2,21 @@
 
 Updated September 28, 2026 (UTC).
 
-## Pending publication: node-face editing and map copying
-
-The [accepted follow-up](node-face-editing.md) implements immediate unsaved child previews with title focus, on-node editing and expandable Details, confidence sliders with exact numeric entry, and a direct Library Copy map action. All **47 local release checks passed** on the application changes: `build/verification/2026-09-28T21-03-56-493Z-99272/summary.json`. Final focused browser checks also cover noninteractive preview edges and mobile cancellation restoring the parent's camera position. The portable Reset → Save/download check passed. Desktop and narrow screenshots were inspected.
-
-GitHub verification and publication are pending. Worker 46 below remains live until that release completes. The existing radial layout, account ownership rules, and deferral list are unchanged.
-
 ## Current release
+
+Node-face editing, confidence sliders, and map copying deployed September 28, 2026 at **21:11:22 UTC** (5:11 p.m. in New York). Application source: `d350313ac2d9fe7444a48359899a85ce7637abc0` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **47**: `688aa821-4287-499d-b8c2-dec09731cd90`, serving **100%** of traffic. Deployment: `d62c5a36-40d0-47f4-b2e7-a2486d9d8b11`.
+- The [accepted follow-up](node-face-editing.md) adds immediate unsaved child previews with title focus, editing on the expanded node face with expandable Details, confidence sliders with exact numeric entry, and a direct Library Copy map action. Whole copies retain authored confidence and handle empty maps atomically; another author's confidence remains unassessed.
+- **47/47 local release checks passed** on the application changes, including seven browser suites, account/database checks, standalone export, production build and complete asset checks. Report: `build/verification/2026-09-28T21-03-56-493Z-99272/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows. Final focused browser checks also passed after adding coverage for noninteractive preview edges and mobile cancellation restoring the parent's camera. The portable Reset → Save/download check passed.
+- **47/47 hosted release checks passed** on the exact pushed application commit in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36483892218), completed at **21:09:07 UTC**. Its job log confirms all 47 checks using Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/face-release-hosted.json`.
+- Public verification at **21:12:24 UTC** confirms all **54 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers passing. Report: `build/public-face-verification.json`. Worker SHA-256: `8f96037e48cf87d4677ad4e41a58d6c69e94c9a522ad664dda5e3696d844dfc0`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were inherited and verified unchanged. No database migration, production account test write, authentication change or dependency update was required. Automatic push/PR checks and automatic deployment remain disabled.
+- Independent review covered preview cleanup, camera/focus restoration, and draft isolation. Browser checks confirm autosave retains the mounted form, caret and expanded Details; confidence ownership/null semantics; copy independence, privacy and reload; and narrow-screen controls. Desktop and mobile screenshots were inspected. Subsequent release-note commits change documentation only.
+
+**Reload both PCs before testing.** Start with **Editing on the node, confidence scale, and map copying** in [the checklist](user-testing-checklist.md). Worker 46 is the preceding compatible release. The [deferral list](next-work-plan.md#deferred-work) is unchanged.
+
+## Preceding map setup and node-menu release
 
 Map setup, frame colors, and node-menu cleanup deployed September 28, 2026 at **20:19:49 UTC** (4:19 p.m. in New York). Application source: `626ad697731b2c88da2188a5027160a6b500d3e0` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 

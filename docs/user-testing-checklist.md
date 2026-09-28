@@ -2,7 +2,7 @@
 
 ## Current: editing on the node, confidence scale, and map copying
 
-September 28: this [follow-up](node-face-editing.md) is **implemented locally and pending final release verification**. **Worker 46 remains the latest live release**. Use the local review build for these new checks; reload both PCs only after [deployment status](deployment-status.md) records publication.
+September 28: this [follow-up](node-face-editing.md) is **live in Worker 47**, after all 47 local and 47 hosted checks and public verification. Reload both PCs before testing. [Deployment status](deployment-status.md) records publication and the exact application source.
 
 - [ ] From **Add child node** and the node's plus control, check that an unfinished child appears immediately on the map and its title has the cursor. Type without another click. Its expanded face should remain attached to that child at a readable size.
 - [ ] Enter a child title and wait beyond the autosave delay. The preview should remain unfinished and should not appear in the saved map on the other PC. **Save now** and **Download backup** should ask you to finish or cancel it. Cancel should remove the preview without adding a saved node or reason connection.
@@ -18,7 +18,7 @@ September 28: this [follow-up](node-face-editing.md) is **implemented locally an
 
 ## Continuing checks: map setup, frame colors, and node menus
 
-These controls shipped in **Worker 46** after all 46 local and 46 hosted checks and public verification. The child and editing checks below include the local follow-up above. [Deployment status](deployment-status.md) records the live release, and the [menu-cleanup plan](node-menu-cleanup-plan.md) retains its scope and evidence.
+These controls shipped in **Worker 46** after all 46 local and 46 hosted checks and public verification. The child and editing checks below include the Worker 47 follow-up above. [Deployment status](deployment-status.md) records the live release, and the [menu-cleanup plan](node-menu-cleanup-plan.md) retains its scope and evidence.
 
 - [ ] From **Comparisons → Choose maps**, choose the first and second map directly on the setup screen. Choices should identify their owners. Clicking the heading or closing View options must not hide the selectors. Start the pair, reopen it, and check that no duplicate comparison appears.
 - [ ] Try **Compare with my map** from shared discovery: the other map should remain preselected while you choose your own. **Change maps** should reopen the selectors. Missing/unavailable choices should explain what is needed without changing sharing. Repeat with keyboard and a narrow window.

@@ -1,6 +1,6 @@
 # Working in a shared Comparison
 
-Updated September 28, 2026. **Worker 46 remains the latest live release**, with the verified picker, frame palette, and node-menu cleanup. The [node-face editing, confidence scale, and map-copy follow-up](node-face-editing.md) is implemented locally and pending final release verification; the authoring instructions below describe that follow-up. [Deployment status](deployment-status.md) records publication and public verification. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera; [the grammar](interaction-grammar-v4.md) defines the actions.
+Updated September 28, 2026. The [node-face editing, confidence scale, and map-copy follow-up](node-face-editing.md) is **live in Worker 47**, after all 47 local and 47 hosted checks and public verification. It builds on the verified picker, frame palette, and node-menu cleanup. [Deployment status](deployment-status.md) records publication and public verification. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera; [the grammar](interaction-grammar-v4.md) defines the actions.
 
 ## Start or reopen a comparison
 

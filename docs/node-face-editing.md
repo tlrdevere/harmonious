@@ -1,6 +1,6 @@
 # Node-face editing and map copying
 
-September 28, 2026. Follow-up to the completed [node-menu cleanup](node-menu-cleanup-plan.md). The owner approved expanding **Details** on the node itself.
+September 28, 2026. **Live in Worker 47**, after all 47 local and 47 hosted release checks and public verification. Follow-up to the completed [node-menu cleanup](node-menu-cleanup-plan.md). The owner approved expanding **Details** on the node itself.
 
 ## Accepted behavior
 
