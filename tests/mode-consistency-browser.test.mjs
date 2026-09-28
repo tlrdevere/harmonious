@@ -101,6 +101,7 @@ try{
     await p.locator('.comparison-view-options>summary').click();
     for(const side of ['a','b'])await p.locator('#compare-all-'+side).click();
     await p.locator('.comparison-view-options>summary').click();
+    await p.getByRole('button',{name:'Fit both maps',exact:true}).click();
   };
   const node=async(p,title)=>{
     await close(p);
@@ -166,7 +167,7 @@ try{
   assert.deepEqual(await a.locator('[aria-label="Conversation mode"] button:visible').allTextContents(),['Inquiry','Compare','Argument'],'Shared mode buttons follow the intended Inquiry, Compare, Argument order');
   const ghostGeometry=await geometry(a),beforeGhostChoice=JSON.stringify((await view(store,alice)).workspace),ghost=()=>a.locator('.counterpart-placeholder[data-state="unlinked"]').first();
   assert(await ghost().getByRole('button',{name:'Link counterpart',exact:true}).isVisible());
-  for(const selectedMode of ['inquiry','argument','compare']){await mode(a,selectedMode);assert.deepEqual(await geometry(a),ghostGeometry,'Compact source/status geometry is identical in all three modes');if(selectedMode!=='compare')assert.equal(await a.locator('.counterpart-placeholder button').count(),0,'Other modes keep neutral counterpart status without authoring controls');}
+  for(const selectedMode of ['inquiry','argument','compare']){await mode(a,selectedMode);assert.deepEqual(await geometry(a),ghostGeometry,'Full-size source/status geometry is identical in all three modes');if(selectedMode!=='compare')assert.equal(await a.locator('.counterpart-placeholder button').count(),0,'Other modes keep neutral counterpart status without authoring controls');}
   await ghost().getByRole('button',{name:'Link counterpart',exact:true}).focus();await a.keyboard.press('Enter');assert.equal(await a.locator('#counterpart-node').inputValue(),'');
   const explicitChoice=await a.locator('#counterpart-node option').evaluateAll(options=>options.find(o=>o.value)?.value);assert(explicitChoice);await a.locator('#counterpart-node').selectOption(explicitChoice);
   for(const selectedMode of ['inquiry','argument']){await mode(a,selectedMode);assert(await pop(a).isHidden(),'A counterpart draft parks outside Compare');assert.deepEqual(await geometry(a),ghostGeometry);}

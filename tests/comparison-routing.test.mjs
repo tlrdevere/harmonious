@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from '../dist/comparison-routing.mjs';
 import {ComparisonCanvas} from '../dist/compare-canvas.mjs';
 import {ReasoningUI} from '../dist/reasoning-ui.mjs';
+import {routeStraightConnection} from '../dist/reasoning-layout.mjs';
 import {CARD_W,CARD_H,layoutForest} from '../dist/layout.mjs';
 import {comparisonNodeKey,layoutComparison,comparisonDisplayRects,COUNTERPART_W,COUNTERPART_H} from '../dist/comparison-layout.mjs';
 
@@ -58,6 +59,9 @@ const clearNeighbor={x:150,y:-10,w:100,h:100};
 assert.equal(verify(diagonalA,diagonalB,[clearNeighbor],noLabel).points.length,2,'An unrelated off-corridor card does not force an elbow');
 const reverse=verify(diagonalB,diagonalA,[],noLabel);
 assert.deepEqual(reverse.points,diagonal.points.slice().reverse(),'Direct paths reverse without changing their attachment points');
+assert.deepEqual(routeStraightConnection(diagonalA,diagonalB).points,diagonal.points,'Straight-only routes reuse exact facing-boundary geometry');
+assert(routeStraightConnection(diagonalA,diagonalB,[diagonalObstacle]).blocked,'A straight-only attempt reports an obstructed corridor without drawing through a card');
+assert.deepEqual(routeStraightConnection(diagonalB,diagonalA).points,diagonal.points.slice().reverse(),'Straight-only geometry retains semantic direction');
 
 const cached=createConnectionRouter({limit:2}),first=cached(diagonalA,diagonalB);
 assert.equal(cached({...diagonalA},{...diagonalB}),first,'Identical geometry reuses its route object without rerouting');
@@ -115,7 +119,7 @@ const displayRects=comparisonDisplayRects(paired),ghosts=displayRects.filter(r=>
 const currentCards=displayRects.map(center),currentRequests=paired.maps.a.layout.edges.filter(edge=>edge.kind==='branch').map(edge=>({key:edge.to,from:center(paired.positions.get(comparisonNodeKey('a',edge.from))),to:center(paired.positions.get(comparisonNodeKey('a',edge.to)))})),currentRoutes=createSourceConnectionRouter()(currentRequests,currentCards);
 for(const request of currentRequests)verifySourcePath(request,currentRoutes.get(request.key),currentCards);
 const moving=new Map([...paired.positions].map(([key,p])=>[key,{...p,x:p.x+19,y:p.y-31}])),movingRects=comparisonDisplayRects(paired,moving);
-for(const rect of displayRects){const moved=movingRects.find(r=>r.key===rect.key);assert.deepEqual([moved.x,moved.y,moved.w,moved.h],[rect.x+19,rect.y-31,rect.w,rect.h],'Animated ghosts translate with their real source while retaining their compact bounds');}
+for(const rect of displayRects){const moved=movingRects.find(r=>r.key===rect.key);assert.deepEqual([moved.x,moved.y,moved.w,moved.h],[rect.x+19,rect.y-31,rect.w,rect.h],'Animated ghosts translate with their real source while retaining their full bounds');}
 const oneMoving=new Map(paired.positions),movingKey=comparisonNodeKey('a','left-union');oneMoving.set(movingKey,{...oneMoving.get(movingKey),x:oneMoving.get(movingKey).x+19,y:oneMoving.get(movingKey).y-31});
 const oneMovingRects=comparisonDisplayRects(paired,oneMoving),movingCards=oneMovingRects.map(center),movingRequests=currentRequests.map(request=>({...request,from:center(oneMoving.get(comparisonNodeKey('a','status'))),to:center(oneMoving.get(comparisonNodeKey('a',request.key)))})),movingRoutes=createSourceConnectionRouter()(movingRequests,movingCards);
 for(const rect of displayRects){const moved=oneMovingRects.find(r=>r.key===rect.key),follows=rect.key===movingKey||rect.sourceKey===movingKey;assert.deepEqual([moved.x,moved.y],[rect.x+(follows?19:0),rect.y+(follows?-31:0)],'Only the initiating real node and its ghost move together during interpolation');}
@@ -130,6 +134,16 @@ const extra=createSourceConnectionRouter()(requests.concat(requests[0]),sourceCa
 const altered=sourceRouter(requests,sourceCards.map((r,index)=>index? r:{...r,x:r.x+1}));assert.notEqual(altered,grouped,'Changed obstacles invalidate routing');assert.equal(sourceRouter.size,2,'Complete-scene memoization remains bounded');sourceRouter.clear();assert.equal(sourceRouter.size,0);
 const labelRoute=grouped.get('left-union'),labelBefore=structuredClone(labelRoute),sourceLabel=labelSourceRoute(labelRoute,{w:80,h:20},sourceCards);assert(sourceLabel);for(const card of sourceCards)assert(!overlap(sourceLabel,card));assert.deepEqual(labelRoute,labelBefore,'Inspection label placement never changes the shared visible route');assert.equal(labelSourceRoute(undefined,{w:40,h:20},sourceCards),null);
 const straightSource=createSourceConnectionRouter()([{key:'clear',from:diagonalA,to:diagonalB}],[]).get('clear');assert.equal(straightSource.points.length,2,'Uncontested direct connections remain direct');
+
+// Outward growth can produce long, nearly parallel branches. The comparison
+// policy keeps their clear lines straight instead of adding peer-avoidance bends.
+const longParent={x:0,y:0,w:100,h:80},longChildren=[{x:100000,y:30000,w:100,h:40},{x:100000,y:30060,w:100,h:40}],longRequests=longChildren.map((to,i)=>({key:'long-'+i,from:longParent,to})),longCards=[longParent,...longChildren];
+const oldLong=createSourceConnectionRouter()(longRequests,longCards),directLongRouter=createSourceConnectionRouter({preferStraight:true}),directLong=directLongRouter(longRequests,longCards);
+assert([...oldLong.values()].some(route=>route.points.length>2),'The fixture exercises the former peer-avoidance detour');
+for(const request of longRequests){const route=directLong.get(request.key);assert.equal(route.points.length,2,'A clear comparison corridor stays straight even near another connection');verifySourcePath(request,route,longCards);}
+assert.equal(directLongRouter(longRequests.slice().reverse(),longCards.slice().reverse()),directLong,'Straight routing remains cached and order independent');
+const obstructedStraight=createSourceConnectionRouter({preferStraight:true})([{key:'obstructed',from:diagonalA,to:diagonalB}],[diagonalObstacle]).get('obstructed');
+assert(obstructedStraight.points.length>2,'Exceptional obstructed geometry retains a visible safe route rather than crossing a card or disappearing');verifySourcePath({from:diagonalA,to:diagonalB},obstructedStraight,[diagonalObstacle]);
 
 // A busy grid bounds the additional peer-avoidance work while keeping every
 // unobstructed endpoint pair visible and preserving the original node geometry.

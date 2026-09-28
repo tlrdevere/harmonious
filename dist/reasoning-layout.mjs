@@ -158,6 +158,20 @@ function drawing(points,clearance){
   return {d:commands.join(' '),midpoint,points,segments,clearance,blocked:false};
 }
 
+/** Test a direct facing-boundary segment without creating a detour. Layout and
+ * straight-preferred displays can distinguish blocked corridors from line
+ * crossings, which never require bending an otherwise clear connection.
+ */
+export function routeStraightConnection(fromRect,toRect,obstacles=[],options={}){
+  const from=rectangle(fromRect),to=rectangle(toRect),others=obstacles.map(rectangle).filter(r=>!sameRect(r,from)&&!sameRect(r,to));
+  const preferred=options.clearance??CLEARANCE;
+  if(!Number.isFinite(preferred)||preferred<2||preferred>256)throw Error('Reasoning route clearance must be between 2 and 256.');
+  for(const clearance of options.clearance===undefined?[CLEARANCE,2]:[preferred]){
+    const points=directRoute(from,to,others,clearance);if(points)return drawing(points,clearance);
+  }
+  return {d:'',midpoint:null,points:[],segments:[],clearance:0,blocked:true};
+}
+
 /** Return a single SVG route and a midpoint on that route, not between endpoints.
  * `points`/`segments` are included for geometry checks. Default padding can be
  * reduced for a narrow passage; an explicit clearance (e.g. for a support badge)

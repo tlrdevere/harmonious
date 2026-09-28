@@ -1,10 +1,21 @@
 # Harmonious: what to check on your next visit
 
+## Upcoming: full-size ghosts and space for straight connections
+
+The [space and line follow-up](comparison-space-and-lines.md) is being verified. Confirm publication in [deployment status](deployment-status.md), then refresh both PCs.
+
+- [ ] Compare a ghost and its neighbouring real card: both have the same width and height. Check the status, other owner's name, button, keyboard focus and touch access at a readable zoom in Compare, Inquiry and Argument.
+- [ ] Repeat `harmonious 13.png`: expand both five-child SQ maps with only Low union density linked. All ten parent connections should be straight and avoid every unrelated real card and ghost. Each real node should appear once; the pair has a short straight gap connection with inspectable meanings and authors.
+- [ ] Collapse the opposite SQ branch, matching `harmonious 12.png`. Its existing link should retain **Counterpart in collapsed branch** status, with straight visible parent lines and full-size ghosts. Test four, six and eight children plus nested branches.
+- [ ] Set a readable zoom, then expand/collapse through both a node toggle and View options. The canvas may grow beyond the screen; the chosen scale and visible anchor should stay put. Pan to the new space. Use **Fit** only when an overview is wanted; test changing frame filters too.
+- [ ] Link and withdraw while zoomed in. Confirm both real nodes, source parents, saved histories, focus and the initiating node's screen position survive. Open the short pair line with the keyboard, inspect authors/meanings, and close back to that connection.
+- [ ] Switch shared modes and reload after saving. Check unchanged geometry, Compare-only counterpart actions, parked drafts, narrow windows, owner permissions, and existing map/copy/confidence workflows.
+
 ## First check: independent nodes, ghosts, and comparison spacing
 
 The [positioning increment](comparison-positioning-plan.md) is **live in Worker 49**, after all 48 local and 48 hosted checks and public verification. **Reload both PCs before testing.** [Deployment status](deployment-status.md) records publication and the exact application source.
 
-- [ ] Open a new comparison with similarly ordered or copied nodes, including the four-child TA example. Every unlinked ordinary node should occupy its own position with a compact **No counterpart linked** control. Equal titles/order should not produce automatic pairs. Frame headings remain corresponding structural headings.
+- [ ] Open a new comparison with similarly ordered or copied nodes, including the four-child TA example. Every unlinked ordinary node should occupy its own position with a full-size **No counterpart linked** ghost. Equal titles/order should not produce automatic pairs. Frame headings remain corresponding structural headings.
 - [ ] Open **Link counterpart** from a ghost on either side. No candidate should be selected initially. Cancel and confirm the camera and nodes stay put; reopen, explicitly choose the intended node, and save. Both real nodes should remain, now paired where eligible, with their saved connection inspectable.
 - [ ] Withdraw your own last qualifying link. The nodes should return to independent positions and truthful ghost/request status. If another author's qualifying link remains, the pair should remain linked. Never offer withdrawal of another person's record.
 - [ ] Start and cancel a request; no request should be sent. Send one and confirm **Counterpart requested** replaces the generic ghost. As recipient, use **Respond** to link, create, or answer **No position yet / Not applicable**. Close/reopen from the permitted account; each state should remain clear after refresh.
@@ -15,9 +26,9 @@ The [positioning increment](comparison-positioning-plan.md) is **live in Worker 
 
 ## Continuing checks: comparison connections and counterparts
 
-The [comparison clarity increment](comparison-clarity-plan.md) **shipped in Worker 48**, after all 48 local and 48 hosted checks and public verification. The checks below reflect Worker 49's compact ghosts. [Deployment status](deployment-status.md) records publication and the exact application source.
+The [comparison clarity increment](comparison-clarity-plan.md) **shipped in Worker 48**, after all 48 local and 48 hosted checks and public verification. The checks below incorporate the full-size ghost follow-up. [Deployment status](deployment-status.md) records publication and the exact application source.
 
-- [ ] Open two maps with similar SQ children, including the two Low union density nodes. Select one, then the other, and alternate among other visible nodes. Existing nodes, compact controls, zoom, camera, folds, and filters should stay in place; selection should create no additional counterpart spot.
+- [ ] Open two maps with similar SQ children, including the two Low union density nodes. Select one, then the other, and alternate among other visible nodes. Existing nodes, ghost controls, zoom, camera, folds, and filters should stay in place; selection should create no additional counterpart spot.
 - [ ] From your own node, choose **Link counterpart**. Search the other map, check the owner, parent path, and wording preview, then select and link the intended node. Nothing should be selected initially. Repeat starting from the other person's node, and repeat as the other account. Cancelling should create no link; linking should change neither source map.
 - [ ] Open **View linked counterparts**, including a node linked to more than one opposite node. Each pair should appear once, with its saved meanings and authors available. **Link another counterpart** should work; retrying an existing pair should not duplicate it. Refresh after saving and confirm both accounts see the link.
 - [ ] Start and cancel **Request counterpart**: the existing ghost should remain unchanged and no request should be saved. Send a request: **Counterpart requested** should remain visible when selection changes. Test Link, Create counterpart in my map, No position yet, close/reopen, and withdrawal of your own link on disposable nodes. A linked node should not offer a new request, and creating must remain restricted to your own map.
@@ -77,7 +88,7 @@ Reload both PCs after the release in [deployment status](deployment-status.md).
 - [ ] Open that badge. Check that it lists the real node pairs, their owners and parent paths. Multiple judgments on one pair should count as one connection; agreement, counterpart links and earlier comparisons should retain their separate meanings/history.
 - [ ] Choose **Show connected nodes**. Both real nodes should become visible at the existing zoom, with unrelated branches still folded. Closing the detail should return keyboard focus to an available connection or node.
 - [ ] Expand and collapse several levels. No connection should attach to an ancestor in place of a hidden descendant. A genuine connection between visible nodes should remain. A linked node should still have no Request counterpart option.
-- [ ] Check direct lines and small rounded detours in Map/Create, Inquiry, Compare and Argument. Lines should avoid cards. Switching shared modes should preserve source positions and source-edge geometry; radial node placement should remain familiar.
+- [ ] In shared comparisons, check straight source lines and space for full-size ghosts; the canvas should grow as needed. Exceptional obstructed saved links can retain safe detours. Map/Create and source browsing keep their existing routing. All lines should avoid cards, and switching shared modes should preserve source positions and source-edge geometry.
 - [ ] In your own map, select a connection using the pointer or keyboard. Its on-map detail should show the real endpoints, meaning and direction. Edit should open the optional panel; removing a reason should retain any separate parent–child organization.
 - [ ] Try **View options → Additional connections**. All visible is the default. Hiding additional connections should not replace them with a misleading parent line. Unrelated parent–child branches remain visible.
 - [ ] Repeat edge inspection in a narrow window. Close/Escape, Show connected nodes, Edit, and draft-discard cancellation should behave consistently.
@@ -227,12 +238,12 @@ Reload both PCs before trying the new flow.
 
 - [ ] Select a node that already has a counterpart. **Request counterpart** should be absent from both its action window and counterpart chooser.
 - [ ] Check an example connected to its parent, and a counterpart pair with an agreement. Each node pair should have one visible line. Open the line's label/details to inspect saved meanings. Opposing judgments should show **Mixed judgments**; collapsing branches should not duplicate the line.
-- [ ] Select a non-frame node with no linked counterpart. Confirm **No counterpart linked** appears in its inspection controls and existing compact ghost, without creating another spot or moving either map or the camera.
-- [ ] Send **Request counterpart**, then refresh the other account. Confirm the existing compact control changes to **Counterpart requested** and persists when selection changes; opening or cancelling an unsent request should change no saved state or geometry.
+- [ ] Select a non-frame node with no linked counterpart. Confirm **No counterpart linked** appears in its inspection controls and existing full-size ghost, without creating another spot or moving either map or the camera.
+- [ ] Send **Request counterpart**, then refresh the other account. Confirm the existing full-size ghost changes to **Counterpart requested** and persists when selection changes; opening or cancelling an unsent request should change no saved state or geometry.
 - [ ] As the recipient, choose **Create counterpart in my map**, select its parent in your own map, and enter your wording. After saving, open your own map and confirm the node is there.
 - [ ] Repeat with **Link counterpart** from either participant's node. Explicitly choose an existing opposite node and confirm it links the pair without creating a duplicate or editing either source map.
 - [ ] Confirm a neutral **Counterparts** connection appears and no agreement/disagreement was recorded automatically. An eligible visible pair in the same frame should sit together, with at most one adjacent partner per real node; neither map's original parent connections should change. Other links remain inspectable.
-- [ ] Respond **No position yet** or **Not applicable** to another request. Confirm the same compact control shows the response status, with the explanation in its inspector. Reopen it from the requesting account.
+- [ ] Respond **No position yet** or **Not applicable** to another request. Confirm the same full-size ghost shows the response status, with the explanation in its inspector. Reopen it from the requesting account.
 - [ ] Start a new counterpart draft and try closing it. Cancel the discard prompt and confirm your wording is preserved. Try the flow on a narrow window too.
 
 See [the counterpart workflow](counterpart-workflow.md) for cross-frame and multiple-link behavior.

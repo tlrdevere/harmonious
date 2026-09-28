@@ -14,7 +14,7 @@ export class ComparisonCanvas{
     installFramePalette();
     this.options=options;
     this.onSelect=onSelect;this.onRecord=onRecord;this.states={a:{map:null,expanded:new Set(),selected:null,frame:'all'},b:{map:null,expanded:new Set(),selected:null,frame:'all'}};
-    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=FRAME_COLORS;this.animation=null;this.routeConnection=createConnectionRouter();this.routeSources=createSourceConnectionRouter();this.sourceHighlights=createSourceConnectionHighlights();this.sourceRoutes=new Map();
+    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=FRAME_COLORS;this.animation=null;this.routeConnection=createConnectionRouter();this.routeSources=createSourceConnectionRouter({preferStraight:!options.single});this.sourceHighlights=createSourceConnectionHighlights();this.sourceRoutes=new Map();
     this.surface=document.createElement('div');this.surface.className='comparison-canvas';this.surface.tabIndex=0;this.surface.setAttribute('role','region');this.surface.setAttribute('aria-label','Both worldview maps on one canvas. Select a node in each map. Drag empty space to pan; scroll to zoom; use F to fit both maps.');
     this.world=document.createElement('div');this.world.className='comparison-world';this.surface.append(this.world);
     this.hint=document.createElement('div');this.hint.className='comparison-canvas-hint';this.hint.textContent='Choose a node in A, then one in B.';this.surface.append(this.hint);
@@ -61,9 +61,20 @@ export class ComparisonCanvas{
   }
   ownerName(map){return map?(this.options.ownerName?.(map)||map.person||'Participant'):'Participant';}
   identity(side){const id=this.states[side].map?.id,ordered=[...new Set(['a','b'].map(key=>this.states[key].map?.id).filter(Boolean))].sort();return ordered.indexOf(id)===1?'two':'one';}
-  setFrame(side,frame){this.states[side].frame=frame;this.reflow({fit:true});}
-  expand(side,all=false){const state=this.states[side];if(!state.map)return;for(const id of all?state.map.nodes.map(n=>n.id):this.layout.maps[side].positions.keys())state.expanded.add(id);this.reflow({fit:true});}
-  collapse(side){this.states[side].expanded.clear();this.reflow({fit:true});}
+  frameAnchor(side){
+    const state=this.states[side];if(!state.map)return null;let node=state.map.nodes.find(n=>n.id===state.selected);const byId=new Map(state.map.nodes.map(n=>[n.id,n]));while(node?.parent)node=byId.get(node.parent);
+    const id=[node?.id,...roots].find(id=>id&&this.positions.has(comparisonNodeKey(side,id)));return id?comparisonNodeKey(side,id):null;
+  }
+  setFrame(side,frame){
+    this.stopAnimation();
+    const state=this.states[side],key=this.frameAnchor(side),point=key&&this.positions.get(key),anchor=point?{key,x:this.camera.x+(point.x+CARD_W/2)*this.camera.z,y:this.camera.y+(point.y+CARD_H/2)*this.camera.z,z:this.camera.z}:null;
+    state.frame=frame;if(this.options.single){this.reflow({fit:true});return;}this.reflow({animate:false,anchor:key});
+    // Switching between disjoint frame filters replaces the visible anchor;
+    // keep its screen location and the user's chosen scale instead of fitting.
+    if(anchor&&!this.positions.has(key)){anchor.key=this.frameAnchor(side);this.restoreAnchor(anchor);}
+  }
+  expand(side,all=false){const state=this.states[side];if(!state.map)return;const anchor=this.frameAnchor(side);for(const id of all?state.map.nodes.map(n=>n.id):this.layout.maps[side].positions.keys())state.expanded.add(id);this.reflow(this.options.single?{fit:true}:{anchor});}
+  collapse(side){const anchor=this.frameAnchor(side);this.states[side].expanded.clear();this.reflow(this.options.single?{fit:true}:{anchor});}
   pick(side,id,focus=false){
     const state=this.states[side];state.selected=id;
     if(id&&state.map){state.expanded=revealPath(state.map.nodes,id,state.expanded);let node=state.map.nodes.find(n=>n.id===id);while(node?.parent)node=state.map.nodes.find(n=>n.id===node.parent);if(state.frame!=='all'&&node?.id!==state.frame)state.frame='all';}
@@ -103,7 +114,7 @@ export class ComparisonCanvas{
       for(const edge of view.layout.edges){if(edge.kind==='spine'&&!this.options.single||!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;const path=this.svgElement('path',{stroke:'#8396a1',fill:'none','stroke-width':1.6,'aria-hidden':'true','data-side':side,'data-identity':this.identity(side)});path.classList.add('comparison-tree-edge');if(edge.kind!=='spine')path.classList.add('source-connection-path');svg.append(path);this.branches.push({path,edge,side,key:visibleNodePairKey(comparisonNodeKey(side,edge.from),comparisonNodeKey(side,edge.to))});}
       const byId=new Map(state.map.nodes.map(n=>[n.id,n]));
       for(const [id,p]of view.positions){
-        const node=byId.get(id),kids=view.layout.children.get(id),owner=this.ownerName(state.map),card=document.createElement('article');card.className=`node${node.parent===null?' root':''}${state.selected===id?' selected':''}`;card.dataset.frame=p.frame;card.dataset.side=side;card.dataset.identity=this.identity(side);
+        const node=byId.get(id),kids=view.layout.children.get(id),owner=this.ownerName(state.map),card=document.createElement('article');card.className=`node${node.parent===null?' root':''}${state.selected===id?' selected':''}`;card.dataset.frame=p.frame;card.dataset.side=side;card.dataset.nodeId=id;card.dataset.identity=this.identity(side);
         const main=document.createElement('button');main.type='button';main.className='node-main';main.setAttribute('aria-label',`Select ${node.title} from ${state.map.name} by ${owner}`);main.setAttribute('aria-pressed',String(state.selected===id));
         const title=document.createElement('div');title.className='node-title';title.textContent=node.title;const summary=document.createElement('div');summary.className='node-summary';summary.textContent=node.summary;main.append(title,summary);main.onclick=()=>this.onSelect(side,id);
         const bottom=document.createElement('div');bottom.className='node-bottom';const meta=document.createElement('span');meta.className='node-meta';meta.textContent=owner;meta.title=`${state.map.name} by ${owner}`;bottom.append(meta);

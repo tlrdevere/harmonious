@@ -2,9 +2,13 @@
 
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
+## September 28 full-size counterparts and straight connections
+
+The [space and line follow-up](comparison-space-and-lines.md) is being implemented and verified. It supersedes the compact ghosts introduced in Worker 49: ghosts match real card dimensions, and the occupied canvas expands to clear straight parent connections. Expansion, collapse and frame filtering preserve zoom. Adjacent counterparts use a short straight line whose meanings and authors remain inspectable; a wide label no longer causes a bent bracket. Pair eligibility, request outcomes, authorship and mode permissions remain unchanged.
+
 ## September 28 comparison positioning follow-up
 
-The [comparison positioning follow-up](comparison-positioning-plan.md) is **live in Worker 49**, after all 48 local and 48 hosted checks and public verification. Ordinary nodes begin independently with compact ghost/status controls; only qualifying saved pairs produce adjacency. Ghosts are display affordances, not nodes, requests, or stances. Source geometry is shared across Inquiry, Compare, and Argument; linking/responding controls remain in Compare. Explicit links, earlier attributed pair records, unavailable-source privacy, request states, and withdrawal ownership retain their existing semantics. [Deployment status](deployment-status.md) identifies the exact published source.
+The [comparison positioning follow-up](comparison-positioning-plan.md) **shipped in Worker 49**, after all 48 local and 48 hosted checks and public verification. Ordinary nodes begin independently; only qualifying saved pairs produce adjacency. Its compact ghosts are superseded by the full-size follow-up above. Ghosts are display affordances, not nodes, requests, or stances. Source geometry is shared across Inquiry, Compare, and Argument; linking/responding controls remain in Compare. Explicit links, earlier attributed pair records, unavailable-source privacy, request states, and withdrawal ownership retain their existing semantics. [Deployment status](deployment-status.md) identifies the exact published source.
 
 ## September 28 comparison clarity follow-up
 

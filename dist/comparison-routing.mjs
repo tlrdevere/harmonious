@@ -1,4 +1,4 @@
-import {routeReasoningConnection} from './reasoning-layout.mjs';
+import {routeReasoningConnection,routeStraightConnection} from './reasoning-layout.mjs';
 
 const overlaps=(a,b,gap=8)=>Math.abs(a.x-b.x)<(a.w+b.w)/2+gap&&Math.abs(a.y-b.y)<(a.h+b.h)/2+gap;
 
@@ -139,11 +139,14 @@ function reverseSourceRoute(route){
   const d=['M '+point(points[0]),...segments.map(s=>s.control?`Q ${point(s.control)} ${point(s.to)}`:'L '+point(s.to))].join(' ');
   return {...route,d,points,segments};
 }
-function sourceBatch({edges,rects}){
-  const chosen=new Map(edges.map(edge=>[edge.key,routeComparisonConnection(edge.from,edge.to,rects)])),ports=sourcePorts(edges);
+function sourceBatch({edges,rects},preferStraight){
+  const chosen=new Map(edges.map(edge=>{
+    const direct=preferStraight&&routeStraightConnection(edge.from,edge.to,rects);
+    return [edge.key,direct&&!direct.blocked?{...direct,label:{...direct.midpoint,w:0,h:0}}:routeComparisonConnection(edge.from,edge.to,rects)];
+  })),ports=sourcePorts(edges);
   let alternatives=0;
   for(const edge of edges){
-    const original=chosen.get(edge.key);if(original.blocked||alternatives>=SOURCE_ALTERNATIVE_LIMIT)continue;
+    const original=chosen.get(edge.key);if(original.blocked||preferStraight&&original.points.length===2||alternatives>=SOURCE_ALTERNATIVE_LIMIT)continue;
     const region=sourceBox(original.points,256),peers=[];
     for(const other of edges){if(other.key===edge.key)continue;for(const segment of sourceSegments(chosen.get(other.key))){const box=sourceBox([segment.from,segment.to],6);if(sourceBoxesOverlap(region,box))peers.push({...segment,box});}}
     // Bound the extra work independently of the existing card-avoidance solver.
@@ -162,12 +165,12 @@ function sourceBatch({edges,rects}){
  * request's from→to direction. Reordering inputs, selection and camera changes
  * cannot alter geometry. The complete peer set participates in cache identity.
  */
-export function createSourceConnectionRouter({limit=2}={}){
+export function createSourceConnectionRouter({limit=2,preferStraight=false}={}){
   const capacity=Math.max(1,Math.min(8,Math.floor(limit)||2)),cache=new Map();
   const route=(requests,obstacles=[])=>{
     const scene=sourceScene(requests,obstacles);
     if(cache.has(scene.key)){const found=cache.get(scene.key);cache.delete(scene.key);cache.set(scene.key,found);return found;}
-    const result=sourceBatch(scene);cache.set(scene.key,result);if(cache.size>capacity)cache.delete(cache.keys().next().value);return result;
+    const result=sourceBatch(scene,preferStraight);cache.set(scene.key,result);if(cache.size>capacity)cache.delete(cache.keys().next().value);return result;
   };
   route.clear=()=>cache.clear();Object.defineProperty(route,'size',{get:()=>cache.size});return route;
 }

@@ -4,6 +4,8 @@ Prepared September 28, 2026 from the owner's feedback on `harmonious 10.png` and
 
 ## Implementation record
 
+The owner's subsequent [full-size ghost and straight-connection request](comparison-space-and-lines.md) supersedes this release's compact dimensions and area-reduction preference. The measurements below remain historical Worker 49 evidence, not the target for later spacing.
+
 The implementation follows the decisions below using the existing client modules. It separates saved counterpart state from eligible adjacency, rebuilds a valid forest of occupied groups, and solves spacing from real card/control rectangles with six bounded angle candidates. Compact ghosts and exact animated rectangles are shared by layout, source routing, discussion/reasoning placement, and Fit. Link/withdraw preserves the initiating node's screen position and zoom; cancellation, focus return, and mode-local drafts remain protected.
 
 Focused unit and two-account browser checks pass, including 100 filter/expansion patterns, 50 conflicting pair sets, dense/deep trees, repeated link/withdraw, reversed source maps, request responses, unavailable history, ownership, and source immutability. The portable-browser smoke check also passes for initial ghosts, explicit linking, cancellation, mode geometry, and unchanged real-node counts. Desktop and narrow screenshots were inspected at both Fit and readable working zooms. The complete local/hosted release result and publication are recorded in [deployment status](deployment-status.md).

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {initialWorkspace,recordComparison,validateWorkspace} from '../dist/workspace.mjs';
 import {roots} from '../dist/data.mjs';
 import {CARD_W,CARD_H} from '../dist/layout.mjs';
+import {routeStraightConnection} from '../dist/reasoning-layout.mjs';
 import {comparisonNodeKey,layoutComparison,visibleComparisonEndpoint,comparisonRecordEnds,comparisonDisplayRects,COUNTERPART_W,COUNTERPART_H,COMPARISON_GROUP_GAP} from '../dist/comparison-layout.mjs';
 
 const workspace=initialWorkspace(),[a,b]=workspace.maps;
@@ -47,12 +48,12 @@ console.log('PASS: overlaid frames, independent identities, unequal trees, 100 e
 const small=(id)=>({id,nodes:roots.map(id=>({id,parent:null})).concat([{id:'one',parent:'status'},{id:'two',parent:'status'},{id:'three',parent:'one'}]),relations:[]});
 const left=small('a-map'),right=small('b-map'),full={a:{map:left,frame:'all',expanded:new Set(left.nodes.map(n=>n.id))},b:{map:right,frame:'all',expanded:new Set(right.nodes.map(n=>n.id))}};
 const source={type:'node',mapId:left.id,nodeId:'one'},other={type:'node',mapId:right.id,nodeId:'two'},originalSmall=JSON.stringify(full);
-function noOverlap(layout){const ps=comparisonDisplayRects(layout);for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){const p=ps[i],q=ps[j];assert(!(p.x<q.x+q.w-.01&&p.x+p.w>q.x+.01&&p.y<q.y+q.h-.01&&p.y+p.h>q.y+.01),'Nodes and compact counterpart controls must not overlap');}}
+function noOverlap(layout){const ps=comparisonDisplayRects(layout);for(let i=0;i<ps.length;i++)for(let j=i+1;j<ps.length;j++){const p=ps[i],q=ps[j];assert(!(p.x<q.x+q.w-.01&&p.x+p.w>q.x+.01&&p.y<q.y+q.h-.01&&p.y+p.h>q.y+.01),'Nodes and full-size counterpart controls must not overlap');}}
 const savedLink={id:'saved',kind:'correspondence',status:'active',createdAt:'2026-09-28',target:source,other};
 const linked=layoutComparison(full,roots,{links:[savedLink],reserved:[]});noOverlap(linked);
-assert.equal(linked.maps.a.positions.get('one').y,linked.maps.b.positions.get('two').y);assert.equal(linked.maps.b.positions.get('two').x-linked.maps.a.positions.get('one').x,CARD_W+16);
+assert.equal(linked.maps.a.positions.get('one').y,linked.maps.b.positions.get('two').y);assert(Math.abs(linked.maps.b.positions.get('two').x-linked.maps.a.positions.get('one').x-CARD_W-16)<1e-8);
 assert.notEqual(linked.maps.b.positions.get('one').x,linked.maps.b.positions.get('two').x,'Unrelated original neighbor is retained elsewhere');
-const reserved=layoutComparison(full,roots,{reserved:[source]});noOverlap(reserved);assert.equal(reserved.placeholders.length,6,'Every solo ordinary node has one compact control, independently of requests');assert.equal(reserved.positions.size,left.nodes.length+right.nodes.length);
+const reserved=layoutComparison(full,roots,{reserved:[source]});noOverlap(reserved);assert.equal(reserved.placeholders.length,6,'Every solo ordinary node has one full-size control, independently of requests');assert.equal(reserved.positions.size,left.nodes.length+right.nodes.length);
 const swapped=layoutComparison({a:full.b,b:full.a},roots,{links:[savedLink]});noOverlap(swapped);assert.equal(swapped.maps.a.positions.get('two').y,swapped.maps.b.positions.get('one').y);
 for(let i=0;i<50;i++){const targets=[...left.nodes.filter(n=>n.parent),...right.nodes.filter(n=>n.parent)].filter(()=>random()>.5).map((n,index)=>({type:'node',mapId:index%2?right.id:left.id,nodeId:n.id}));noOverlap(layoutComparison(full,roots,{reserved:[...new Map(targets.map(t=>[JSON.stringify(t),t])).values()]}));}
 assert.equal(JSON.stringify(full),originalSmall,'Neither counterpart links nor reservations change source data');
@@ -78,6 +79,15 @@ function checkGroups(layout){
   }
   for(const rect of comparisonDisplayRects(layout))assert(rect.x>=0&&rect.y>=0&&rect.x+rect.w<=layout.bounds.width+.001&&rect.y+rect.h<=layout.bounds.height+.001,'Fit includes each exact card/control rectangle');
 }
+function straightParents(layout){
+  const rects=comparisonDisplayRects(layout).map(p=>({...p,x:p.x+p.w/2,y:p.y+p.h/2})),byKey=new Map(rects.filter(r=>r.kind==='node').map(r=>[r.key,r]));let count=0;
+  for(const [side,view]of Object.entries(layout.maps))for(const node of view.map.nodes){
+    const from=byKey.get(comparisonNodeKey(side,node.parent)),to=byKey.get(comparisonNodeKey(side,node.id));if(!from||!to)continue;
+    count++;const route=routeStraightConnection(from,to,rects,{clearance:6});assert(!route.blocked,`Straight parent line ${side}:${node.parent} → ${node.id} must clear every real card and full-size ghost`);assert.equal(route.points.length,2);
+  }
+  assert.equal(layout.straightSource.total,count);assert.equal(layout.straightSource.clear,count);assert.deepEqual(layout.straightSource.blocked,[]);
+}
+assert.equal(COUNTERPART_W,CARD_W);assert.equal(COUNTERPART_H,CARD_H,'A ghost reserves the same full-size node footprint');
 const untouched=layoutComparison(full,roots);checkGroups(untouched);
 assert.equal([...untouched.groups.values()].filter(g=>g.kind==='pair').length,0,'Matching IDs, wording and sibling order do not imply counterpart identity');
 assert.notEqual(groupOf(untouched,'a','one').id,groupOf(untouched,'b','one').id);
@@ -126,12 +136,12 @@ for(const [aCount,bCount]of [[0,0],[1,0],[4,4],[5,0],[5,2],[5,8],[6,6],[8,0]]){
   const A=countsMap('map-a',aCount),B=countsMap('map-b',bCount),state={a:{map:A,frame:'status',expanded:new Set(['status'])},b:{map:B,frame:'status',expanded:new Set(['status'])}},before=JSON.stringify(state);
   for(const collapsedSide of [null,'a','b']){
     const view={a:{...state.a},b:{...state.b}};if(collapsedSide)view[collapsedSide].expanded=new Set();
-    const layout=layoutComparison(view,roots);checkGroups(layout);assert.equal(layout.positions.size,2+(collapsedSide==='a'?0:aCount)+(collapsedSide==='b'?0:bCount));assert.equal(layout.placeholders.length,layout.positions.size-2);assert.deepEqual(layoutComparison(view,roots),layout,'Selection, mode and camera are absent from geometry inputs');
+    const layout=layoutComparison(view,roots);checkGroups(layout);straightParents(layout);assert.equal(layout.positions.size,2+(collapsedSide==='a'?0:aCount)+(collapsedSide==='b'?0:bCount));assert.equal(layout.placeholders.length,layout.positions.size-2);assert.deepEqual(layoutComparison(view,roots),layout,'Selection, mode and camera are absent from geometry inputs');
     if(aCount===5&&bCount===0&&!collapsedSide)five=layout;
   }
   assert.equal(JSON.stringify(state),before);
 }
-assert(five.bounds.width<1000&&five.bounds.height<1050,'The screenshot’s five-child comparison uses compact occupied content instead of the old 1363×1142 content stretch');
+assert(five.bounds.width>1000&&five.bounds.height>1050,'The world grows to fit full-size counterparts and straight parent corridors rather than shrinking cards or preserving compact bounds');
 const manyA=countsMap('map-a',5),manyB=countsMap('map-b',8),many={a:{map:manyA,frame:'status',expanded:new Set(['status'])},b:{map:manyB,frame:'status',expanded:new Set(['status'])}},manyBefore=JSON.stringify(many);
 const fifth={...savedLink,target:{type:'node',mapId:manyA.id,nodeId:'node-4'},other:{type:'node',mapId:manyB.id,nodeId:'node-0'}},initialMany=layoutComparison(many,roots);
 for(let i=0;i<20;i++){
@@ -149,4 +159,13 @@ const denseA=countsMap('dense-a',8),denseB=countsMap('dense-b',8);
 for(const map of [denseA,denseB])for(let branch=0;branch<8;branch++)for(let depth=0;depth<5;depth++)map.nodes.push({id:`branch-${branch}-${depth}`,parent:depth?`branch-${branch}-${depth-1}`:`node-${branch}`});
 const denseState={a:{map:denseA,frame:'status',expanded:new Set(denseA.nodes.map(n=>n.id))},b:{map:denseB,frame:'status',expanded:new Set(denseB.nodes.map(n=>n.id))}};
 const denseStart=performance.now(),denseLayout=layoutComparison(denseState,roots);checkGroups(denseLayout);assert.equal(denseLayout.positions.size,98);assert(performance.now()-denseStart<5000,'The bounded geometry pass finishes on deep, dense comparison fixtures');
-console.log('PASS: unpaired defaults, explicit/legacy priority, actual identity grouping, acyclic cross-depth ancestry, hidden/missing endpoints, compact ghost animation, rectangle gaps and bounds, five-child spacing, unequal repeated link/withdraw and deep/dense layouts.');
+straightParents(denseLayout);
+const fiveA=countsMap('five-a',5),fiveB=countsMap('five-b',5),fiveStates={a:{map:fiveA,frame:'status',expanded:new Set(['status'])},b:{map:fiveB,frame:'status',expanded:new Set(['status'])}},union={...savedLink,target:{type:'node',mapId:fiveA.id,nodeId:'node-4'},other:{type:'node',mapId:fiveB.id,nodeId:'node-4'}};
+const fivePaired=layoutComparison(fiveStates,roots,{links:[union]});checkGroups(fivePaired);straightParents(fivePaired);assert.equal(fivePaired.placeholders.length,8);
+const frame=groupOf(fivePaired,'a','status');for(const group of fivePaired.groups.values())if(group.kind!=='frame')assert(group.anchor.mapId===fiveA.id?group.cy<frame.cy:group.cy>frame.cy,'A deliberately linked pair does not spill one owner’s remaining solo into the other owner’s sector');
+const chainA=countsMap('chain-a',0),chainB=countsMap('chain-b',0);for(let i=0;i<100;i++)chainA.nodes.push({id:'chain-'+i,parent:i?'chain-'+(i-1):'status'});
+const chainStates={a:{map:chainA,frame:'status',expanded:new Set(chainA.nodes.map(n=>n.id))},b:{map:chainB,frame:'status',expanded:new Set()}},chain=layoutComparison(chainStates,roots);checkGroups(chain);straightParents(chain);assert(chain.bounds.height<30000&&chain.bounds.width<1000,'A 100-level skinny chain grows linearly instead of multiplying every ring radius');
+const fanA=countsMap('fan-a',40),fanB=countsMap('fan-b',0),fan=layoutComparison({a:{map:fanA,frame:'status',expanded:new Set(['status'])},b:{map:fanB,frame:'status',expanded:new Set()}},roots);checkGroups(fan);straightParents(fan);assert(fan.bounds.width<100000&&fan.bounds.height<100000,'High fan-out has finite practical world dimensions');
+const additionalState=structuredClone(fiveStates);additionalState.a.map.relations=[{id:'extra',from:'node-0',to:'node-1',type:'cause'},{id:'reverse-extra',from:'node-1',to:'node-0',type:'reason'},{id:'parent-meaning',from:'node-0',to:'status',type:'reason'},{id:'other-frame',from:'node-0',to:'action',type:'cause'}];additionalState.a.frame='all';
+const additional=layoutComparison(additionalState,roots);straightParents(additional);assert.equal(additional.straightSource.additional.total,1,'Additional meanings count once per actual pair and do not recount parent edges');assert.equal(additional.straightSource.additional.crossFrame,1,'Cross-frame semantic links are explicitly outside the per-frame placement guarantee');
+console.log('PASS: unpaired defaults, explicit/legacy priority, actual identity grouping, acyclic cross-depth ancestry, hidden/missing endpoints, full-size ghost animation, exact rectangle bounds, straight screenshot/unequal/nested parent routes, owner sectors, 100-level chain and 40-child fan-out.');

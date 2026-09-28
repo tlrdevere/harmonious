@@ -1,7 +1,7 @@
 import {CARD_W,CARD_H,FRAME_GAP,layoutForest} from './layout.mjs';
 
-export const COUNTERPART_W=144,COUNTERPART_H=88;
-export const COUNTERPART_GAP=12,COMPARISON_PAIR_GAP=16,COMPARISON_GROUP_GAP=44;
+export const COUNTERPART_W=CARD_W,COUNTERPART_H=CARD_H;
+export const COUNTERPART_GAP=16,COMPARISON_PAIR_GAP=16,COMPARISON_GROUP_GAP=44;
 export const OVERLAY_TOP_GAP=72;
 
 // The two maps share frame columns, but retain independent trees and expansion state.
@@ -99,7 +99,14 @@ function layoutOverlay(states,roots,{links=[]}={}){
   }
   for(const group of groups.values())if(group.parent)groups.get(group.parent)?.children.push(group.id);
   for(const group of groups.values())group.children.sort((a,b)=>memberOrder(groups.get(a).anchor,groups.get(b).anchor));
-  placeGroups(groups);
+  const additionalPairs=new Map();let crossFrameRelations=0;
+  for(const side of ['a','b'])for(const relation of states[side].map.relations||[]){
+    const from=members.get(comparisonNodeKey(side,relation.from)),to=members.get(comparisonNodeKey(side,relation.to));
+    if(!from||!to||from.parentId===to.nodeId||to.parentId===from.nodeId)continue;
+    const key=JSON.stringify([from.key,to.key].sort());if(additionalPairs.has(key))continue;
+    additionalPairs.set(key,{fromKey:from.key,toKey:to.key});if(from.frame!==to.frame)crossFrameRelations++;
+  }
+  const straightSource=placeGroups(groups,[...additionalPairs.values()]);straightSource.additional.crossFrame=crossFrameRelations;
   const positions=new Map(),placeholders=[];
   for(const group of groups.values()){
     for(const m of group.members){
@@ -112,7 +119,7 @@ function layoutOverlay(states,roots,{links=[]}={}){
     }
   }
   const rects=comparisonDisplayRects({positions,placeholders}),width=rects.length?Math.max(...rects.map(p=>p.x+p.w))+32:0,height=rects.length?Math.max(...rects.map(p=>p.y+p.h))+32:0;
-  return {maps,positions,placeholders,groups,groupFor,lanes:rects.length?[{side:'a',x:0,y:0,width,height}]:[],overlay:true,bounds:{x:0,y:0,width,height}};
+  return {maps,positions,placeholders,groups,groupFor,straightSource,lanes:rects.length?[{side:'a',x:0,y:0,width,height}]:[],overlay:true,bounds:{x:0,y:0,width,height}};
 }
 
 // Solve forbidden radius intervals for actual rectangles. This is a bounded
@@ -132,17 +139,49 @@ function freeRadius(moving,fixed,min){
   for(const [low,high]of intervals)if(radius>=low-1e-8&&radius<high+1e-8)radius=high+1e-6;
   return radius;
 }
-function placeGroups(groups){
+function groupCardRects(items,reverse=false){
+  const rects=[];
+  for(const group of items){
+    for(const member of group.members){const right=reverse?member.side==='a':member.side==='b',x=group.cx-group.w/2+CARD_W/2+(group.w>CARD_W&&right?CARD_W+COMPARISON_PAIR_GAP:0);rects.push({key:member.key,x,y:group.cy,w:CARD_W,h:CARD_H,member});}
+    if(group.kind==='solo'){const member=group.anchor,left=reverse?member.side==='b':member.side==='a';rects.push({key:JSON.stringify(['ghost',member.mapId,member.nodeId]),x:group.cx+(left?1:-1)*(CARD_W+COMPARISON_PAIR_GAP)/2,y:group.cy,w:COUNTERPART_W,h:COUNTERPART_H});}
+  }
+  return rects;
+}
+function segmentHitsRect(a,b,rect,padding=6){
+  let low=0,high=1;
+  for(const axis of ['x','y']){const half=(axis==='x'?rect.w:rect.h)/2+padding,d=b[axis]-a[axis],start=rect[axis]-half,end=rect[axis]+half;
+    if(Math.abs(d)<1e-10){if(a[axis]<=start||a[axis]>=end)return false;continue;}
+    let first=(start-a[axis])/d,last=(end-a[axis])/d;if(first>last)[first,last]=[last,first];low=Math.max(low,first);high=Math.min(high,last);if(low>=high-1e-10)return false;
+  }
+  return high>0&&low<1;
+}
+function directSourceState(items,reverse=false,additionalPairs=[]){
+  const rects=groupCardRects(items,reverse),byKey=new Map(rects.filter(r=>r.member).map(r=>[r.key,r])),blocked=[];let total=0,length=0;
+  for(const to of byKey.values()){
+    if(to.member.parentId===null)continue;const from=byKey.get(comparisonNodeKey(to.member.side,to.member.parentId));if(!from)continue;
+    total++;length+=Math.hypot(to.x-from.x,to.y-from.y);const obstacles=rects.filter(r=>r!==from&&r!==to&&segmentHitsRect(from,to,r));
+    if(obstacles.length)blocked.push({fromKey:from.key,toKey:to.key,obstacles:obstacles.map(r=>r.key)});
+  }
+  const additional={total:0,clear:0,blocked:[],length:0};
+  for(const pair of additionalPairs){const from=byKey.get(pair.fromKey),to=byKey.get(pair.toKey);if(!from||!to)continue;
+    additional.total++;additional.length+=Math.hypot(to.x-from.x,to.y-from.y);const obstacles=rects.filter(r=>r!==from&&r!==to&&segmentHitsRect(from,to,r));
+    if(obstacles.length)additional.blocked.push({...pair,obstacles:obstacles.map(r=>r.key)});else additional.clear++;
+  }
+  return {total,clear:total-blocked.length,blocked,length,additional};
+}
+function placeGroups(groups,additionalPairs){
   const frames=[...groups.values()].filter(g=>g.kind==='frame').sort((a,b)=>a.frame-b.frame),clusters=[];
   for(const root of frames){
     let best=null;
-    // Wide occupied groups need wider angular sectors than single cards. Try
-    // a fixed small set of directions, retaining source order, and judge the
-    // actual rectangle result rather than stretching already placed cards.
-    for(const horizontal of [1,1.2,1.4,1.6,1.8,2]){
-      const cluster=solveGroupFrame(root,groups,horizontal),width=cluster.maxX-cluster.minX,height=cluster.maxY-cluster.minY;
-      const score=width*height*(1+.5*Math.log(width/height)**2);
-      if(!best||score<best.score-.001)best={...cluster,score};
+    // The world grows to clear the actual parent-to-child segments. Full-size
+    // counterpart halves remain obstacles even when they contain no real node.
+    // Candidate count and growth are bounded; exceptional blocked edges remain
+    // explicit so the renderer can retain its honest fallback.
+    for(const corridor of [Math.PI/5,Math.PI/4,Math.PI/6])for(const depthGrowth of [.6,1,1.6,2.4])for(const compact of [true,false]){
+      const cluster=solveGroupFrame(root,groups,{corridor,depthGrowth,compact}),state=directSourceState(cluster.items,false,additionalPairs),reversed=directSourceState(cluster.items,true,additionalPairs);
+      // The same actual identities choose the same world after swapping A/B.
+      const scoreBlocked=state.blocked.length+reversed.blocked.length,scoreAdditional=state.additional.blocked.length+reversed.additional.blocked.length,scoreLength=state.length+reversed.length+state.additional.length+reversed.additional.length;
+      if(!best||scoreBlocked<best.scoreBlocked||scoreBlocked===best.scoreBlocked&&(scoreAdditional<best.scoreAdditional||scoreAdditional===best.scoreAdditional&&scoreLength<best.scoreLength-.001))best={...cluster,state,scoreBlocked,scoreAdditional,scoreLength};
     }
     clusters.push(best);
   }
@@ -151,35 +190,40 @@ function placeGroups(groups){
     for(const group of cluster.items)Object.assign(groups.get(group.id),group,{x:group.cx-group.w/2-cluster.minX+left,y:group.cy-group.h/2-top+OVERLAY_TOP_GAP});
     left+=cluster.maxX-cluster.minX+FRAME_GAP;
   }
+  const blocked=clusters.flatMap(c=>c.state.blocked),total=clusters.reduce((sum,c)=>sum+c.state.total,0),additionalBlocked=clusters.flatMap(c=>c.state.additional.blocked),additionalTotal=clusters.reduce((sum,c)=>sum+c.state.additional.total,0);
+  return {total,clear:total-blocked.length,blocked,additional:{total:additionalTotal,clear:additionalTotal-additionalBlocked.length,blocked:additionalBlocked}};
 }
-function solveGroupFrame(root,groups,horizontal){
-    const corridor=Math.PI/10;
+function solveGroupFrame(root,groups,{corridor,depthGrowth,compact}){
     const weights=new Map(),levels=new Map(),items=[];
     function measure(id){const g=groups.get(id),weight=g.children.length?g.children.reduce((sum,child)=>sum+measure(child),0):1;weights.set(id,weight);return weight;}
     measure(root.id);
     function distribute(ids,start,end,depth){
       const total=ids.reduce((sum,id)=>sum+weights.get(id),0);let cursor=start;
       for(const id of ids){const group=groups.get(id),span=(end-start)*weights.get(id)/total,angle=cursor+span/2;
-        const heading=Math.atan2(Math.sin(angle),Math.cos(angle)*horizontal);
+        const heading=angle;
         Object.assign(group,{depth,angle:heading,dx:Math.cos(heading),dy:Math.sin(heading)});if(!levels.has(depth))levels.set(depth,[]);levels.get(depth).push(group);
         distribute(group.children,cursor,cursor+span,depth+1);cursor+=span;
       }
     }
     Object.assign(root,{depth:0,angle:0,radius:0,cx:0,cy:0});items.push(root);
-    const split=Math.floor(root.children.length/2);
+    const owners=[...new Set(root.children.map(id=>groups.get(id).anchor.mapId))];
+    const split=owners.length===2?root.children.filter(id=>groups.get(id).anchor.mapId===owners[0]).length:Math.floor(root.children.length/2);
     if(root.children.length===1)distribute(root.children,-Math.PI*.75,-Math.PI*.25,1);
     else{distribute(root.children.slice(0,split),-Math.PI+corridor,-corridor,1);distribute(root.children.slice(split),corridor,Math.PI-corridor,1);}
-    let previous=0;
+    let previous=0,firstRadius=0;
     for(const depth of [...levels.keys()].sort((a,b)=>a-b)){
-      const level=levels.get(depth),min=previous+CARD_H+COMPARISON_GROUP_GAP;
+      // Add a bounded ring step, rather than multiplying the preceding ring.
+      // A long one-child chain therefore grows linearly with its real content.
+      const level=levels.get(depth),min=previous+Math.max(CARD_H+COMPARISON_GROUP_GAP,firstRadius*depthGrowth);
       const radius=freeRadius(level,items,min);
+      if(!firstRadius)firstRadius=radius;
       for(const group of level)Object.assign(group,{radius,cx:group.dx*radius,cy:group.dy*radius});
-      // Compact symmetric sectors together, starting at the sides. The middle
-      // child can sit slightly farther out without widening every other branch.
-      const batches=new Map();for(const group of level){const key=group.dy.toFixed(9);if(!batches.has(key))batches.set(key,[]);batches.get(key).push(group);}
-      for(const batch of [...batches.values()].sort((a,b)=>Math.abs(b[0].dx)-Math.abs(a[0].dx))){
-        const fixed=items.concat(level.filter(g=>!batch.includes(g))),r=freeRadius(batch,fixed,min);
-        for(const group of batch)Object.assign(group,{radius:r,cx:group.dx*r,cy:group.dy*r});
+      if(compact){
+        const batches=new Map();for(const group of level){const key=group.dy.toFixed(9);if(!batches.has(key))batches.set(key,[]);batches.get(key).push(group);}
+        for(const batch of [...batches.values()].sort((a,b)=>Math.abs(b[0].dx)-Math.abs(a[0].dx))){
+          const fixed=items.concat(level.filter(g=>!batch.includes(g))),r=freeRadius(batch,fixed,min);
+          for(const group of batch)Object.assign(group,{radius:r,cx:group.dx*r,cy:group.dy*r});
+        }
       }
       previous=Math.max(...level.map(g=>g.radius));items.push(...level);
     }

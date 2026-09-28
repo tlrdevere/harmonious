@@ -16,6 +16,7 @@ import {comparisonPairKey,validateWorkspace} from './workspace.mjs';
 import {comparisonNodeKey,visibleComparisonEndpoint,comparisonEndpoint,comparisonDisplayRects} from './comparison-layout.mjs';
 import {graphEdges,revealPath,STRUCTURAL_TYPES,RELATION_TYPES} from './model.mjs';
 import {CARD_W,CARD_H} from './layout.mjs';
+import {routeStraightConnection} from './reasoning-layout.mjs';
 import {stableJSON} from './account-model.mjs';
 import {conversationAnchor,conversationGroups,challengeState,groupSourceConnections,projectComparisonConnections,actualNodePairKey,visibleNodePairKey} from './conversation-tree.mjs';
 const discussEl=(tag,text='',className='')=>{const e=document.createElement(tag);e.textContent=text;e.className=className;return e;};
@@ -278,8 +279,9 @@ export class DiscussionUI{
     const show=discussButton('Show connected nodes',()=>this.showConnectedNodes(group));show.dataset.showConnection=group.key;host.append(show);
   }
   openConnection(group,label,anchor,{details=false}={}){
-    if(!details&&group.records.length===1){const r=group.records[0];if(r.legacy){if(this.canLeave())this.c.openRecord(r.id);}else this.open(r.id);return;}
-    if(!this.canLeave())return;this.target=anchor;this.shell(label);this.connectionDetails(group,this.host);this.positionPopover();
+    const target=group.target||group.records[0]?.target,side=['a','b'].find(side=>this.canvas.states[side].map?.id===target?.mapId),returnTo={pairKey:group.key,nodeKey:side&&comparisonNodeKey(side,target.nodeId)};
+    if(!details&&group.records.length===1){const r=group.records[0];if(r.legacy){if(this.canLeave()){this.c.openRecord(r.id);return true;}}else{this.open(r.id);if(this.viewId===r.id&&!this.host.hidden){this.connectionReturn=returnTo;this.host.querySelector('header button')?.focus({preventScroll:true});return true;}}return false;}
+    if(!this.canLeave())return false;this.target=anchor;this.shell(label);this.connectionReturn=returnTo;this.connectionDetails(group,this.host);this.positionPopover();this.host.querySelector('header button')?.focus({preventScroll:true});return true;
   }
   openCollapsedConnections(key){
     const branch=this.projectConnections().branches.find(b=>b.key===key);if(!branch||!this.canLeave())return;
@@ -359,7 +361,7 @@ export class DiscussionUI{
       if(this.mode()==='argument'&&records.some(e=>groups.some(g=>g.target.entryId===e.id&&g.openChallenges)))label+=' · Contested';
       if(records.some(e=>!e.legacy&&discussionHealth(this.c.workspace,e).state==='changed'))label+=' · Review source';
       const path=canvas.svgElement('path',{class:`discussion-relationship ${action}`,fill:'none'});path.dataset.nodePair=connection.key;
-      const anchor={type:'connection',a:r.target,b:r.other,key:connection.key},open=()=>this.openConnection(connection,label,anchor);
+      const anchor={type:'connection',a:r.target,b:r.other,key:connection.key},open=()=>{if(this.openConnection(connection,label,anchor))this.counterparts.returnControl=null;};
       const hit=canvas.svgElement('path',{class:'discussion-edge-hit discussion-relationship-hit',fill:'none',tabindex:'0',role:'button','aria-label':`Select ${label}`});
       hit.dataset.connectionPair=connection.key;
       hit.onclick=open;hit.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();open();}};
@@ -418,8 +420,9 @@ export class DiscussionUI{
         let d;
         if(item.connection){
           const label=item.badge.b;label.hidden=false;
-          item.route=this.canvas.routeConnection(a,b,occupied.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h})),{w:label.offsetWidth,h:label.offsetHeight});d=item.route.d;
-          if(item.route.label)this.connectionPositions.set(item.connection.key,item.route.label);
+          const sourcePoint=target=>{const side=['a','b'].find(side=>this.canvas.states[side].map?.id===target.mapId);return side&&this.canvas.positions.get(comparisonNodeKey(side,target.nodeId));},pa=sourcePoint(item.a),pb=sourcePoint(item.b),group=pa?.groupId&&pa.groupId===pb?.groupId&&this.canvas.layout.groups?.get(pa.groupId),adjacent=group?.members?.length===2,obstacles=occupied.map(r=>({x:r.x+r.w/2,y:r.y+r.h/2,w:r.w,h:r.h})),straight=adjacent&&routeStraightConnection(a,b,obstacles);
+          item.route=straight&&!straight.blocked?{...straight,label:null}:this.canvas.routeConnection(a,b,obstacles,{w:label.offsetWidth,h:label.offsetHeight});d=item.route.d;item.path.dataset.adjacentPair=String(!!straight&&!straight.blocked);
+          const attachment=item.route.label||item.route.midpoint;if(attachment){this.connectionPositions.set(item.connection.key,attachment);for(const id of item.badge.aliases||[])this.entryPositions.set(id,attachment);}
           routeBounds.push(...item.route.points.map(p=>({...p,w:0,h:0})));
         }else{item.route=this.canvas.sourceRoutes.get(item.sourceKey);d=item.route?.d||'';if(item.route)routeBounds.push(...item.route.points.map(p=>({...p,w:0,h:0})));}
         item.path.setAttribute('d',d);item.hit?.setAttribute('d',d);

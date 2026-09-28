@@ -2,6 +2,8 @@
 
 ## Current priorities — September 28, 2026
 
+The owner subsequently requested **full-size ghost counterparts and more canvas space for straight connections**, after reviewing `harmonious 12.png` and `harmonious 13.png`. The [space and connection follow-up](comparison-space-and-lines.md) is being implemented and verified. It supersedes Worker 49's compactness preference; the source/pair semantics and existing deferrals remain unchanged.
+
 The owner's feedback in `harmonious 10.png` and `harmonious 11.png` is addressed by the [positioning implementation](comparison-positioning-plan.md), **live in Worker 49** after all 48 local and 48 hosted checks and public verification. Provisional ordinary-node pairing is removed, compact ghost/status controls are present, and comparison spacing follows occupied content. Saved-link compatibility, request and unavailable states, both participants and all shared modes are covered. [Deployment status](deployment-status.md) records application source `b419d39ab217cda49fdda4f37c9d0c97ed18c95b` and publication. The [diagnosis](comparison-positioning-follow-up.md) retains the preceding findings. Pair-specific **Aligned / In tension** remains the next separate design discussion. Continue the owner's [updated walkthrough](user-testing-checklist.md); the existing deferral list is unchanged.
 
 ## Preceding release — Worker 48

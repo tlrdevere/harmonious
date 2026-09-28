@@ -27,7 +27,7 @@ for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mj
         names='REFLECTION_CATEGORIES,REFLECTION_RESULTS,isReflection,isDisagreementPoint,isReflectionOutcome,canMarkDisagreement,reflectionOutcomes,validateReflections,validateReflectionEdit'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='reasoning-layout.mjs':
-        code='const routeReasoningConnection=(()=>{\n'+code+'\nreturn routeReasoningConnection;})();'
+        code='const {routeReasoningConnection,routeStraightConnection}=(()=>{\n'+code+'\nreturn {routeReasoningConnection,routeStraightConnection};})();'
     if name=='comparison-routing.mjs':
         names='routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
