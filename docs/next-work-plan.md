@@ -2,7 +2,7 @@
 
 ## Current priorities — September 28, 2026
 
-The owner approved execution of the [map selection, frame colors, and node-menu cleanup](node-menu-cleanup-plan.md). **Implemented locally; release verification is in progress:** comparison source selectors are directly usable; SQ is red, TA blue, and GS green; Edit, Add child node, inspection, and destructive actions are separated; reason creation is an option in the child form; and nullable Confidence has a consistent place on eligible nodes. Child creation stays a draft until explicit submission. The changes retain appropriate differences across Map/Create, source browsing, Inquiry, Compare, and Argument. Worker 45 remains the published baseline until verification and publication are recorded. The deferrals below are unchanged.
+The [map selection, frame colors, and node-menu cleanup](node-menu-cleanup-plan.md) is **live in Worker 46**. Comparison source selectors are directly usable; SQ is red, TA blue, and GS green; Edit, Add child node, inspection, and destructive actions are separated; reason creation is an option in the child form; and nullable Confidence has a consistent place on eligible nodes. Child creation stays a draft until explicit submission. The changes retain appropriate differences across Map/Create, source browsing, Inquiry, Compare, and Argument. Application commit `626ad697` is pushed and passed all **46 local and 46 hosted checks** before deployment; public verification passed afterward. [Deployment status](deployment-status.md) records the release. Next is the owner's [menu and map-setup walkthrough](user-testing-checklist.md) and resulting feedback. The deferrals below are unchanged.
 
 ## Preceding work — September 27, 2026 (UTC)
 

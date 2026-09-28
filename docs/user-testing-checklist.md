@@ -2,7 +2,7 @@
 
 ## Current: map setup, frame colors, and node menus
 
-September 28: implemented locally; complete release verification and publication are still pending. Worker 45 remains live. Use this walkthrough after [deployment status](deployment-status.md) records the new release, then reload both PCs. The [implementation plan](node-menu-cleanup-plan.md) records the agreed scope.
+September 28: live in **Worker 46** after all 46 local and 46 hosted checks and public verification. Reload both PCs before this walkthrough. [Deployment status](deployment-status.md) records the release, and the [implementation plan](node-menu-cleanup-plan.md) records the scope and evidence.
 
 - [ ] From **Comparisons → Choose maps**, choose the first and second map directly on the setup screen. Choices should identify their owners. Clicking the heading or closing View options must not hide the selectors. Start the pair, reopen it, and check that no duplicate comparison appears.
 - [ ] Try **Compare with my map** from shared discovery: the other map should remain preselected while you choose your own. **Change maps** should reopen the selectors. Missing/unavailable choices should explain what is needed without changing sharing. Repeat with keyboard and a narrow window.
@@ -19,7 +19,7 @@ September 28: implemented locally; complete release verification and publication
 
 ## Previous release: code review and view consistency
 
-Reload both PCs for Worker 45; [deployment status](deployment-status.md) records the release.
+These checks from Worker 45 remain useful after reloading the current release recorded in [deployment status](deployment-status.md).
 
 - [ ] Open **View source map** and expand nodes with reason/cause connections, including one across frames. Connections should retain their direction and saved meanings, with one route per actual pair and read-only detail. Close/Escape and narrow-window inspection should remain usable.
 - [ ] On disposable source nodes, edit a saved dispute after the other participant changes its frame or removes its citation. Incompatible saved grounds should appear under **Earlier choices**, with an explanation requiring you to clear them before saving current choices. Earlier revisions should retain the original grounds.

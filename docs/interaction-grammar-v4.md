@@ -4,7 +4,7 @@ The original v4 grammar was implemented on `redesign/node-interactions` and depl
 
 ## September 28 menu and creation follow-up
 
-The accepted [node-menu cleanup plan](node-menu-cleanup-plan.md) is implemented locally, pending complete release verification and publication. Worker 45 remains the published baseline. These placement and wording changes retain the v4 interaction and connection semantics:
+The accepted [node-menu cleanup plan](node-menu-cleanup-plan.md) is live in **Worker 46**, after all 46 local and 46 hosted release checks and public verification. [Deployment status](deployment-status.md) records the exact application commit and version. These placement and wording changes retain the v4 interaction and connection semantics:
 
 - New comparisons show two real source selectors and **Start / open comparison** directly; **Change maps** reopens setup after a pair is open. View options contains display controls. Existing-pair reopening and map sharing rules are unchanged.
 - Map/Create separates **Edit**, **Add child node**, **Inspect details**, and the **More actions / Fewer actions** disclosure containing **Delete branch**. The frame containers use **Edit frame details** and omit ordinary-node-only actions.

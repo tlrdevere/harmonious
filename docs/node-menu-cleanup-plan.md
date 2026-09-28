@@ -1,6 +1,6 @@
 # Map selection, frame colors, and node menus
 
-September 28, 2026. **Status: implemented; all 46 local release checks passed. Hosted verification and publication are pending.** The owner accepted this plan and instructed execution. Changes use the existing checkout on `redesign/node-interactions`. Worker 45 remains the published baseline until [deployment status](deployment-status.md) records publication of this increment.
+September 28, 2026. **Status: implemented and published as Worker 46; all 46 local and 46 hosted checks passed.** The owner accepted this plan and instructed execution in the existing checkout on `redesign/node-interactions`. Application commit `626ad697731b2c88da2188a5027160a6b500d3e0` is pushed, deployed, and publicly verified. [Deployment status](deployment-status.md) records the release identifiers and evidence.
 
 ## Intended result
 
@@ -116,13 +116,14 @@ Extend active suites rather than relying on the retired navigation browser test.
 
 Update [the current workflow](current-argument-workflow.md), [v4 grammar](interaction-grammar-v4.md), and [user-testing checklist](user-testing-checklist.md) when implemented. Record implementation and release status separately in [the next-work plan](next-work-plan.md) and [deployment status](deployment-status.md).
 
-For release, use the established sequence: commit the completed application changes on `redesign/node-interactions`, push, run the manual hosted checks on that exact revision, deploy that verified application, and verify public assets and account gates. Keep automatic deployment disabled. Record the actual Worker version and evidence only after successful publication.
+The release followed the established sequence: commit the completed application changes on `redesign/node-interactions`, push, run the manual hosted checks on that exact revision, deploy that verified application, and verify public assets and account gates. Automatic deployment remains disabled.
 
 The work is complete when the picker works from the real entry path, the palette and applicable controls agree across views, new child drafts do not leak saved placeholders, the verification passes, and the released behavior is accurately documented for the owner's walkthrough.
 
 ## Implementation evidence
 
 - Full local run: **46/46 passed**; `build/verification/2026-09-28T20-12-45-780Z-88264/summary.json`, using Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows.
+- Hosted run: **46/46 passed** on the exact application commit in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36477959624). Worker 46 was deployed at **20:19:49 UTC** and public verification passed at **20:20:49 UTC**, matching all 53 client files and the homepage and preserving the account gates and eight encrypted bindings.
 - Extended active browser cases cover the real map-picker entry path, setup reopening, empty/unavailable sources, owner names, direct child drafts, absence of background saves, explicit reason creation, inspection/edit separation, persistent confidence, ownership, and keyboard focus. Account autosave checks guard the delayed-flush boundary.
 - Independent review caught and corrected child-discard panel restoration, immediate confidence input focus, disclosure focus, and portable Reset draft cleanup. The initial full run also caught a palette initializer incompatibility with minimal test DOMs; the final run above includes its correction.
 - Desktop and narrow screenshots of setup, menus, inspector, confidence and source/shared frame colors were inspected. A separate portable browser check confirmed Reset followed by Save downloads committed data without the cancelled child.

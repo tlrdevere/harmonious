@@ -1,8 +1,22 @@
 # Deployment status
 
-Updated September 27, 2026 (UTC).
+Updated September 28, 2026 (UTC).
 
 ## Current release
+
+Map setup, frame colors, and node-menu cleanup deployed September 28, 2026 at **20:19:49 UTC** (4:19 p.m. in New York). Application source: `626ad697731b2c88da2188a5027160a6b500d3e0` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **46**: `936d34e7-942c-4d8c-8766-d88c0296118c`, serving **100%** of traffic. Deployment: `ca5041c1-cf4c-45c3-b302-acacac72b439`.
+- The [implemented plan](node-menu-cleanup-plan.md) repairs comparison source selection, centralizes SQ red / TA blue / GS green, separates node-menu action groups, introduces explicit child drafts with an optional reason relationship, and gives eligible nodes persistent nullable Confidence. Definitions and connections are reachable through inspection; shared modes retain their distinct actions and owner permissions.
+- **46/46 local release checks passed** on the final application changes, including all six browser suites, account/database checks, standalone export, production build and complete asset checks. Report: `build/verification/2026-09-28T20-12-45-780Z-88264/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows.
+- **46/46 hosted release checks passed** on the exact pushed application commit in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36477959624), completed at **20:18:03 UTC**. The clean hosted run used Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium; its job log confirms all 46 checks. Evidence: `build/menu-release-hosted.json`.
+- Public verification at **20:20:49 UTC** confirms all **53 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers passing. Report: `build/public-menu-verification.json`. Worker SHA-256: `32303f07211fb960a9a43b7a2779caa56bc31a690f19aae65e73af6d1e341625`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were inherited and verified unchanged. No database migration, production account test write, authentication change or dependency update was required. Automatic push/PR checks and automatic deployment remain disabled.
+- Independent review and browser regressions cover discarded child drafts, delayed autosave, read/edit separation, confidence and disclosure focus, and portable Reset followed by Save. Desktop and narrow screenshots were inspected. Release-note commits after the application commit change documentation only.
+
+**Reload both PCs before testing.** Start with **Map setup, frame colors, and node menus** in [the checklist](user-testing-checklist.md). Worker 45 is the preceding compatible release. The [deferral list](next-work-plan.md#deferred-work) is unchanged.
+
+## Preceding code and view-consistency release
 
 Code and view-consistency fixes deployed September 27, 2026 at **02:45:36 UTC** (September 26 at 10:45 p.m. in New York). Application source: `b3f9a2a2d469f9467e49f1bd0c85245bf17174e7` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 

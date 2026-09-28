@@ -1,6 +1,6 @@
 # Working in a shared Comparison
 
-Updated September 28, 2026. The picker, frame palette, node menus, and child-draft changes described here are implemented locally and awaiting complete release verification and publication. Worker 45 remains the published baseline until [deployment status](deployment-status.md) records the new release. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera; [the grammar](interaction-grammar-v4.md) defines the actions.
+Updated September 28, 2026. The picker, frame palette, node menus, and child-draft changes described here are live in **Worker 46**, following all 46 local and 46 hosted release checks. [Deployment status](deployment-status.md) records publication and public verification. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera; [the grammar](interaction-grammar-v4.md) defines the actions.
 
 ## Start or reopen a comparison
 
