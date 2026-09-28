@@ -27,10 +27,21 @@ export function createOwnedMap(workspace,{name,ownerId,personName,mapType='perso
   if(workspace.maps.length>=100)throw Error('This prototype supports up to 100 maps per workspace.');
   if(!name?.trim())throw Error('Enter a map name.');if(!['personal','reference'].includes(mapType))throw Error('Choose a map type.');
   let person=workspace.participants.find(p=>p.id===ownerId);if(!person){if(!personName?.trim())throw Error('Enter the participant or creator’s name.');person={id:adoptionId('participant'),name:personName.trim()};}
-  const source=fromMapId?workspace.maps.find(m=>m.id===fromMapId):null;if(fromMapId&&!source)throw Error('The starting map is unavailable.');
-  const map={id:adoptionId('map'),name:name.trim(),ownerId:person.id,person:person.name,mapType,revision:1,nodes:exampleMap().filter(n=>n.parent===null),relations:[],updatedAt:new Date().toISOString()};
-  if(!workspace.participants.some(p=>p.id===person.id))workspace.participants.push(person);workspace.maps.push(map);
-  if(source)transferNodes(workspace,{sourceMapId:source.id,targetMapId:map.id,nodeIds:source.nodes.filter(n=>n.parent!==null).map(n=>n.id),mode:'copy'});
+  const source=fromMapId?workspace.maps.find(m=>m.id===fromMapId&&!m.unavailable):null;if(fromMapId&&!source)throw Error('The starting map is unavailable.');
+  if(source)validateGraph(source.nodes,roots,source.relations);
+  const map={id:adoptionId('map'),name:name.trim(),ownerId:person.id,person:person.name,mapType,revision:1,nodes:source?adoptionClone(source.nodes.filter(n=>n.parent===null)):exampleMap().filter(n=>n.parent===null),relations:[],updatedAt:new Date().toISOString()};
+  // Build copies off-workspace so an invalid source cannot leave a partial map
+  // or a new participant behind. Empty maps still produce a valid frame copy.
+  const candidate={...workspace,maps:[...workspace.maps,map],ideas:[...workspace.ideas]};
+  if(source){
+    const nodeIds=source.nodes.filter(n=>n.parent!==null).map(n=>n.id);
+    if(nodeIds.length){
+      const {mapping}=transferNodes(candidate,{sourceMapId:source.id,targetMapId:map.id,nodeIds,mode:'copy'}),copies=new Map(map.nodes.map(n=>[n.id,n]));
+      for(const node of source.nodes){const copy=copies.get(mapping.get(node.id));if(copy){copy.structuralType=node.structuralType;if(source.ownerId===person.id)copy.confidence=node.confidence;}}
+    }
+  }
+  validateGraph(map.nodes,roots,map.relations);
+  if(!workspace.participants.some(p=>p.id===person.id))workspace.participants.push(person);workspace.maps.push(map);workspace.ideas.push(...candidate.ideas.slice(workspace.ideas.length));
   return map;
 }
 export function scopeNodeIds(map,scope='node',anchorId=null){

@@ -2,7 +2,17 @@
 
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
-## September 28 menu and creation follow-up
+## September 28 node-face editing and copying follow-up
+
+The accepted [node-face editing follow-up](node-face-editing.md) is **implemented locally and pending final release verification**. **Worker 46 remains the latest live release**; its menu cleanup is recorded below. The new authoring behavior retains the existing interaction and connection semantics:
+
+- **Edit** expands the selected node face. Title, short description, and confidence are directly available; **Details** expands longer context and sources on the same face. **Save changes** keeps the face open; **Done** saves valid changes and returns to the map. Existing-node autosave preserves the field and caret. Frame names stay fixed.
+- **Add child node** immediately puts an unfinished child in the map layout and focuses its title. The preview is separate from saved map data. Only final submission adds the node and any chosen reason connection; Cancel removes the preview. Draft-discard, Save now, download, and autosave safeguards continue to apply.
+- All eligible confidence editors pair a whole-percentage slider with a compact number field that preserves decimals. Opening an unassessed rating does not assign a value. **Not assessed** restores null, distinct from 0%; source views and other authors' ratings remain read-only.
+- Owned Library cards offer **Copy map**, opening the existing creation form with a source and suggested name. **Create map → Start with → Copy…** remains available for accessible maps. A whole copy is independent and private by default, preserving frame details, hierarchy, internal connections, citations, and attribution. It retains the owner's own confidence but clears another author's scores. It does not duplicate conversations, comparisons, co-signs, or invoked definitions.
+- The existing source copy-and-adapt workflow still adds selected nodes and their internal connections to another owned destination map. It is separate from creating a whole-map copy and records no endorsement.
+
+## September 28 menu and creation release
 
 The accepted [node-menu cleanup plan](node-menu-cleanup-plan.md) is live in **Worker 46**, after all 46 local and 46 hosted release checks and public verification. [Deployment status](deployment-status.md) records the exact application commit and version. These placement and wording changes retain the v4 interaction and connection semantics:
 

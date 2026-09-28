@@ -225,12 +225,13 @@ export class WorkspaceController{
       this.argument?.reset();this.loadingMap=true;this.workspace=workspace;this.activeMapId=workspace.maps[0].id;this.sides={a:{mapId:workspace.maps[0].id,nodeId:null},b:{mapId:workspace.maps[1]?.id||null,nodeId:null}};this.activeComparisonPair=null;this.clearComparison();this.loadMap(this.activeMapId);this.populateMaps();this.workspaceDirty=!this.fileMode;this.status('Workspace file opened');this.message();if(this.mode==='compare')this.renderComparison();this.participation.peopleSelection=null;this.participation.refresh();}
     catch(error){this.message(`File was not opened: ${error.message}`);}finally{ui('workspace-file').value='';}
   }
-  showMapDialog(rename=false,{type='personal',newPerson=false}={}){
+  showMapDialog(rename=false,{type='personal',newPerson=false,fromMapId=null}={}){
+    const source=fromMapId?this.workspace.maps.find(m=>m.id===fromMapId&&!m.unavailable):null;if(fromMapId&&!source){this.message('This source map is unavailable.');return;}
     if(!this.editor.beforeLeave()||!this.canLeaveComparison())return;this.renameMap=rename;const map=this.activeMap();
-    ui('map-dialog-title').textContent=rename?'Rename map':'Create a map';ui('map-name-input').value=rename?map.name:'';ui('map-type-input').value=rename?map.mapType:type;ui('map-type-input').disabled=rename;
+    ui('map-dialog-title').textContent=rename?'Rename map':source?'Copy a map':'Create a map';ui('map-name-input').value=rename?map.name:source?source.name.slice(0,93)+' (copy)':'';ui('map-type-input').value=rename?map.mapType:source?.mapType||type;ui('map-type-input').disabled=rename;
     ui('map-owner-input').replaceChildren(...this.workspace.participants.map(p=>wsOption(p.id,p.name)),wsOption('new','＋ New participant'));ui('map-owner-input').value=rename?map.ownerId:newPerson?'new':this.participation.actorId;ui('map-owner-input').disabled=rename;
     ui('map-person-input').value=rename?(this.workspace.participants.find(p=>p.id===map.ownerId)?.name||map.person):'';ui('map-person-group').hidden=!rename&&ui('map-owner-input').value!=='new';ui('map-person-input').required=rename||ui('map-owner-input').value==='new';
-    ui('map-start-group').hidden=rename;ui('map-start-input').replaceChildren(wsOption('','Three empty frames'),...this.workspace.maps.map(m=>wsOption(m.id,'Copy '+m.name)));ui('map-dialog-error').textContent='';ui('confirm-map').textContent=rename?'Save name':'Create map';ui('map-dialog').showModal();ui('map-name-input').focus();
+    ui('map-start-group').hidden=rename;ui('map-start-input').replaceChildren(wsOption('','Three empty frames'),...this.workspace.maps.filter(m=>!m.unavailable).map(m=>wsOption(m.id,`Copy ${m.name} · ${this.workspace.participants.find(p=>p.id===m.ownerId)?.name||m.person||'Participant'}`)));ui('map-start-input').value=source?.id||'';ui('map-dialog-error').textContent='';ui('confirm-map').textContent=rename?'Save name':'Create map';ui('map-dialog').showModal();ui('map-name-input').focus();if(source)ui('map-name-input').select();
   }
   sharedNodeNote(node){
     if(!node?.ideaId)return '';const idea=this.workspace.ideas.find(i=>i.id===node.ideaId);if(!idea)return '';

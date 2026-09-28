@@ -261,3 +261,13 @@ body.comparison-full-canvas #comparison-commandbar .comparison-full-status{order
 .node-bottom:has(.node-confidence) .node-meta{flex:1;min-width:0}
 .node-confidence{max-width:114px;overflow:hidden;text-overflow:ellipsis}
 .node-confidence[data-assessed="false"]{border-style:dashed;color:#657687}
+
+/* The number field remains exact; the scale makes whole-point adjustment easy. */
+.confidence-scale{display:block;min-width:0;margin:7px 0 12px}
+.confidence-scale-row{display:grid;grid-template-columns:minmax(0,1fr) 76px;align-items:center;gap:10px}
+.confidence-scale input[type=range]{display:block;width:100%;min-width:0;height:30px;margin:0;padding:0;border:0;border-radius:0;background:transparent;accent-color:var(--frame-ink,#285e72);cursor:pointer}
+.confidence-scale input.confidence-scale-number{display:block;width:76px;min-width:0;margin:0;padding:7px 6px;box-sizing:border-box;text-align:center}
+.confidence-scale[data-assessed="false"] input[type=range]{opacity:.55;accent-color:#83919e}
+.confidence-scale-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;font-size:11px;color:#637487}
+.confidence-scale .confidence-scale-clear{font-size:11px;padding:3px 5px;border:0;background:transparent;color:#52677d;text-decoration:underline;text-underline-offset:2px}
+.confidence-scale .confidence-scale-clear[aria-pressed="true"]{font-weight:650;text-decoration:none}

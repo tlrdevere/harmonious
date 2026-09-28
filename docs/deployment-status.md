@@ -2,6 +2,12 @@
 
 Updated September 28, 2026 (UTC).
 
+## Pending publication: node-face editing and map copying
+
+The [accepted follow-up](node-face-editing.md) implements immediate unsaved child previews with title focus, on-node editing and expandable Details, confidence sliders with exact numeric entry, and a direct Library Copy map action. All **47 local release checks passed** on the application changes: `build/verification/2026-09-28T21-03-56-493Z-99272/summary.json`. Final focused browser checks also cover noninteractive preview edges and mobile cancellation restoring the parent's camera position. The portable Reset → Save/download check passed. Desktop and narrow screenshots were inspected.
+
+GitHub verification and publication are pending. Worker 46 below remains live until that release completes. The existing radial layout, account ownership rules, and deferral list are unchanged.
+
 ## Current release
 
 Map setup, frame colors, and node-menu cleanup deployed September 28, 2026 at **20:19:49 UTC** (4:19 p.m. in New York). Application source: `626ad697731b2c88da2188a5027160a6b500d3e0` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.

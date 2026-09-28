@@ -2,7 +2,11 @@
 
 ## Current priorities — September 28, 2026
 
-The [map selection, frame colors, and node-menu cleanup](node-menu-cleanup-plan.md) is **live in Worker 46**. Comparison source selectors are directly usable; SQ is red, TA blue, and GS green; Edit, Add child node, inspection, and destructive actions are separated; reason creation is an option in the child form; and nullable Confidence has a consistent place on eligible nodes. Child creation stays a draft until explicit submission. The changes retain appropriate differences across Map/Create, source browsing, Inquiry, Compare, and Argument. Application commit `626ad697` is pushed and passed all **46 local and 46 hosted checks** before deployment; public verification passed afterward. [Deployment status](deployment-status.md) records the release. Next is the owner's [menu and map-setup walkthrough](user-testing-checklist.md) and resulting feedback. The deferrals below are unchanged.
+The [node-face editing and map-copy follow-up](node-face-editing.md) is **implemented locally and pending final release verification**. Adding a child immediately shows an unsaved preview and focuses its title; Edit opens the node face, with longer context and sources under expandable Details. Confidence offers a slider and exact numeric entry, including an unassessed state. Owned Library cards now expose Copy map, using the existing creation form for a separate private copy. Draft and ownership boundaries remain intact, and the source workflow for copying selected content into an existing map remains separate. Next is the complete release verification, then publication and the owner's [updated walkthrough](user-testing-checklist.md). The deferrals below are unchanged.
+
+## Latest live release — Worker 46
+
+The [map selection, frame colors, and node-menu cleanup](node-menu-cleanup-plan.md) remains **live in Worker 46**. Comparison source selectors are directly usable; SQ is red, TA blue, and GS green; Edit, Add child node, inspection, and destructive actions are separated; reason creation is an option in the child form; and nullable Confidence has a consistent place on eligible nodes. Child creation stays a draft until explicit submission. The changes retain appropriate differences across Map/Create, source browsing, Inquiry, Compare, and Argument. Application commit `626ad697` is pushed and passed all **46 local and 46 hosted checks** before deployment; public verification passed afterward. [Deployment status](deployment-status.md) records the release.
 
 ## Preceding work — September 27, 2026 (UTC)
 
