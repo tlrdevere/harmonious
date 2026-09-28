@@ -7,7 +7,7 @@ import {confidenceBadge} from './confidence-ui.mjs';
 import {SourceConnectionsUI,createSourceConnectionHighlights} from './source-connections-ui.mjs';
 import {groupSourceConnections,visibleNodePairKey,actualNodePairKey} from './conversation-tree.mjs';
 import {QUESTION_STATUSES,ANSWER_STATUSES} from './workspace.mjs';
-import {comparisonNodeKey,layoutComparison,visibleComparisonEndpoint,comparisonRecordEnds} from './comparison-layout.mjs';
+import {comparisonNodeKey,layoutComparison,visibleComparisonEndpoint,comparisonRecordEnds,comparisonDisplayRects} from './comparison-layout.mjs';
 
 export class ComparisonCanvas{
   constructor(host,onSelect,onRecord,options={}){
@@ -34,7 +34,7 @@ export class ComparisonCanvas{
     const pointers=new Map();let drag=null,pinch=null;
     this.surface.addEventListener('wheel',e=>{if(e.target.closest('button'))return;e.preventDefault();const r=this.surface.getBoundingClientRect();this.zoom(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
     this.surface.addEventListener('pointerdown',e=>{
-      if(e.button>0||e.target.closest('button,.node,.comparison-link-hit,.discussion-edge-hit'))return;this.stopAnimation();this.surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});this.surface.classList.add('panning');
+      if(e.button>0||e.target.closest('button,.node,.counterpart-placeholder,.comparison-link-hit,.discussion-edge-hit'))return;this.stopAnimation();this.surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});this.surface.classList.add('panning');
       if(pointers.size===1)drag={x:e.clientX,y:e.clientY,cx:this.camera.x,cy:this.camera.y};
       if(pointers.size===2){const [a,b]=[...pointers.values()],r=this.surface.getBoundingClientRect(),x=(a.x+b.x)/2-r.left,y=(a.y+b.y)/2-r.top;pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),z:this.camera.z,wx:(x-this.camera.x)/this.camera.z,wy:(y-this.camera.y)/this.camera.z};drag=null;}
     });
@@ -147,7 +147,7 @@ export class ComparisonCanvas{
     for(const [key,card]of this.cards){const p=this.positions.get(key);card.style.transform=`translate(${p.x}px,${p.y}px)`;}
     for(const lane of lanes){const el=this.laneElements.get(lane.side);el.style.transform=`translate(${lane.x}px,${lane.y}px)`;el.style.width=lane.width+'px';el.style.height=lane.height+'px';}
     const center=p=>p&&({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});
-    const obstacles=[...this.positions.values(),...(this.layout.placeholders||[])].map(center);
+    const obstacles=comparisonDisplayRects(this.layout,this.positions).map(p=>({x:p.x+p.w/2,y:p.y+p.h/2,w:p.w,h:p.h}));
     this.ensureSourceRoutes();
     for(const branch of this.branches){const {path,edge,side}=branch,a=center(this.positions.get(comparisonNodeKey(side,edge.from))),b=center(this.positions.get(comparisonNodeKey(side,edge.to)));branch.route=edge.kind==='spine'?(a&&b?this.routeConnection(a,b,obstacles):null):this.sourceRoutes.get(branch.key);path.setAttribute('d',branch.route?.d||'');}
     for(const link of this.links){
@@ -159,11 +159,19 @@ export class ComparisonCanvas{
   }
   ensureSourceRoutes(){
     if(this.sourceRoutedPositions===this.positions)return;
-    const center=p=>p&&({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});this.sourceObstacles=[...this.positions.values(),...(this.layout.placeholders||[])].map(center);
+    const center=p=>p&&({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});this.sourceObstacles=comparisonDisplayRects(this.layout,this.positions).map(p=>({x:p.x+p.w/2,y:p.y+p.h/2,w:p.w,h:p.h}));
     const requests=[];for(const pair of this.sourcePairs?.values()||[]){const from=center(this.positions.get(pair.fromKey)),to=center(this.positions.get(pair.toKey));if(from&&to)requests.push({key:pair.routeKey,from,to});}
     const routes=this.routeSources(requests,this.sourceObstacles);this.sourceRoutes=new Map([...this.sourcePairs?.values()||[]].map(pair=>[pair.key,routes.get(pair.routeKey)]).filter(([,route])=>route));this.sourceRoutedPositions=this.positions;
   }
   sourceRouteLabel(key,size){this.ensureSourceRoutes();return labelSourceRoute(this.sourceRoutes.get(key),size,this.sourceObstacles);}
+  captureAnchor(target){
+    this.stopAnimation();const side=['a','b'].find(s=>this.states[s].map?.id===target?.mapId),key=side&&comparisonNodeKey(side,target.nodeId),p=key&&this.positions.get(key);if(!p)return null;
+    return {key,x:this.camera.x+(p.x+CARD_W/2)*this.camera.z,y:this.camera.y+(p.y+CARD_H/2)*this.camera.z,z:this.camera.z};
+  }
+  restoreAnchor(anchor){
+    if(!anchor)return;this.stopAnimation();const p=this.positions.get(anchor.key);if(!p)return;
+    this.camera={z:anchor.z,x:anchor.x-(p.x+CARD_W/2)*anchor.z,y:anchor.y-(p.y+CARD_H/2)*anchor.z};this.drawCamera();
+  }
   fitCamera(points=null){
     const w=this.surface.clientWidth,h=this.surface.clientHeight;if(!w||!h)return this.camera;
     let bounds=this.layout.bounds;

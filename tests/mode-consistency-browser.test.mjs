@@ -127,6 +127,7 @@ try{
   const geometry=p=>p.locator('#compare-canvas .comparison-world').evaluate(world=>({
     camera:world.style.transform,
     nodes:[...world.querySelectorAll('article.node')].map(n=>[n.querySelector('.node-main')?.getAttribute('aria-label'),n.style.transform,n.querySelector('.node-main')?.getAttribute('aria-pressed')]).sort(),
+    ghosts:[...world.querySelectorAll('.counterpart-placeholder')].map(n=>[n.dataset.sourceMap,n.dataset.sourceNode,n.dataset.state,n.style.transform,n.offsetWidth,n.offsetHeight]).sort(),
     branches:[...world.querySelectorAll('.toggle')].map(n=>[n.getAttribute('aria-label'),n.getAttribute('aria-expanded')]).sort()
   }));
   const noRetiredActions=async p=>{
@@ -163,6 +164,13 @@ try{
   await a.setViewportSize({width:1440,height:1000});
   await load(a);await load(b);
   assert.deepEqual(await a.locator('[aria-label="Conversation mode"] button:visible').allTextContents(),['Inquiry','Compare','Argument'],'Shared mode buttons follow the intended Inquiry, Compare, Argument order');
+  const ghostGeometry=await geometry(a),beforeGhostChoice=JSON.stringify((await view(store,alice)).workspace),ghost=()=>a.locator('.counterpart-placeholder[data-state="unlinked"]').first();
+  assert(await ghost().getByRole('button',{name:'Link counterpart',exact:true}).isVisible());
+  for(const selectedMode of ['inquiry','argument','compare']){await mode(a,selectedMode);assert.deepEqual(await geometry(a),ghostGeometry,'Compact source/status geometry is identical in all three modes');if(selectedMode!=='compare')assert.equal(await a.locator('.counterpart-placeholder button').count(),0,'Other modes keep neutral counterpart status without authoring controls');}
+  await ghost().getByRole('button',{name:'Link counterpart',exact:true}).focus();await a.keyboard.press('Enter');assert.equal(await a.locator('#counterpart-node').inputValue(),'');
+  const explicitChoice=await a.locator('#counterpart-node option').evaluateAll(options=>options.find(o=>o.value)?.value);assert(explicitChoice);await a.locator('#counterpart-node').selectOption(explicitChoice);
+  for(const selectedMode of ['inquiry','argument']){await mode(a,selectedMode);assert(await pop(a).isHidden(),'A counterpart draft parks outside Compare');assert.deepEqual(await geometry(a),ghostGeometry);}
+  await mode(a,'compare');assert.equal(await a.locator('#counterpart-node').inputValue(),explicitChoice);a.once('dialog',dialog=>dialog.dismiss());await click(a,'Cancel');assert.equal(await a.locator('#counterpart-node').inputValue(),explicitChoice,'Declining discard retains the explicit ghost choice');a.once('dialog',dialog=>dialog.accept());await click(a,'Cancel');assert.deepEqual(await geometry(a),ghostGeometry);assert(await a.locator('.counterpart-placeholder button:focus').count(),'Cancelled ghost chooser returns focus to its rebuilt initiating control');assert.equal(JSON.stringify((await view(store,alice)).workspace),beforeGhostChoice,'Opening, parking and cancelling a ghost creates no saved record');
   await mode(a,'argument');await node(a,'Daytime meeting');
   assert(await button(a,'View 1 attached interaction').isVisible(),'A response does not inflate the source attachment count');
   await click(a,'View 1 attached interaction');

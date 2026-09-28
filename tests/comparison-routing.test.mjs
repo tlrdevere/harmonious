@@ -3,7 +3,7 @@ import {routeComparisonConnection,createConnectionRouter,createSourceConnectionR
 import {ComparisonCanvas} from '../dist/compare-canvas.mjs';
 import {ReasoningUI} from '../dist/reasoning-ui.mjs';
 import {CARD_W,CARD_H,layoutForest} from '../dist/layout.mjs';
-import {comparisonNodeKey,layoutComparison} from '../dist/comparison-layout.mjs';
+import {comparisonNodeKey,layoutComparison,comparisonDisplayRects,COUNTERPART_W,COUNTERPART_H} from '../dist/comparison-layout.mjs';
 
 const inside=(p,r)=>Math.abs(p.x-r.x)<r.w/2-.001&&Math.abs(p.y-r.y)<r.h/2-.001;
 const overlap=(a,b)=>Math.abs(a.x-b.x)<(a.w+b.w)/2&&Math.abs(a.y-b.y)<(a.h+b.h)/2;
@@ -82,8 +82,11 @@ canvas.camera={x:300,y:-400,z:.35};canvas.drawGeometry();assert.deepEqual(positi
 // in the long vertical connection to Socialists.
 const sampleMap=id=>({id,nodes:[...roots.map(id=>({id,parent:null})),...['dsa','state','union','socialists','democrats'].map(name=>({id:id+'-'+name,parent:'status'}))],relations:[]});
 const leftMap=sampleMap('left'),rightMap=sampleMap('right'),states={a:{map:leftMap,expanded:new Set(['status']),frame:'all'},b:{map:rightMap,expanded:new Set(),frame:'all'}};
-const snapshot=structuredClone(states),paired=layoutComparison(states,roots,{reserved:[{mapId:leftMap.id,nodeId:'left-union'}]}),center=p=>({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});
-const sourceCards=[...paired.positions.values(),...paired.placeholders].map(center),requests=paired.maps.a.layout.edges.filter(edge=>edge.kind==='branch').map(edge=>({key:edge.to,from:center(paired.positions.get(comparisonNodeKey('a',edge.from))),to:center(paired.positions.get(comparisonNodeKey('a',edge.to)))}));
+const snapshot=structuredClone(states),paired=layoutComparison(states,roots),center=p=>({x:p.x+(p.w||CARD_W)/2,y:p.y+(p.h||CARD_H)/2,w:p.w||CARD_W,h:p.h||CARD_H});
+// Keep the reported Worker 47 overlap as fixed geometry even when the display
+// layout improves; otherwise its regression test would silently stop testing it.
+const legacyPoints=[[587.409,508.685],[148.112,72],[1026.706,72],[1142.818,869.862],[587.409,1048.456],[32,869.862],[1783.618,508.685],[2424.418,508.685],[855.409,508.685],[2051.618,508.685],[2692.418,508.685],[1410.818,869.862]].map(([x,y])=>({x,y}));
+const sourceCards=legacyPoints.map(center),requests=['dsa','state','union','socialists','democrats'].map((id,index)=>({key:'left-'+id,from:sourceCards[0],to:sourceCards[index+1]}));
 function sharedLength(a,b){
   let total=0;
   for(const first of a.segments)for(const second of b.segments){
@@ -108,6 +111,16 @@ function verifySourcePath(request,route,cards){
 }
 for(const request of requests)verifySourcePath(request,grouped.get(request.key),sourceCards);
 assert.deepEqual(states,snapshot,'The route batch never changes authored parents or layout inputs');
+const displayRects=comparisonDisplayRects(paired),ghosts=displayRects.filter(r=>r.kind==='counterpart');assert.equal(ghosts.length,5);for(const ghost of ghosts)assert.deepEqual([ghost.w,ghost.h],[COUNTERPART_W,COUNTERPART_H]);
+const currentCards=displayRects.map(center),currentRequests=paired.maps.a.layout.edges.filter(edge=>edge.kind==='branch').map(edge=>({key:edge.to,from:center(paired.positions.get(comparisonNodeKey('a',edge.from))),to:center(paired.positions.get(comparisonNodeKey('a',edge.to)))})),currentRoutes=createSourceConnectionRouter()(currentRequests,currentCards);
+for(const request of currentRequests)verifySourcePath(request,currentRoutes.get(request.key),currentCards);
+const moving=new Map([...paired.positions].map(([key,p])=>[key,{...p,x:p.x+19,y:p.y-31}])),movingRects=comparisonDisplayRects(paired,moving);
+for(const rect of displayRects){const moved=movingRects.find(r=>r.key===rect.key);assert.deepEqual([moved.x,moved.y,moved.w,moved.h],[rect.x+19,rect.y-31,rect.w,rect.h],'Animated ghosts translate with their real source while retaining their compact bounds');}
+const oneMoving=new Map(paired.positions),movingKey=comparisonNodeKey('a','left-union');oneMoving.set(movingKey,{...oneMoving.get(movingKey),x:oneMoving.get(movingKey).x+19,y:oneMoving.get(movingKey).y-31});
+const oneMovingRects=comparisonDisplayRects(paired,oneMoving),movingCards=oneMovingRects.map(center),movingRequests=currentRequests.map(request=>({...request,from:center(oneMoving.get(comparisonNodeKey('a','status'))),to:center(oneMoving.get(comparisonNodeKey('a',request.key)))})),movingRoutes=createSourceConnectionRouter()(movingRequests,movingCards);
+for(const rect of displayRects){const moved=oneMovingRects.find(r=>r.key===rect.key),follows=rect.key===movingKey||rect.sourceKey===movingKey;assert.deepEqual([moved.x,moved.y],[rect.x+(follows?19:0),rect.y+(follows?-31:0)],'Only the initiating real node and its ghost move together during interpolation');}
+for(const request of movingRequests)verifySourcePath(request,movingRoutes.get(request.key),movingCards);
+const anchored=Object.assign(Object.create(ComparisonCanvas.prototype),{states,positions:new Map(paired.positions),camera:{x:40,y:75,z:.62},animation:null,drawCamera(){}}),anchor=anchored.captureAnchor({mapId:leftMap.id,nodeId:'left-union'});anchored.positions=moving;anchored.restoreAnchor(anchor);assert.deepEqual(anchored.captureAnchor({mapId:leftMap.id,nodeId:'left-union'}),anchor,'Reflow retains the initiating real node screen position and zoom');
 assert.equal(sourceRouter(requests.slice().reverse(),sourceCards.slice().reverse()),grouped,'Input enumeration order cannot change the route set or invalidate the cache');
 assert.deepEqual([...createSourceConnectionRouter()(requests.slice().reverse(),sourceCards.slice().reverse())],[...grouped],'Fresh routing is deterministic independent of enumeration order');
 const reversedRequests=requests.map(request=>({...request,from:request.to,to:request.from})),backward=sourceRouter(reversedRequests,sourceCards);

@@ -3,6 +3,7 @@ import {conversationAnchor,challengeState} from './conversation-tree.mjs';
 import {buildReasoningIndex,projectReasoning,reasoningTargetKey,ReasoningViewState} from './reasoning-view.mjs';
 import {definitionReference} from './definitions.mjs';
 import {CARD_W,CARD_H} from './layout.mjs';
+import {comparisonDisplayRects} from './comparison-layout.mjs';
 import {createConnectionRouter} from './comparison-routing.mjs';
 import {isReflection} from './reflection.mjs';
 
@@ -85,7 +86,7 @@ export class ReasoningUI{
     if(selected.overflowCount){this.more=reasoningButton(`Browse all contributions · ${selected.overflowCount} beyond this view`,()=>this.find(),'reasoning-more reasoning-drawing');canvas.world.append(this.more)}
   }
   position(){if(!this.cards.length)return;const d=this.d,canvas=d.canvas,anchor=d.point(this.anchor);if(!anchor){this.tools.hidden=true;for(const e of canvas.world.querySelectorAll('.reasoning-drawing'))e.hidden=true;return}
-    const occupied=[...canvas.positions.values(),...(canvas.layout.placeholders||[])].map(p=>({x:p.x,y:p.y,w:CARD_W,h:CARD_H}));const overlaps=(a,b)=>a.x<b.x+b.w+26&&a.x+a.w+26>b.x&&a.y<b.y+b.h+26&&a.y+a.h+26>b.y;
+    const occupied=comparisonDisplayRects(canvas.layout,canvas.positions);const overlaps=(a,b)=>a.x<b.x+b.w+26&&a.x+a.w+26>b.x&&a.y<b.y+b.h+26&&a.y+a.h+26>b.y;
     // Place appendages in free rows near their anchor. No source coordinates move.
     const width=280,gap=62,columns=canvas.surface.clientWidth<650?1:3;let baseY=anchor.y+(anchor.h||CARD_H)/2+100;const baseX=anchor.x-width/2;
     for(let row=0;row<Math.ceil(this.cards.length/columns);row++){

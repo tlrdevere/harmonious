@@ -4,7 +4,7 @@
 
 The [comparison connections and counterpart controls increment](comparison-clarity-plan.md), based on the owner's four annotated screenshots, is **live in Worker 48**, after all 48 local and 48 hosted checks and public verification. It delivers stable selection, direct counterpart linking from either side, removal of decorative comparison frame lines, and clearer sibling connection routes. [Deployment status](deployment-status.md) records application commit `27269a60d04f5f8f84f59cd1fb445b626978cfaf` and publication.
 
-Next is the owner's [updated walkthrough](user-testing-checklist.md) on both accounts and feedback from real use. Pair-specific Aligned / In tension assessments remain a separate design decision. The existing deferral list is unchanged.
+The owner's subsequent feedback in `harmonious 10.png` and `harmonious 11.png` is addressed by the [positioning implementation](comparison-positioning-plan.md): provisional ordinary-node pairing is removed, compact ghost/status controls are present, and comparison spacing follows occupied content. Saved-link compatibility, request and unavailable states, both participants and all shared modes are covered. **All 48 local release checks passed; hosted verification and publication are next.** The [diagnosis](comparison-positioning-follow-up.md) retains the preceding findings. Pair-specific **Aligned / In tension** remains the next separate design discussion. Continue the owner's [updated walkthrough](user-testing-checklist.md); the existing deferral list is unchanged.
 
 ## Preceding release — Worker 47
 

@@ -13,7 +13,7 @@ import {isAdoptionReceipt} from './adoption-fulfillment.mjs';
 import {ReasoningUI} from './reasoning-ui.mjs';
 import {makeDiscussion,discussionLayer,discussionSource,discussionTargetLabel,discussionHealth,DISCUSSION_LABELS,isReason,isChallenge,canExplainReasoning} from './discussion.mjs';
 import {comparisonPairKey,validateWorkspace} from './workspace.mjs';
-import {comparisonNodeKey,visibleComparisonEndpoint,comparisonEndpoint} from './comparison-layout.mjs';
+import {comparisonNodeKey,visibleComparisonEndpoint,comparisonEndpoint,comparisonDisplayRects} from './comparison-layout.mjs';
 import {graphEdges,revealPath,STRUCTURAL_TYPES,RELATION_TYPES} from './model.mjs';
 import {CARD_W,CARD_H} from './layout.mjs';
 import {stableJSON} from './account-model.mjs';
@@ -108,11 +108,11 @@ export class DiscussionUI{
     this.viewId=null;this.groupTarget=null;if(this.target)this.actions();else this.list();
   }
   canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.canvas.sourceHighlights.select(null);this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.confidenceReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
-  close(){const entry=this.viewId,connectionReturn=this.connectionReturn,confidenceReturn=this.confidenceReturn;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.confidenceReturn=null;this.draw();const marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main')),confidenceFocus=confidenceReturn&&this.canvas.cards.get(confidenceReturn)?.querySelector('.node-confidence');(confidenceFocus||connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
+  close(){const entry=this.viewId,connectionReturn=this.connectionReturn,confidenceReturn=this.confidenceReturn,counterpartReturn=this.counterparts.returnControl;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.confidenceReturn=null;this.counterparts.returnControl=null;this.draw();if(counterpartReturn&&this.counterparts.focusReturn?.(counterpartReturn))return;const counterpartSide=counterpartReturn&&['a','b'].find(side=>this.canvas.states[side].map?.id===counterpartReturn.mapId),counterpartFocus=counterpartSide&&this.canvas.cards.get(comparisonNodeKey(counterpartSide,counterpartReturn.nodeId))?.querySelector('.node-main'),marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main')),confidenceFocus=confidenceReturn&&this.canvas.cards.get(confidenceReturn)?.querySelector('.node-confidence');(counterpartFocus||confidenceFocus||connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
   shell(title){this.viewOptions.open=false;this.viewId=null;this.hostMode=this.mode();this.host.replaceChildren();this.host.hidden=false;const header=discussEl('header');header.append(discussEl('strong',title),discussButton('Close',()=>this.close()));this.host.append(header);this.positionPopover();}
   actionGroup(title,buttons){if(!buttons.length)return;const section=discussEl('section','','discussion-action-group'),actions=discussEl('div','','discussion-actions');section.append(discussEl('h3',title));actions.append(...buttons);section.append(actions);this.host.append(section);}
-  selectNode(side,id){if(!this.canLeave())return;this.confidenceReturn=null;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
-  selectTarget(target){if(!this.canLeave())return false;this.confidenceReturn=null;this.target=target;this.returnFocus=document.activeElement;this.canvas.sourceHighlights.select(this.sourceEdgeKeys?.get(stableJSON(target))||null);this.actions();return true;}
+  selectNode(side,id){if(!this.canLeave())return;this.counterparts.returnControl=null;this.confidenceReturn=null;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
+  selectTarget(target){if(!this.canLeave())return false;this.counterparts.returnControl=null;this.confidenceReturn=null;this.target=target;this.returnFocus=document.activeElement;this.canvas.sourceHighlights.select(this.sourceEdgeKeys?.get(stableJSON(target))||null);this.actions();return true;}
   attachmentCategory(record){const category=interactionCategory(record);return category==='counterparts'?'questions':category;}
   revealInteraction(id,{responseContext=false}={}){
     const r=this.allEntries().find(record=>record.id===id);if(!r)return false;
@@ -172,13 +172,14 @@ export class DiscussionUI{
   }
   async save(input,old=null){
     if(this.saving)return;this.saving=true;this.host.inert=true;
+    const affectsPair=['correspondence','relationship'].includes(input.kind),anchor=affectsPair?this.canvas.captureAnchor(this.counterparts.returnControl||input.target):null;
     try{
       const thread=input.kind==='context'?null:await this.c.ensureComparison();
       const value=makeDiscussion(this.c.workspace,{...input,comparisonId:thread?.id||null},this.actor(),old);
       const candidate={...this.c.workspace,discussions:[...(this.c.workspace.discussions||[]).filter(r=>r.id!==value.id),value]};validateWorkspace(candidate);this.c.workspace=candidate;this.dirty=false;this.c.markDirty();
       if(thread){this.c.activeComparisonPair=comparisonPairKey(thread);this.c.setComparisonRoute(thread.id);}
       if(value.kind!=='interaction'&&discussionLayer(value)==='arguments'&&value.status==='active')this.reasoning.focusEntry(value);
-      this.c.renderComparison();this.c.library.render();this.saving=false;if(value.status==='active')this.open(value.id);else this.close();
+      this.c.renderComparison();this.canvas.restoreAnchor(anchor);this.c.library.render();this.saving=false;if(value.status==='active')this.open(value.id);else this.close();
     }catch(e){let error=this.host.querySelector('[role=alert]');if(!error){error=discussEl('p');error.setAttribute('role','alert');this.host.append(error);}error.textContent=e.message;}finally{this.saving=false;this.host.inert=false;}
   }
   open(id,{context=false,mode=null}={}){
@@ -207,7 +208,7 @@ export class DiscussionUI{
     if(r.status==='active'){
       if(this.mode()==='compare'&&r.kind==='counterpart'){
         this.counterparts.requestActions(r);
-        if(r.authorId!==this.actor())this.actionGroup('Respond',[discussButton('Respond',()=>this.compose('reply','reply',null,{layer:discussionLayer(r)}))]);
+        if(r.authorId!==this.actor()&&this.counterparts.canLink(r.target)&&this.counterparts.otherMap(r.target)?.ownerId===this.actor())this.actionGroup('Respond',[discussButton('Respond',()=>this.compose('reply','reply',null,{layer:discussionLayer(r)}))]);
       }
       if(['relationship','correspondence'].includes(r.kind))this.actionGroup('Connected nodes',[discussButton('Show connected nodes',()=>this.showConnectedNodes({key:actualNodePairKey(r.target,r.other)}))]);
       if(isReason(r))this.actionGroup('Earlier reasoning',[discussButton('Inspect reasoning connection',()=>this.reasoning.openInference(r.id))]);
@@ -408,7 +409,7 @@ export class DiscussionUI{
   }
   badge(text,target,action,aria,style=''){const b=discussButton(text,action,`discussion-badge discussion-drawing ${style}`);b.setAttribute('aria-label',aria);b.title=aria;if(target.type==='entry')b.dataset.entry=target.entryId;this.canvas.world.append(b);this.items.push({type:'badge',target,b});}
   position(){
-    if(!this.items)return;this.entryPositions=new Map();this.connectionPositions=new Map();const routeBounds=[],occupied=[...this.canvas.positions.values(),...(this.canvas.layout.placeholders||[])].map(p=>({x:p.x,y:p.y,w:CARD_W,h:CARD_H}));
+    if(!this.items)return;this.entryPositions=new Map();this.connectionPositions=new Map();const routeBounds=[],occupied=comparisonDisplayRects(this.canvas.layout,this.canvas.positions);
     this.canvas.ensureSourceRoutes();
     const overlaps=(x,y,w,h)=>occupied.some(r=>x<r.x+r.w+12&&x+w+12>r.x&&y<r.y+r.h+12&&y+h+12>r.y);
     for(const item of this.items){

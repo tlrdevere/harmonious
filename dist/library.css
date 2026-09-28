@@ -248,9 +248,9 @@ body.comparison-full-canvas #comparison-commandbar .comparison-full-status{order
   .comparison-context>.discussion-layers button,.comparison-context .comparison-view-options>summary{font-size:11px;min-height:32px;white-space:nowrap}
   .comparison-context .comparison-options-body{top:calc(100% + 4px);max-height:calc(100dvh - 190px)}
 }
-.counterpart-placeholder{position:absolute;width:252px;height:166px;box-sizing:border-box;border:2px dashed #9cb4ca;border-radius:14px;background:#f2f7fbbd;color:#426588;padding:18px;display:flex;flex-direction:column;justify-content:center;gap:8px;pointer-events:auto}
+.counterpart-placeholder{position:absolute;box-sizing:border-box;border:2px dashed #9cb4ca;border-radius:12px;background:#f2f7fbed;color:#426588;padding:8px;display:flex;flex-direction:column;justify-content:center;align-items:stretch;gap:5px;pointer-events:auto}
 .counterpart-placeholder[data-identity=two]{border-color:#ccad88;background:#fff8efbd;color:#95692f}
-.counterpart-placeholder strong{font-size:15px}.counterpart-placeholder p{font-size:12px;margin:0}.counterpart-placeholder button{font-size:12px;padding:6px 8px;background:#ffffffc9}
+.counterpart-placeholder strong{font-size:12px;line-height:1.2}.counterpart-placeholder button{font-size:11px;line-height:1.15;padding:5px 4px;min-height:28px;background:#ffffffed;white-space:normal}.counterpart-placeholder button:focus-visible{outline:3px solid #274c77;outline-offset:2px}.counterpart-placeholder[data-counterpart-state=requested]{border-style:dotted}.counterpart-placeholder[data-counterpart-state=linked],.counterpart-placeholder[data-counterpart-state=unavailable],.counterpart-placeholder[data-counterpart-state=request-state]{border-style:solid;border-width:1px}
 .counterpart-status{font-size:10px;line-height:1.2;padding:3px;max-width:85px}
 .discussion-relationship.counterpart_link{stroke:#74869b;stroke-dasharray:5 4}
 .discussion-badge.counterpart_link{border-color:#8396ab;background:#f4f7fb;color:#42596f}

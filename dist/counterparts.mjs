@@ -5,10 +5,17 @@ export function counterpartFrame(map,id){
   while(n?.parent){if(seen.has(n.id))return null;seen.add(n.id);n=byId.get(n.parent);}return n?.id||null;
 }
 export const sameCounterpartSource=(a,b)=>a?.type==='node'&&b?.type==='node'&&a.mapId===b.mapId&&a.nodeId===b.nodeId;
+const counterpartOrder=(a,b)=>(a.kind==='correspondence'?0:1)-(b.kind==='correspondence'?0:1)||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id);
+// This projection reads only the records already supplied to the participant.
+// Missing source cards must not erase a permitted, deliberately saved link.
+export function counterpartRecords(ws,comparisonId){
+  const thread=ws.comparisonThreads?.find(t=>t.id===comparisonId);if(!thread)return [];
+  const ids=[thread.aMapId,thread.bMapId];
+  return (ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.status==='active'&&['correspondence','relationship'].includes(r.kind)&&r.target?.type==='node'&&r.other?.type==='node'&&r.target.mapId!==r.other.mapId&&ids.includes(r.target.mapId)&&ids.includes(r.other.mapId)).sort(counterpartOrder);
+}
 export function counterpartLinks(ws,comparisonId){
   const available=t=>ws.maps.find(m=>m.id===t?.mapId&&!m.unavailable)?.nodes.some(n=>n.id===t.nodeId);
-  return (ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.status==='active'&&['correspondence','relationship'].includes(r.kind)&&available(r.target)&&available(r.other))
-    .sort((a,b)=>(a.kind==='correspondence'?0:1)-(b.kind==='correspondence'?0:1)||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
+  return (ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.status==='active'&&['correspondence','relationship'].includes(r.kind)&&available(r.target)&&available(r.other)).sort(counterpartOrder);
 }
 export function counterpartPairs(ws,comparisonId,target){
   const pairs=new Map();
@@ -17,6 +24,27 @@ export function counterpartPairs(ws,comparisonId,target){
     const key=JSON.stringify([other.mapId,other.nodeId]);if(!pairs.has(key))pairs.set(key,{other,records:[]});pairs.get(key).records.push(record);
   }
   return [...pairs.values()];
+}
+export function counterpartState(ws,comparisonId,target,{endpoint,adjacent}={}){
+  const sourceMap=ws.maps.find(m=>m.id===target?.mapId),pairs=new Map();
+  const classify=other=>{
+    const map=ws.maps.find(m=>m.id===other.mapId);let status=endpoint?.(other)?.status;
+    if(!status)status=!map||map.unavailable?'unavailable':map.nodes.some(n=>n.id===other.nodeId)?'visible':'missing';
+    if(status==='visible'&&counterpartFrame(sourceMap,target.nodeId)!==counterpartFrame(map,other.nodeId))status='cross-frame';
+    return status;
+  };
+  for(const record of counterpartRecords(ws,comparisonId)){
+    const other=sameCounterpartSource(record.target,target)?record.other:sameCounterpartSource(record.other,target)?record.target:null;if(!other)continue;
+    const key=JSON.stringify([other.mapId,other.nodeId]);if(!pairs.has(key))pairs.set(key,{other,status:classify(other),records:[]});pairs.get(key).records.push(record);
+  }
+  const requests=(ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.kind==='counterpart'&&sameCounterpartSource(r.target,target)).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id)),request=requests.at(-1),linked=[...pairs.values()];
+  if(linked.length){
+    const unavailable=linked.every(p=>['missing','unavailable'].includes(p.status));
+    const labels={visible:'Linked elsewhere',collapsed:'Counterpart in collapsed branch',filtered:'Counterpart in hidden frame','cross-frame':'Counterpart in another frame',missing:'Counterpart unavailable',unavailable:'Counterpart unavailable'};
+    return {kind:unavailable?'unavailable':'linked',label:linked.length>1?`Linked counterparts (${linked.length})`:linked[0].status==='visible'&&adjacent?.(linked[0].other)?'Counterpart linked':labels[linked[0].status],pairs:linked,count:linked.length,request,requests};
+  }
+  if(request){const state=counterpartRequestState(ws,request);return {kind:state==='Awaiting counterpart'?'requested':'request-state',label:state==='Awaiting counterpart'?'Counterpart requested':state,pairs:[],count:0,request,requests};}
+  return {kind:'unlinked',label:'No counterpart linked',pairs:[],count:0,request:null,requests};
 }
 export function counterpartRequestState(ws,r){
   if(r.status!=='active')return 'Request closed';
@@ -27,7 +55,7 @@ export function counterpartRequestState(ws,r){
 export function comparisonCounterparts(ws,states){
   const ids=['a','b'].map(s=>states[s].map?.id),thread=ws.comparisonThreads?.find(t=>ids.includes(t.aMapId)&&ids.includes(t.bMapId)&&t.aMapId!==t.bMapId);
   if(!ids.every(Boolean)||ids[0]===ids[1]||['a','b'].some(side=>states[side].map.unavailable))return {links:[],reserved:[]};
-  const links=thread?counterpartLinks(ws,thread.id):[],reserved=[];
+  const links=thread?counterpartRecords(ws,thread.id):[],reserved=[];
   const add=target=>{const map=ws.maps.find(m=>m.id===target?.mapId&&!m.unavailable),n=map?.nodes.find(n=>n.id===target.nodeId);if(!n||n.parent===null||links.some(r=>sameCounterpartSource(r.target,target)||sameCounterpartSource(r.other,target))||reserved.some(t=>sameCounterpartSource(t,target)))return;reserved.push(target);};
   for(const r of ws.discussions||[])if(r.kind==='counterpart'&&r.comparisonId===thread?.id&&counterpartRequestState(ws,r)==='Awaiting counterpart')add(r.target);
   return {links,reserved};

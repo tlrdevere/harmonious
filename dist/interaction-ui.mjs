@@ -35,7 +35,7 @@ export class InteractionUI{
     const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));
     const definitions=[];if(context)definitions.push(interactionButton('View definitions & standards',()=>d.openContexts(target)));if(own&&ordinary)definitions.push(interactionButton('Use definitions & standards',()=>this.c.library.definitions.choose(target)));d.actionGroup('Meaning',definitions);
     if(d.mode()==='compare'&&target.type==='node'&&ordinary){
-      if(!d.counterparts.pairs(target).length)d.host.append(interactionEl('p','No counterpart linked.','field-help counterpart-state'));
+      d.host.append(interactionEl('p',d.counterparts.state(target).label,'field-help counterpart-state'));
       d.actionGroup('Counterparts',d.counterparts.actions(target));
     }
     const attached=conversationThreads(d.allEntries(),{mode:d.mode()}).filter(r=>stableJSON(conversationAnchor(ws.discussions,r))===stableJSON(target));
