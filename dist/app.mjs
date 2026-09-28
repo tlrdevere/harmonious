@@ -4,6 +4,7 @@ import {MapConnectionsUI} from './map-connections-ui.mjs';
 import {createConnectionRouter} from './comparison-routing.mjs';
 import {groupSourceConnections,visibleNodePairKey} from './conversation-tree.mjs';
 import {confidenceBadge} from './confidence-ui.mjs';
+import {FRAME_COLORS,installFramePalette} from './frame-palette.mjs';
 import {newId} from './workspace.mjs';
 import {CARD_W,CARD_H,layoutForest} from './layout.mjs';
 import {roots,exampleMap,exampleRelations} from './data.mjs';
@@ -11,17 +12,23 @@ import {NODE_KINDS,STRUCTURAL_TYPES,RELATION_TYPES,graphEdges,frameOf,allowedRel
 const $=id=>document.getElementById(id),viewport=$('viewport'),world=$('world');
 const svgNS='http://www.w3.org/2000/svg';
 let nodes=exampleMap(),relations=exampleRelations(),expanded=new Set(),selected=null,result,positions=new Map(),camera={x:0,y:0,z:1},animation=0,serial=0;
-let dirty=false,connectionDirty=false,activeRelation=null,editingRelation=null,relationDrawables=[];
+let dirty=false,connectionDirty=false,activeRelation=null,editingRelation=null,relationDrawables=[],childDraft=null,inspectorMode='edit';
 let activeConnectionKey=null,routedPositions=null;
 const mapRoute=createConnectionRouter(),connectionRoutes=new Map();
-const elements=new Map(),colors=['#008575','#3263cc','#8250bd'];
+const elements=new Map(),colors=FRAME_COLORS;
+installFramePalette();
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function nodeById(id){return nodes.find(n=>n.id===id);}
 function descendants(id){const out=[];for(const n of nodes)if(n.parent===id)out.push(n.id,...descendants(n.id));return out;}
 function connectedEdges(id){return relations.filter(e=>e.from===id||e.to===id);}
 function svg(tag,attrs={}){const el=document.createElementNS(svgNS,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;}
 function option(value,label){const el=document.createElement('option');el.value=value;el.textContent=label;return el;}
-function allowLeave(){return (!dirty&&!connectionDirty)||confirm('Discard unsaved changes to this node or connection?');}
+function allowLeave(){
+  if(!dirty&&!connectionDirty&&!childDraft)return true;
+  if(!confirm(childDraft?'Discard this unfinished child node?':'Discard unsaved changes to this node or connection?'))return false;
+  if(childDraft){const {panelOpen,mode}=childDraft;childDraft=null;loadInspector(mode==='child'?'edit':mode);$('inspector').hidden=!panelOpen;}
+  return true;
+}
 function relationSentence(edge){return `${nodeById(edge.from).title} ${RELATION_TYPES[edge.type].label.toLowerCase()} ${nodeById(edge.to).title}`;}
 function makeLabel(text,structural=false){const group=svg('g',{class:`edge-label${structural?' structural-label':''}`}),width=text.length*7.2+20;group.dataset.width=width;group.append(svg('rect',{x:-width/2,y:-12,width,height:24}));const label=svg('text',{x:0,y:0});label.textContent=text;group.append(label);return group;}
 function inspectionPath(parent,path,edges){
@@ -41,7 +48,7 @@ function makeCard(n){
   const toggle=document.createElement('button');toggle.type='button';toggle.className='toggle';
   const sign=document.createElement('span'),count=document.createElement('span');count.className='child-count';toggle.append(sign,count);
   const add=document.createElement('button');add.type='button';add.className='node-add-child';add.textContent='+';add.setAttribute('aria-label',`Add a child to “${n.title}”`);add.title='Add child';
-  add.onclick=e=>{e.stopPropagation();selectNode(n.id);if(selected===n.id){nodeActions.show(nodeById(n.id),'child');nodeActions.position(positions.get(n.id),camera);}};
+  add.onclick=e=>{e.stopPropagation();selectNode(n.id);if(selected===n.id)addChild();};
   const confidence=document.createElement('span');confidence.className='node-confidence-slot';
   const controls=document.createElement('div');controls.className='node-controls';controls.append(toggle,add);
   bottom.append(confidence,controls);card.append(main,bottom);
@@ -130,7 +137,7 @@ function update({anchor=null,fit=false,instant=false}={}){
 }
 
 function settle(){if(animation){cancelAnimationFrame(animation);animation=0;}}
-function closeInspector(force=false){if(!force&&!allowLeave())return false;selected=null;dirty=false;connectionDirty=false;activeRelation=null;activeConnectionKey=null;connectionMenu.hide();nodeActions.hide();$('inspector').hidden=true;$('connection-form').hidden=true;if(result){syncCards();draw();}return true;}
+function closeInspector(force=false){if(!force&&!allowLeave())return false;const id=selected;selected=null;dirty=false;connectionDirty=false;childDraft=null;activeRelation=null;activeConnectionKey=null;connectionMenu.hide();nodeActions.hide();$('inspector').hidden=true;$('connection-form').hidden=true;$('child-form').hidden=true;if(result){syncCards();draw();}elements.get(id)?.main.focus({preventScroll:true});workspaceController.status();return true;}
 function refreshKindFields(){
   if(!selected)return;const n=nodeById(selected),kind=$('kind').value,isRoot=n.parent===null;
   $('kind-group').hidden=true;$('structural-group').hidden=true;$('time-group').hidden=true;$('confidence-group').hidden=kind!=='position'||isRoot;
@@ -140,26 +147,42 @@ function refreshKindFields(){
   $('structural-type').value=[...$('structural-type').options].some(o=>o.value===previous)?previous:'nesting';
   $('parent-hint').textContent=n.parent?`Parent: ${nodeById(n.parent).title}`:'';
 }
-function loadInspector(){
-  const n=nodeById(selected);if(!n)return;dirty=false;connectionDirty=false;$('inspector').hidden=false;
+function renderNodeReading(n){
+  const host=$('node-reading');host.replaceChildren();
+  for(const [tag,text]of [['h2',n.title],['p',n.summary],['p',n.details]])if(text){const el=document.createElement(tag);el.textContent=text;host.append(el);}
+  if(n.sourceTitle||n.sourceUrl){const source=document.createElement('p');source.textContent=n.sourceTitle||'Source';if(n.sourceUrl){const link=document.createElement('a');link.href=n.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open source';source.append(document.createElement('br'),link);}host.append(source);}
+  const map=workspaceController.activeMap(),owner=workspaceController.workspace.participants.find(person=>person.id===map?.ownerId)?.name||map?.person||'Author',badge=confidenceBadge(n,owner);if(badge)host.append(badge);
+  const definitions=$('node-definition-list');definitions.replaceChildren();
+  const refs=(workspaceController.workspace.discussions||[]).filter(r=>r.kind==='context'&&r.status==='active'&&r.target?.type==='node'&&r.target.mapId===workspaceController.activeMapId&&r.target.nodeId===n.id).flatMap(r=>r.definitionRefs||[]);
+  for(const ref of refs){const entry=document.createElement('div'),title=document.createElement('h3'),byline=document.createElement('p'),body=document.createElement('p');title.textContent=ref.title;byline.className='field-help';const author=workspaceController.workspace.participants.find(p=>p.id===ref.authorId)?.name||'Author';byline.textContent=`${ref.type==='standard'?'Standard':'Definition'} · ${author} · Version ${ref.version}`;body.textContent=ref.body;entry.append(title,byline,body);definitions.append(entry);}
+  if(!refs.length){const p=document.createElement('p');p.className='field-help';p.textContent='No definitions or standards attached.';definitions.append(p);}
+  $('node-definitions').hidden=!workspaceController.canEditMap(workspaceController.activeMap());
+}
+function setInspectorMode(mode){
+  inspectorMode=mode;$('inspector-mode').textContent=mode==='child'?'ADD CHILD NODE':mode==='inspect'?'NODE DETAILS':'EDIT NODE';
+  $('edit-form').hidden=mode!=='edit';$('child-form').hidden=mode!=='child';$('node-reading').hidden=mode!=='inspect';$('node-meaning').hidden=mode!=='inspect';$('node-connections').hidden=mode==='child';$('inspector-node-actions').hidden=mode!=='edit';
+}
+function loadInspector(mode=inspectorMode==='child'?'edit':inspectorMode){
+  const n=nodeById(selected);if(!n)return;dirty=false;connectionDirty=false;childDraft=null;setInspectorMode(mode);$('inspector').hidden=false;
   $('kind').replaceChildren(option(n.kind,'Node'));$('kind').value=n.kind;$('title').value=n.title;$('title').disabled=n.parent===null;$('summary').value=n.summary;$('details').value=n.details;
   $('source-title').value=n.sourceTitle||'';$('source-url').value=n.sourceUrl||'';$('time-scope').value=n.timeScope||'present';$('confidence').value=n.confidence===null?'':String(n.confidence);$('confidence').setCustomValidity('');
   $('structural-type').replaceChildren();$('structural-type').append(option(n.structuralType||'nesting',''));$('structural-type').value=n.structuralType||'nesting';refreshKindFields();
-  $('saved').textContent='';$('saved').classList.remove('error');$('remove').hidden=n.parent===null;$('add-reason').hidden=n.parent===null||!workspaceController.canEditMap(workspaceController.activeMap());$('connect').hidden=n.parent===null;$('connection-form').hidden=true;editingRelation=null;
+  $('saved').textContent='';$('saved').classList.remove('error');$('remove').hidden=n.parent===null;$('connect').hidden=n.parent===null||!workspaceController.canEditMap(workspaceController.activeMap());$('connection-form').hidden=true;editingRelation=null;
   $('source-link').hidden=!n.sourceUrl;if(n.sourceUrl)$('source-link').href=n.sourceUrl;
   const chain=[];let p=n;while(p){chain.unshift(p.title);p=nodeById(p.parent);} $('breadcrumb').textContent=chain.join(' / ');
   $('shared-node-note').textContent=workspaceController.sharedNodeNote(n);$('shared-node-note').hidden=!n.ideaId;$('inspect-cosigns').hidden=!n.ideaId;
-  renderConnections();
+  renderNodeReading(n);renderConnections();
 }
+function openNodeInspector(mode){if(!selected||!allowLeave())return;loadInspector(mode);$('inspector').hidden=false;if(mode==='edit')($('title').disabled?$('summary'):$('title')).focus();else $('close').focus();workspaceController.status();}
 function selectNode(id){
-  if(selected===id){connectionMenu.hide();activeConnectionKey=null;nodeActions.show(nodeById(id));syncCards();draw();return;}if(!allowLeave())return;
+  if(selected===id){if(childDraft)return;connectionMenu.hide();activeConnectionKey=null;nodeActions.show(nodeById(id));syncCards();draw();return;}if(!allowLeave())return;
   connectionMenu.hide();activeConnectionKey=null;
   const panelOpen=!$('inspector').hidden;selected=id;activeRelation=null;loadInspector();$('inspector').hidden=!panelOpen;nodeActions.show(nodeById(id));syncCards();draw();
 }
 function showConfidence(id){
-  if(!workspaceController.canEditMap(workspaceController.activeMap())||nodeById(id)?.kind!=='position')return;
+  if(!workspaceController.canEditMap(workspaceController.activeMap())||nodeById(id)?.kind!=='position'||nodeById(id)?.parent===null)return;
   if(!workspaceController.editor.flushDraft())return;
-  selectNode(id);if(selected!==id)return;nodeActions.show(nodeById(id),'confidence');nodeActions.position(positions.get(id),camera);
+  selectNode(id);if(selected!==id)return;nodeActions.show(nodeById(id),'confidence');nodeActions.position(positions.get(id),camera);nodeActions.host.querySelector('input')?.focus();
 }
 function focusNodes(ids){
   const pts=ids.map(id=>result.positions.get(id)).filter(Boolean);if(!pts.length)return;
@@ -187,7 +210,7 @@ function inspectConnection(key,edges=connectionMeanings(key)){
 function closeConnection(key){connectionMenu.hide();activeConnectionKey=null;activeRelation=null;syncCards();draw();focusConnection(key);}
 function editConnection(id){
   const edge=relations.find(item=>item.id===id);if(!edge||!workspaceController.canEditMap(workspaceController.activeMap())||!allowLeave())return;
-  selected=edge.from;activeRelation=id;loadInspector();connectionMenu.hide();nodeActions.hide();openConnectionForm(edge);syncCards();draw();
+  selected=edge.from;activeRelation=id;loadInspector('edit');connectionMenu.hide();nodeActions.hide();openConnectionForm(edge);syncCards();draw();
 }
 function removeConnection(id,key){
   if(!workspaceController.canEditMap(workspaceController.activeMap())||!allowLeave())return;
@@ -233,13 +256,26 @@ function refreshConnectionTypes(preferred=null){
   $('connection-hint').textContent=!from||!to?'Choose the other node first.':!types.length?'This pairing uses the other direction. Try changing “From this node” to “To this node,” or vice versa.':frameOf(nodes,from)===frameOf(nodes,to)?'A connection within this frame.':'A connection between frames.';
   $('connection-error').textContent='';
 }
-function addChild(asReason=false){
-  if(!selected||!workspaceController.canEditMap(workspaceController.activeMap())||!allowLeave())return;const parent=selected,id=newId('node');
-  if(asReason&&nodeById(parent).parent===null)return;
-  const {node,relation}=createChildStatement(nodes,parent,id,{reasonId:asReason?newId('relation'):null});
-  nodes.push(node);if(relation)relations.push(relation);
-  dirty=false;expanded.add(parent);selected=id;nodeActions.hide();update({anchor:parent});loadInspector();syncCards();draw();$('title').focus();$('title').select();
+function addChild(){
+  if(!selected||!workspaceController.canEditMap(workspaceController.activeMap())||!allowLeave())return;
+  const parent=selected,panelOpen=!$('inspector').hidden,mode=inspectorMode;
+  loadInspector('edit');childDraft={parent,panelOpen,mode};setInspectorMode('child');$('child-form').reset();$('child-error').textContent='';$('child-parent').textContent=`Parent: ${nodeById(parent).title}`;$('child-relationship-group').hidden=nodeById(parent).parent===null;
+  nodeActions.hide();connectionMenu.hide();$('child-title').focus();workspaceController.status();
 }
+function cancelChild(){if(!childDraft)return;const {parent,panelOpen,mode}=childDraft;selected=parent;loadInspector(mode==='child'?'edit':mode);$('inspector').hidden=!panelOpen;nodeActions.show(nodeById(parent));nodeActions.position(positions.get(parent),camera);elements.get(parent)?.main.focus();workspaceController.status();}
+$('cancel-child').onclick=cancelChild;
+$('child-form').addEventListener('input',()=>{$('child-error').textContent='';workspaceController.status();});
+$('child-form').addEventListener('submit',event=>{
+  event.preventDefault();if(!childDraft||!workspaceController.canEditMap(workspaceController.activeMap()))return;
+  try{
+    const parent=childDraft.parent,title=$('child-title').value.trim();if(!title)throw Error('Enter a title.');
+    const asReason=$('child-relationship').value==='reason'&&nodeById(parent)?.parent!==null;
+    const {node,relation}=createChildStatement(nodes,parent,newId('node'),{reasonId:asReason?newId('relation'):null});
+    Object.assign(node,{title,summary:$('child-summary').value.trim(),details:$('child-details').value.trim(),sourceTitle:$('child-source-title').value.trim(),sourceUrl:$('child-source-url').value.trim(),confidence:$('child-confidence').value===''?null:Number($('child-confidence').value)});
+    const nextNodes=[...nodes,node],nextRelations=relation?[...relations,relation]:relations;validateGraph(nextNodes,roots,nextRelations);
+    nodes=nextNodes;relations=nextRelations;childDraft=null;dirty=false;expanded.add(parent);selected=node.id;nodeActions.hide();update({anchor:parent});loadInspector('edit');syncCards();draw();$('saved').textContent='Node added.';$('title').focus();workspaceController.status();
+  }catch(error){$('child-error').textContent=error.message;}
+});
 $('close').addEventListener('click',()=>closeInspector());
 $('inspect-cosigns').addEventListener('click',()=>{if(selected)workspaceController.exploreNode(workspaceController.activeMapId,selected);});
 $('edit-form').addEventListener('input',()=>{dirty=true;$('saved').textContent='Unsaved changes';$('saved').classList.remove('error');});
@@ -253,7 +289,8 @@ $('edit-form').addEventListener('submit',event=>{
     const candidate=nodes.map(node=>node.id===selected?next:node);validateGraph(candidate,roots,relations);nodes=candidate;dirty=false;const panelOpen=!$('inspector').hidden;loadInspector();$('inspector').hidden=!panelOpen;syncCards();draw();$('saved').textContent=workspaceController.accountMode?'Node updated.':'Node updated. Save the workspace to keep changes.';
   }catch(error){$('saved').textContent=error.message;$('saved').classList.add('error');}
 });
-$('add-child').addEventListener('click',()=>addChild());$('add-reason').addEventListener('click',()=>addChild(true));
+$('add-child').addEventListener('click',()=>addChild());
+$('node-definitions').onclick=()=>{if(selected)workspaceController.library.definitions.choose({type:'node',mapId:workspaceController.activeMapId,nodeId:selected});};
 $('connect').addEventListener('click',()=>openConnectionForm());$('cancel-connect').addEventListener('click',()=>{if(connectionDirty&&!confirm('Discard the unsaved connection changes?'))return;connectionDirty=false;$('connection-form').hidden=true;editingRelation=null;});
 $('connection-form').addEventListener('input',()=>{connectionDirty=true;});$('connection-form').addEventListener('change',()=>{connectionDirty=true;});
 $('connection-direction').addEventListener('change',()=>refreshConnectionTypes());$('connection-target').addEventListener('change',()=>refreshConnectionTypes());
@@ -267,7 +304,7 @@ $('remove').addEventListener('click',()=>{if(!selected||roots.includes(selected)
 $('next').addEventListener('click',()=>{const visible=[...result.positions.keys()];for(const id of visible)if(result.children.get(id).length)expanded.add(id);update({fit:true});});
 $('all').addEventListener('click',()=>{expanded=new Set(nodes.filter(n=>result.children.get(n.id).length).map(n=>n.id));update({fit:true});});
 $('collapse').addEventListener('click',()=>{if(!allowLeave())return;expanded.clear();closeInspector(true);update({fit:true});});
-$('reset').addEventListener('click',()=>{if(!confirm('Reset to the illustrative map? This will discard your edits.'))return;nodes=exampleMap();relations=exampleRelations();expanded.clear();selected=null;dirty=false;connectionDirty=false;activeRelation=null;activeConnectionKey=null;connectionMenu.hide();$('inspector').hidden=true;$('relation-view').value='all';update({fit:true});});
+$('reset').addEventListener('click',()=>{if(!confirm('Reset to the illustrative map? This will discard your edits.'))return;nodes=exampleMap();relations=exampleRelations();expanded.clear();selected=null;dirty=false;connectionDirty=false;childDraft=null;activeRelation=null;editingRelation=null;activeConnectionKey=null;connectionMenu.hide();nodeActions.hide();$('inspector').hidden=true;$('child-form').hidden=true;$('connection-form').hidden=true;$('relation-view').value='all';update({fit:true});});
 $('fit').addEventListener('click',()=>transition(result.positions,fitCamera()));
 function zoom(factor,x=viewport.clientWidth/2,y=viewport.clientHeight/2,absolute=false){settle();const z=Math.min(2,Math.max(.02,absolute?factor:camera.z*factor)),ratio=z/camera.z;camera={x:x-(x-camera.x)*ratio,y:y-(y-camera.y)*ratio,z};positions=result.positions;draw();}
 $('plus').addEventListener('click',()=>zoom(1.2));$('minus').addEventListener('click',()=>zoom(1/1.2));$('zoom').addEventListener('click',()=>zoom(1,viewport.clientWidth/2,viewport.clientHeight/2,true));
@@ -282,12 +319,12 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape')closeInspect
 let oldWidth=viewport.clientWidth,oldHeight=viewport.clientHeight;
 new ResizeObserver(()=>{const w=viewport.clientWidth,h=viewport.clientHeight;if(result&&(w!==oldWidth||h!==oldHeight)){settle();positions=result.positions;if(!oldWidth||!oldHeight)camera=fitCamera();else{camera.x+=(w-oldWidth)/2;camera.y+=(h-oldHeight)/2;}draw();}oldWidth=w;oldHeight=h;}).observe(viewport);
 const workspaceController=new WorkspaceController({
-  getMapData:()=>({nodes,relations}),beforeLeave:allowLeave,hasDraft:()=>dirty||connectionDirty,
+  getMapData:()=>({nodes,relations}),beforeLeave:allowLeave,hasDraft:()=>dirty||connectionDirty||!!childDraft,hasChildDraft:()=>!!childDraft,
   discardDraft:()=>closeInspector(true),
   updateConfidence:(id,value)=>{const n=nodeById(id);if(!n)return;n.confidence=value;if(selected===id)$('confidence').value=value===null?'':String(value);syncCards();draw();},
-  flushDraft:()=>{if(connectionDirty)$('connection-form').requestSubmit();if(connectionDirty)return false;if(dirty)$('edit-form').requestSubmit();return !dirty;},
-  setMap:map=>{nodeActions.hide();connectionMenu.hide();activeConnectionKey=null;mapRoute.clear();selected=null;dirty=false;connectionDirty=false;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
-  focusNode:id=>{expanded=revealPath(nodes,id,expanded);selected=id;update();loadInspector();requestAnimationFrame(()=>focusNodes([id]));}
+  flushDraft:()=>{if(childDraft){workspaceController.message('Finish or cancel the child node before saving or downloading the workspace.');$('child-title').focus();return false;}if(connectionDirty)$('connection-form').requestSubmit();if(connectionDirty)return false;if(dirty)$('edit-form').requestSubmit();return !dirty;},
+  setMap:map=>{nodeActions.hide();connectionMenu.hide();activeConnectionKey=null;mapRoute.clear();selected=null;dirty=false;connectionDirty=false;childDraft=null;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;$('child-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
+  focusNode:id=>{expanded=revealPath(nodes,id,expanded);selected=id;update();loadInspector('edit');requestAnimationFrame(()=>focusNodes([id]));}
 });
 const connectionMenu=new MapConnectionsUI(viewport,{
   close:closeConnection,edit:editConnection,remove:removeConnection,
@@ -298,13 +335,13 @@ const nodeActions=new NodeActions(viewport,{
   canSetConfidence:()=>workspaceController.canEditMap(workspaceController.activeMap()),confidence:showConfidence,
   draftConfidence:(value,valid)=>{$('confidence').value=value;$('confidence').setCustomValidity(valid?'':'Enter a confidence from 0 to 100.');dirty=true;$('saved').textContent='Unsaved confidence';},
   cancelConfidence:()=>{const n=nodeById(selected);$('confidence').value=n.confidence===null?'':String(n.confidence);$('confidence').setCustomValidity('');dirty=[['title','title'],['summary','summary'],['details','details'],['kind','kind'],['source-title','sourceTitle'],['source-url','sourceUrl'],['time-scope','timeScope'],['structural-type','structuralType']].some(([id,key])=>$(id).value.trim()!==(n[key]||''));$('saved').textContent=dirty?'Unsaved changes':'';},
-  saveConfidence:value=>{$('confidence').value=value===null?'':String(value);$('confidence').setCustomValidity('');dirty=true;$('edit-form').requestSubmit();if(dirty)throw Error('Resolve the node fields before saving confidence.');nodeActions.show(nodeById(selected));nodeActions.position(positions.get(selected),camera);},
-  addChild,edit:()=>{$('inspector').hidden=false;$('title').focus();},connect:()=>{$('inspector').hidden=false;openConnectionForm();},remove:()=>{$('remove').click();nodeActions.hide();},
-  compare:id=>workspaceController.library.createComparison(workspaceController.activeMapId,id),
-  definitions:id=>workspaceController.library.definitions.choose({type:'node',mapId:workspaceController.activeMapId,nodeId:id}),
+  saveConfidence:value=>{$('confidence').value=value===null?'':String(value);$('confidence').setCustomValidity('');dirty=true;$('edit-form').requestSubmit();if(dirty)throw Error('Resolve the node fields before saving confidence.');},
+  focusConfidence:()=>elements.get(selected)?.confidence.querySelector('button')?.focus({preventScroll:true}),
+  addChild,edit:()=>openNodeInspector('edit'),inspect:()=>openNodeInspector('inspect'),remove:()=>{$('remove').click();},
   contributions:id=>workspaceController.library.openSource(workspaceController.activeMapId,id),
   canArgue:id=>{const p=workspaceController.workspace.comparisons.find(p=>p.id===workspaceController.editingRecord);return !!p&&['a','b'].some(s=>p[`${s}MapId`]===workspaceController.activeMapId&&p[`${s}NodeId`]===id);},
   argue:()=>workspaceController.argument.open(),focusNode:()=>elements.get(selected)?.main.focus()
 });
+workspaceController.library.definitions.dialog.addEventListener('close',()=>{if(selected&&!childDraft)renderNodeReading(nodeById(selected));});
 update({fit:true,instant:true});
 workspaceController.initialize();

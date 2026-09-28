@@ -135,6 +135,32 @@ try{
     }
   };
 
+  // Real entry path: essential map selection must not depend on View options,
+  // nor disappear when the passive source identity labels are clicked.
+  const pairCount=(await view(store,alice)).workspace.comparisonThreads.length;
+  await a.goto(origin+'/#library=comparisons');await a.getByRole('button',{name:'Choose maps',exact:true}).click();
+  const setup=a.getByRole('region',{name:'Choose comparison maps',exact:true}),start=a.locator('#start-comparison');
+  assert(await setup.isVisible());assert.equal(await a.locator('.comparison-view-options').evaluate(e=>e.open),false);
+  assert(await start.isDisabled());assert.equal(await a.locator('#compare-map-a').evaluate(e=>e===document.activeElement),true);
+  await a.keyboard.press('Tab');assert.equal(await a.locator('#compare-map-b').evaluate(e=>e===document.activeElement),true,'Both source choices are reachable in normal keyboard order');
+  for(const side of ['a','b']){await a.locator('#comparison-identity-'+side).click();assert(await a.locator('#compare-map-'+side).isVisible());}
+  assert.match(await a.locator('#compare-map-a').innerText(),/Alice consistency map · Alice/);assert.match(await a.locator('#compare-map-b').innerText(),/Bob consistency map · Bob/);
+  await a.locator('#compare-map-a').selectOption(aMap.id);assert(await start.isDisabled(),'The missing second choice stays explicit');
+  await a.locator('#compare-map-b').selectOption(aMap.id);assert(await start.isDisabled());assert.match(await a.locator('#comparison-map-help').innerText(),/two different maps/);
+  await a.locator('#compare-map-b').selectOption(bMap.id);assert(await start.isEnabled());
+  await a.screenshot({path:'build/design-review/comparison-map-setup-desktop.png',fullPage:true});
+  await a.setViewportSize({width:390,height:844});
+  for(const id of ['compare-map-a','compare-map-b','start-comparison']){const box=await a.locator('#'+id).boundingBox();assert(box.x>=0&&box.x+box.width<=390,`${id} fits a narrow screen`);}
+  await a.locator('.comparison-view-options>summary').click();await a.locator('#comparison-identity-a').click();assert(await setup.isVisible(),'Closing View options leaves source choices visible');
+  await a.screenshot({path:'build/design-review/comparison-map-setup-mobile.png',fullPage:true});
+  await start.click();await a.waitForURL('**/#comparison='+thread.id);assert.equal(await setup.isVisible(),false);assert(await a.getByRole('button',{name:'Change maps',exact:true}).isVisible());
+  assert.equal((await view(store,alice)).workspace.comparisonThreads.length,pairCount,'Opening the existing pair does not create another comparison');
+  await a.reload();await a.getByRole('button',{name:'Change maps',exact:true}).click();assert(await setup.isVisible());assert.deepEqual((await Promise.all(['a','b'].map(side=>a.locator('#compare-map-'+side).inputValue()))).sort(),[aMap.id,bMap.id].sort());
+  await a.locator('#comparison-library').click();await a.getByRole('button',{name:'Find a shared map',exact:true}).click();await a.getByRole('button',{name:'Compare with my map',exact:true}).click();
+  assert.equal(await a.locator('#compare-map-a').inputValue(),'');assert.equal(await a.locator('#compare-map-b').inputValue(),bMap.id);assert(await start.isDisabled(),'A preselected shared source still requires choosing an owned map');
+  await a.locator('#compare-map-a').selectOption(aMap.id);await start.click();await a.waitForURL('**/#comparison='+thread.id);
+  assert.deepEqual((await view(store,alice)).workspace.maps.filter(m=>[aMap.id,bMap.id].includes(m.id)).map(m=>m.visibility),['shared','shared'],'Choosing maps never changes their sharing');
+  await a.setViewportSize({width:1440,height:1000});
   await load(a);await load(b);
   assert.deepEqual(await a.locator('[aria-label="Conversation mode"] button:visible').allTextContents(),['Inquiry','Compare','Argument'],'Shared mode buttons follow the intended Inquiry, Compare, Argument order');
   await mode(a,'argument');await node(a,'Daytime meeting');
@@ -233,6 +259,8 @@ try{
   for(const which of ['inquiry','argument','compare']){await mode(a,which);assert.deepEqual(await geometry(a),before,`${which} preserves radial coordinates and camera`);}
   await mode(a,'inquiry');await node(a,'Daytime meeting');await click(a,'Request reason');
   await a.locator('#interaction-comment').fill('A parked inquiry draft');
+  a.once('dialog',d=>d.dismiss());await a.getByRole('button',{name:'Change maps',exact:true}).click();
+  assert.equal(await a.locator('#interaction-comment').inputValue(),'A parked inquiry draft');assert.equal(await setup.isVisible(),false,'Canceling Change maps preserves the current pair and unfinished interaction');
   await mode(a,'compare');assert.equal(await pop(a).isVisible(),false);
   await mode(a,'argument');assert.equal(await pop(a).isVisible(),false);
   await mode(a,'inquiry');assert.equal(await a.locator('#interaction-comment').inputValue(),'A parked inquiry draft');
@@ -360,16 +388,23 @@ try{
   await load(a);
   for(const which of ['inquiry','compare','argument']){
     await mode(a,which);
-    for(const title of legacyTitles){await node(a,title);assert.equal(await button(a,'My confidence').count(),0,`${which} omits unsupported confidence for ${title}`);assert(await button(a,'Edit in my map').isVisible());}
-    await node(a,'Evening meeting');await click(a,'My confidence');assert(await pop(a).locator('.confidence-form').isVisible(),`${which} retains confidence for an owned position`);await close(a);
+    for(const title of legacyTitles){await node(a,title);const card=a.locator('#compare-canvas .node').filter({has:a.getByText(title,{exact:true})});assert.equal(await card.locator('.node-confidence').count(),0,`${which} omits unsupported confidence for ${title}`);assert(await button(a,'Edit in my map').isVisible());}
+    await node(a,'Evening meeting');assert.equal(await button(a,'My confidence').count(),0,'Confidence is not duplicated in the source actions');await close(a);
+    await a.locator('#compare-canvas .node').filter({has:a.getByText('Evening meeting',{exact:true})}).locator('button.node-confidence').click();assert(await pop(a).locator('.confidence-form').isVisible(),`${which} retains direct confidence for an owned position`);await close(a);
   }
   await a.goto(origin+'/#map='+aMap.id);await a.locator('#editor-main').waitFor();await a.locator('#all').click();
   for(const title of [...legacyTitles,'Evening meeting']){
     const card=a.locator('#cards .node-main').filter({has:a.getByText(title,{exact:true})});await card.focus();await a.keyboard.press('Enter');
-    assert.equal(await a.locator('.on-map-actions').getByRole('button',{name:'My confidence',exact:true}).count(),title==='Evening meeting'?1:0,`Map/Create has the same confidence eligibility for ${title}`);
+    assert.equal(await card.locator('..').locator('.node-confidence').count(),title==='Evening meeting'?1:0,`Map/Create has the same confidence eligibility for ${title}`);
+    assert.equal(await a.locator('.on-map-actions').getByRole('button',{name:'My confidence',exact:true}).count(),0,'Map/Create uses the direct confidence slot');
   }
+  // An inaccessible former source remains history, never a selectable map.
+  await edit(store,bob,ws=>{ws.maps.find(m=>m.id===bMap.id).visibility='private';});
+  await a.goto(origin+'/?unavailable-picker#library=comparisons');await a.getByRole('button',{name:'Choose maps',exact:true}).click();
+  assert.equal(await a.locator(`#compare-map-b option[value="${bMap.id}"]`).count(),0);assert(await start.isDisabled());
+  assert.match(await a.locator('#comparison-map-help').innerText(),/needs two different maps/,'The setup explains why no second accessible choice is available');
   assert.deepEqual(errors,[]);
-  console.log('Mode consistency browser: shared lists/counts, dispute and response search, exact attachment categories, one detail path, recipients, retired controls, mode-local drafts/search, stable radial geometry, persistence, source-change edits with preserved history, keyboard and narrow screens passed.');
+  console.log('Mode consistency browser: visible comparison setup, keyboard and narrow source selection, preselection, existing-pair reopening, unavailable sources, shared lists/counts, dispute and response search, exact attachment categories, one detail path, recipients, retired controls, mode-local drafts/search, stable radial geometry, persistence, source-change edits with preserved history, keyboard and narrow screens passed.');
 }catch(error){
   for(const [i,ctx]of browser.contexts().entries())for(const p of ctx.pages()){
     await p.screenshot({path:`build/design-review/mode-consistency-failure-${i}.png`,fullPage:true});

@@ -30,7 +30,6 @@ export class InteractionUI{
     }
     if(own&&target.type==='node'&&ordinary){
       const actions=[interactionButton('Edit in my map',()=>{if(d.canLeave())this.c.library.openMap(source.map.id,source.item.id);})];
-      if(source.item.kind==='position')actions.push(interactionButton('My confidence',()=>d.confidence()));
       d.actionGroup('Your node',actions);
     }
     const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));

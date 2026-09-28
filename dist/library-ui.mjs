@@ -19,6 +19,14 @@ export class LibraryUI{
     const shell=libEl('section','','comparison-context');shell.id='comparison-context';shell.hidden=true;
     shell.innerHTML='<div class="context-heading"><button id="comparison-library" type="button">← Comparisons</button><div class="comparison-context-copy"><h1 id="comparison-context-title"><span id="comparison-identity-a" class="comparison-identity" data-side="a"><strong>Choose a map</strong><small>First source</small></span><span class="comparison-between">with</span><span id="comparison-identity-b" class="comparison-identity" data-side="b"><strong>Choose a map</strong><small>Second source</small></span></h1><p id="comparison-context-question"></p></div><span id="comparison-context-state" role="status"></span><div id="comparison-view-modes" class="view-modes" role="group" aria-label="Earlier comparison views"></div></div>';
     libUI('comparison-workspace').before(shell);
+    const setup=libEl('section','','comparison-map-setup');setup.id='comparison-map-setup';setup.setAttribute('aria-label','Choose comparison maps');
+    const choices=libEl('div','','comparison-map-choices');
+    for(const [side,label]of [['a','First source map'],['b','Second source map']]){
+      const field=libEl('div','','comparison-map-choice'),caption=libEl('label',label),select=libUI(`compare-map-${side}`);caption.htmlFor=select.id;select.setAttribute('aria-label',label);select.setAttribute('aria-describedby','comparison-map-help');
+      document.querySelector(`label[for="${select.id}"]`).htmlFor=`compare-frame-${side}`;field.append(caption,select);choices.append(field);
+    }
+    const help=libEl('p','','field-help');help.id='comparison-map-help';help.setAttribute('role','status');
+    setup.append(choices,libUI('start-comparison'),help);shell.append(setup);
     libUI('comparison-library').onclick=()=>this.open('comparisons');
     const compare=libButton('Compare',()=>this.c.showMode('compare'));compare.id='compare-view-mode';libUI('comparison-view-modes').append(compare,libUI('argument-mode'));
     libUI('argument-mode').onclick=()=>this.c.argument.open();
@@ -95,6 +103,7 @@ export class LibraryUI{
     this.c.sides={a:{mapId,nodeId},b:{mapId:otherMapId,nodeId:null}};this.c.populateMaps();this.c.renderComparison(true);this.c.setComparisonRoute();
     this.c.message('Choose two source maps, then select Start / open comparison. Shared maps are listed with their owners.');libUI('compare-map-a').focus();
   }
+  changeComparisonMaps(){const {a,b}=this.c.sides;this.createComparison(a.mapId,a.nodeId,b.mapId);}
   context(){
     const c=this.c,proposal=c.mode==='argument'?c.argument.proposal():c.workspace.comparisons.find(p=>p.id===c.editingRecord),version=proposal&&comparisonProposalVersions(proposal).find(v=>v.revision===(c.mode==='argument'?c.argument.revision:comparisonProposalVersions(proposal).at(-1).revision));
     const maps=Object.fromEntries(['a','b'].map(side=>[side,c.workspace.maps.find(m=>m.id===(proposal?.[`${side}MapId`]||c.sides[side].mapId))]));
@@ -105,8 +114,14 @@ export class LibraryUI{
       identity.dataset.identity=ordered.indexOf(map?.id)===1?'two':'one';identity.title=map?`${map.name} by ${owner}`:'Choose a source map';
       for(const letter of document.querySelectorAll(`#comparison-workspace .map-letter[for$="-${side}"],#comparison-workspace .source-picker[aria-label$="map ${side.toUpperCase()}"] .map-letter`)){letter.dataset.identity=identity.dataset.identity;letter.title=identity.title;}
     }
-    libUI('comparison-context-question').textContent=version?`Proposal ${version.revision} · ${version.question}`:'Select nodes or connections to relate, inquire, or argue.';
-    const status=proposal?comparisonConsensus(c.workspace,proposal):null;libUI('comparison-context-state').textContent=status?.label||'Shared conversation';libUI('comparison-context-state').dataset.state=status?.state||'pending';
+    const choosing=c.mode==='compare'&&!c.activeComparisonPair,error=c.comparisonSelectionError(),available=c.workspace.maps.filter(m=>!m.unavailable);
+    libUI('comparison-map-setup').hidden=!choosing;libUI('comparison-context').classList.toggle('choosing-maps',choosing);
+    if(libUI('change-comparison-maps'))libUI('change-comparison-maps').hidden=choosing;
+    libUI('start-comparison').disabled=!!error||!!c.startingComparison;
+    for(const side of ['a','b'])libUI(`compare-map-${side}`).disabled=!available.length||!!c.startingComparison;
+    libUI('comparison-map-help').textContent=!available.length?'No accessible maps are available. Return to the Library to create a map or find a shared map.':available.length<2?'A comparison needs two different maps. Return to the Library to create another map or find a shared map.':error||'Ready to start. Opening an existing pair returns to its saved comparison. Map sharing stays unchanged.';
+    libUI('comparison-context-question').textContent=version?`Proposal ${version.revision} · ${version.question}`:choosing?'Choose both source maps below.':'Select nodes or connections to relate, inquire, or argue.';
+    const status=proposal?comparisonConsensus(c.workspace,proposal):null;libUI('comparison-context-state').textContent=status?.label||(choosing?'Choose source maps':'Shared conversation');libUI('comparison-context-state').dataset.state=status?.state||'pending';
     for(const [id,mode]of [['compare-view-mode','compare'],['argument-mode','argument']])libUI(id).setAttribute('aria-pressed',String(c.mode===mode));
   }
   openRoute(){

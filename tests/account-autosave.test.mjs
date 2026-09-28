@@ -38,4 +38,16 @@ assert.equal(foreignImport.ownerId,importActor.id);assert.equal(foreignImport.vi
 assert.equal(JSON.stringify(backup),originalBackup,'Import leaves the backup unchanged');
 assert.equal(importedController.workspace.maps.find(m=>m.id===foreignBackup.id).nodes.find(n=>n.id===foreignNodes[0].id).confidence,83,'Existing source maps keep their author’s confidence');
 validateWorkspace(importedController.workspace);
+
+// A delayed edit autosave must never submit a subsequently opened child form.
+let pendingChild=true,flushCount=0,captureCount=0;
+const originalDocument=globalThis.document;
+globalThis.document={getElementById:id=>id==='edit-form'?{checkValidity:()=>true}:{hidden:true}};
+const childState={controller:{ready:true,editor:{hasChildDraft:()=>pendingChild,flushDraft:()=>{flushCount++;return true;}},captureActive:()=>{captureCount++;}},status(){}};
+try{
+  AccountWorkspace.prototype.scheduleDraft.call(childState);await new Promise(resolve=>setTimeout(resolve,1250));
+  assert.equal(flushCount,0,'Pending child creation is never flushed by the edit autosave timer');assert.equal(captureCount,0);
+  pendingChild=false;AccountWorkspace.prototype.scheduleDraft.call(childState);await new Promise(resolve=>setTimeout(resolve,1250));
+  assert.equal(flushCount,1,'Existing node drafts retain their autosave behavior');assert.equal(captureCount,1);
+}finally{clearTimeout(childState.draftTimer);globalThis.document=originalDocument;}
 console.log('Autosave preserves in-flight edits and conflicting work; imports retain only the original owner’s confidence.');

@@ -11,13 +11,23 @@
 <div id="viewport" tabindex="0" aria-label="Interactive worldview map. Drag empty space to pan. Use zoom controls or the mouse wheel to zoom. Select a node to edit it." role="region">
 <div id="world"><svg id="connections" aria-label="Map branches"></svg><svg id="relationships" aria-label="Additional map connections"></svg><div id="cards"></div></div>
 <div class="canvas-hint">Start with a frame’s <strong>＋</strong> to explore its branches.</div>
-<div class="legend"><span><i class="teal"></i>Status Quo</span><span><i class="blue"></i>Transformative Action</span><span><i class="purple"></i>Goal State</span></div>
+<div class="legend"><span><i class="frame-status"></i>Status Quo</span><span><i class="frame-action"></i>Transformative Action</span><span><i class="frame-goal"></i>Goal State</span></div>
 <div class="viewport-controls"><button id="minus" aria-label="Zoom out">−</button><button id="zoom" title="Reset zoom to 100%">100%</button><button id="plus" aria-label="Zoom in">＋</button><span class="divider"></span><button id="fit">Fit map</button></div>
 </div><footer><span>Drag the canvas to pan · Scroll to zoom · Select a node to edit</span><span id="depth-note">3 radial frames · One parent per node</span></footer>
 </section>
 <aside id="inspector" hidden aria-label="Node details">
-<div class="inspector-top"><span class="eyebrow">NODE DETAILS</span><button id="close" class="icon-button" aria-label="Close node details">×</button></div>
+<div class="inspector-top"><span id="inspector-mode" class="eyebrow">NODE DETAILS</span><button id="close" class="icon-button" aria-label="Close node details">×</button></div>
 <div id="breadcrumb"></div><div id="shared-node-note" class="shared-node-note" hidden></div><button id="inspect-cosigns" class="text-button" hidden>View this node’s co-signs</button>
+<div id="node-reading" hidden></div>
+<form id="child-form" hidden aria-label="Add child node">
+<p id="child-parent" class="field-help"></p>
+<label for="child-title">Title</label><input id="child-title" maxlength="90" required>
+<label for="child-summary">Short description</label><textarea id="child-summary" rows="3" maxlength="180"></textarea>
+<details class="detail-group"><summary>Context & sources</summary><label for="child-details">Detailed reasoning or context</label><textarea id="child-details" rows="4"></textarea><label for="child-source-title">Source or reference title</label><input id="child-source-title" maxlength="200"><label for="child-source-url">Source URL</label><input id="child-source-url" type="url" placeholder="https://…"></details>
+<label for="child-confidence">Confidence (%)</label><input id="child-confidence" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Not assessed">
+<div id="child-relationship-group"><label for="child-relationship">Relationship to parent</label><select id="child-relationship"><option value="organization">Organization only</option><option value="reason">This child is a reason for its parent</option></select><p class="field-help">A reason supports its parent. Organization alone makes no reasoning claim.</p></div>
+<div class="form-actions"><button id="child-submit" type="submit" class="primary">Add child node</button><button id="cancel-child" type="button">Cancel</button></div><p id="child-error" role="alert"></p>
+</form>
 <form id="edit-form">
 <div id="kind-group" hidden><select id="kind" aria-label="Node kind"><option value="position">Node</option></select><div id="kind-hint" class="field-help"></div></div>
 <label for="title">Title</label><input id="title" maxlength="90" required>
@@ -25,13 +35,14 @@
 <div id="structural-group" hidden><label for="structural-type">Relationship to parent</label><select id="structural-type"></select><div id="parent-hint" class="field-help"></div></div>
 <div id="time-group" hidden><select id="time-scope" aria-label="Time perspective"><option value="present">Present</option><option value="history">History</option><option value="likely_future">Likely future</option></select></div>
 <details class="detail-group" open><summary>Context & sources</summary><label for="details">Detailed reasoning or context</label><textarea id="details" rows="4" placeholder="Add qualifications, reasoning, or context…"></textarea><label for="source-title">Source or reference title</label><input id="source-title" maxlength="200" placeholder="Optional"><label for="source-url">Source URL</label><input id="source-url" type="url" placeholder="https://…"><a id="source-link" hidden target="_blank" rel="noopener noreferrer">Open source ↗</a></details>
-<div id="confidence-group"><label for="confidence">My confidence (%)</label><input id="confidence" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Not assessed"><p class="field-help">From 0 to 100. Leave blank if you have not assessed it.</p></div>
+<div id="confidence-group"><label for="confidence">Confidence (%)</label><input id="confidence" type="number" min="0" max="100" step="any" inputmode="decimal" placeholder="Not assessed"><p class="field-help">From 0 to 100. Leave blank if you have not assessed it.</p></div>
 <button type="submit" class="primary">Save changes</button><span id="saved" role="status"></span>
 </form>
-<section class="connection-section" aria-labelledby="connection-heading"><div class="section-heading"><h2 id="connection-heading">Connections</h2><span id="connection-count"></span></div><p id="connection-note" class="field-help"></p><div id="connection-list"></div><button id="connect" class="wide">＋ Connect an existing node</button>
+<section id="node-meaning" hidden aria-labelledby="node-meaning-heading"><h2 id="node-meaning-heading">Definitions & standards</h2><div id="node-definition-list"></div><button id="node-definitions" type="button">Use definitions & standards</button></section>
+<section id="node-connections" class="connection-section" aria-labelledby="connection-heading"><div class="section-heading"><h2 id="connection-heading">Connections</h2><span id="connection-count"></span></div><p id="connection-note" class="field-help"></p><div id="connection-list"></div><button id="connect" class="wide">Connect existing node</button>
 <form id="connection-form" hidden><label for="connection-direction">Direction</label><select id="connection-direction"><option value="out">From this node</option><option value="in">To this node</option></select><label for="connection-target">Other node</label><select id="connection-target"></select><label for="connection-type">Relationship</label><select id="connection-type" required></select><div id="connection-hint" class="field-help"></div><label for="connection-note-input">Connection note</label><textarea id="connection-note-input" rows="2" placeholder="Why are these ideas connected?"></textarea><div class="form-actions"><button id="connection-submit" type="submit" class="primary">Add connection</button><button id="cancel-connect" type="button">Cancel</button></div><div id="connection-error" role="alert"></div></form>
 </section>
-<div class="node-actions"><button id="add-child">＋ Add node</button><button id="add-reason">＋ Create reason</button><button id="remove" class="danger">Delete node & branch</button></div>
+<div id="inspector-node-actions" class="node-actions"><button id="add-child">＋ Add child node</button><button id="remove" class="danger">Delete branch</button></div>
 </aside>
 </main><section id="comparison-workspace" hidden aria-label="Compare two worldviews">
 <div class="comparison-heading"><div><div class="eyebrow">TWO-PERSON COMPARISON</div><h1>Compare worldviews</h1><p>Overlay two worldviews. Check counterparts, then clarify the open questions.</p></div><div class="comparison-register-actions"><button id="start-comparison" class="primary">Start / open comparison</button><button id="new-comparison">New judgment</button></div></div>

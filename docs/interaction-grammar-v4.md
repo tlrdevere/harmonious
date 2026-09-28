@@ -1,6 +1,17 @@
 # Interaction grammar v4
 
-Implemented on `redesign/node-interactions` and deployed to the live beta at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). The database migration is applied; see [deployment status](deployment-status.md). The optional portable review file remains `review/Harmonious-interactions-preview.html`. All **44 active release checks passed** on September 22, 2026; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`.
+The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
+
+## September 28 menu and creation follow-up
+
+The accepted [node-menu cleanup plan](node-menu-cleanup-plan.md) is implemented locally, pending complete release verification and publication. Worker 45 remains the published baseline. These placement and wording changes retain the v4 interaction and connection semantics:
+
+- New comparisons show two real source selectors and **Start / open comparison** directly; **Change maps** reopens setup after a pair is open. View options contains display controls. Existing-pair reopening and map sharing rules are unchanged.
+- Map/Create separates **Edit**, **Add child node**, **Inspect details**, and the **More actions / Fewer actions** disclosure containing **Delete branch**. The frame containers use **Edit frame details** and omit ordinary-node-only actions.
+- Child creation is a draft until the final **Add child node** action, including when entered through the plus control. It defaults to **Organization only**; **This child is a reason for its parent** creates the ordinary child and its reason connection together. Cancel creates no records. Autosave cannot submit the draft; Save now/download require finishing or cancelling it, and leaving uses the discard safeguard.
+- **Inspect details** contains separate **Definitions & standards** and **Connections** sections. **Connect existing node** preserves the existing typed endpoint/direction rules. The old Create reason, Connect, Definitions & standards, My confidence, and Compare shortcuts no longer crowd the quick menu.
+- Eligible ordinary nodes have a persistent **Confidence —** or **Confidence n%** slot. Owners can edit during creation, in Edit, or directly from that slot; others' values are read-only. Null is distinct from zero. Source-map browsing is read-only, and frame containers and legacy non-position nodes are excluded. Shared source menus retain **Edit in my map**, without a duplicate confidence action.
+- One palette identifies frames in all covered views: Status Quo `#EDAAA7`, Transformative Action `#A4C7EB`, and Goal State `#A9CFA8`. Frame labels and separate owner identity remain visible; lighter category shades are reserved.
 
 ## Consistency follow-up
 
@@ -26,7 +37,7 @@ Copies of the revised uploads are preserved in [the design references](design/in
 
 | Place | Actions | Scope |
 | --- | --- | --- |
-| Map / Create | Add node, Create reason, connect nodes, edit wording and sources | Author's own map |
+| Map / Create | Edit; Add child node, optionally as a reason; Inspect details; Connect existing node; direct Confidence | Author's own map |
 | Compare | Endorse, Disagree, No position | Another participant's ordinary node or connection |
 | Inquiry | Request reason, Request explanation, Propose alternative, Offer reason | Another participant's ordinary node or connection |
 | Argument | Dispute reasoning | Another participant's ordinary node or eligible typed connection |
@@ -56,7 +67,7 @@ New semantic connections have an explicit type at creation:
 | `enables` | Transformative Action → Goal State |
 | `nesting` | Organizational parent/child structure; no Dispute menu |
 
-Create reason adds a node beneath the selected node and an explicit `reason` connection from child to conclusion. Merely nesting a node does not assert reasoning. Frame headings are containers, not endpoints for new semantic claims. Legacy `causal`, `motivates`, and `aims_for` connections have canonical interpretation for new menus without silently rewriting saved content.
+The child form's **This child is a reason for its parent** choice adds a node beneath the selected node and an explicit `reason` connection from child to conclusion in one submission. It replaces the separate Create reason shortcut; a reason is an ordinary node with that relationship, not a distinct node type. Merely nesting a node does not assert reasoning. Frame headings are containers, not endpoints for new semantic claims, so their child forms omit the reason choice. Legacy `causal`, `motivates`, and `aims_for` connections have canonical interpretation for new menus without silently rewriting saved content.
 
 The canvas shows one visible route per node pair. A semantic connection replaces a redundant parent line in the Map editor. Existing connection records remain distinguishable through their saved details.
 
@@ -85,7 +96,7 @@ Organizational edges do not offer unsupported copy or wording-revision operation
 ## Retained and deferred features
 
 - Counterpart requests and create/choose counterpart flows remain in Compare. Request counterpart is unavailable when a counterpart is already linked.
-- Confidence remains author-controlled. Definitions and standards retain their central library and invoked references on the map.
+- Confidence remains author-controlled through the persistent node slot and creation/edit forms. Definitions and standards retain their central library and invoked references in inspection.
 - Old Ask functionality is replaced in the new workflow by Inquiry's request menus.
 - Standalone adoption suggestions, reflection/outcome entry tools, generic Resolve/Reopen, and old challenge/reply menus are not new grammar actions. Historical records and underlying model checks remain for compatibility.
 - Dragging/rearranging, Likely Future filtering, merging nodes, termination status, and automatic adoption remain outside this prototype.
@@ -101,7 +112,7 @@ Open `review/Harmonious-interactions-preview.html`. Use **Preview as** to switch
 3. In Inquiry, send a request, proposal, or offered reason. Switch to Blair while viewing it, choose Respond, and select one outcome. Acceptance alone should leave the map unchanged; Review and Apply perform a separate owner-controlled edit.
 4. In Argument, inspect nodes in all three frames and the sample typed connections. A sample citation adds source-related grounds. Other opens a text field, and no internal Signals labels appear.
 5. Try Point to a node with no selection, one existing selection, and a newly created node. Confirm only the explicit option to create a node adds it to your map.
-6. Collapse a branch containing interactions and open its count badge. Check that the attached conversations remain reachable. In Maps, create a node and a reason; check the direction and single visible connection.
+6. Collapse a branch containing interactions and open its count badge. Check that the attached conversations remain reachable. In Maps, use Add child node with Organization only, then create another child with the reason-to-parent choice; check the direction and single visible connection. Cancelling an unfinished child should add nothing.
 
 - `dist/interaction-grammar.mjs`: vocabulary, target-derived menus, Signals, references, recipient and edit validation.
 - `dist/interaction-ui.mjs`: source actions, grouped forms, responses, and interaction lists.

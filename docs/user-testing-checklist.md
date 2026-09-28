@@ -1,6 +1,23 @@
 # Harmonious: what to check on your next visit
 
-## Current: code review and view consistency
+## Current: map setup, frame colors, and node menus
+
+September 28: implemented locally; complete release verification and publication are still pending. Worker 45 remains live. Use this walkthrough after [deployment status](deployment-status.md) records the new release, then reload both PCs. The [implementation plan](node-menu-cleanup-plan.md) records the agreed scope.
+
+- [ ] From **Comparisons → Choose maps**, choose the first and second map directly on the setup screen. Choices should identify their owners. Clicking the heading or closing View options must not hide the selectors. Start the pair, reopen it, and check that no duplicate comparison appears.
+- [ ] Try **Compare with my map** from shared discovery: the other map should remain preselected while you choose your own. **Change maps** should reopen the selectors. Missing/unavailable choices should explain what is needed without changing sharing. Repeat with keyboard and a narrow window.
+- [ ] Check **Status Quo red**, **Transformative Action blue**, and **Goal State green** in your map, source browsing, Inquiry, Compare, and Argument. The same frame should use the same shade, with readable labels and a distinct owner identity.
+- [ ] Select an ordinary node immediately beneath a frame, then one deeper in a branch. Both should offer separate **Edit**, **Add child node**, and **Inspect details** actions. **More actions** should reveal **Delete branch**, visually distinct from the disclosure. Generic Compare, Create reason, and My confidence actions should be absent.
+- [ ] Select each frame heading. Its action should read **Edit frame details**; its title stays fixed. It should allow a child and applicable inspection, but no confidence, reason-to-parent choice, semantic connection creation, or branch deletion.
+- [ ] Open **Add child node** from the menu and from a node's plus control. Both should go straight to the form. Enter wording and wait several seconds: no child should appear until you submit. Cancel should add neither a node nor a connection.
+- [ ] Submit one child using **Organization only**, then another using **This child is a reason for its parent**. The reason should point child → parent, with one visible route for that pair. Wording, optional sources, and confidence should survive reload after saving.
+- [ ] While a child is unfinished, try closing the panel, selecting another node, changing maps, or leaving Maps. Declining discard should retain its values and original parent. **Save now** and **Download backup** should ask you to finish or cancel the child and preserve the draft. Ordinary existing-node edits should still autosave.
+- [ ] Open **Inspect details**. Read wording/sources and the separate **Definitions & standards** and **Connections** sections. Owners should reach **Connect existing node** there. Test reason, cause, addresses, and enables with their existing direction rules, then inspect/edit/remove a disposable connection.
+- [ ] Find **Confidence —** on an unassessed ordinary node. Set 0%, 100%, and a decimal; invalid values below 0 or above 100 must not save. Clear with **Not assessed** and verify the dash returns. Check creation, Edit, and direct access; direct saving should keep a closed inspector closed and return focus to the value.
+- [ ] In shared modes, your own confidence slot should be editable while the other author's is read-only. **Edit in my map** remains separate; no duplicate confidence menu action should appear. Source-map browsing is read-only even for your own source. Frame containers and legacy Topic/Question/Explainer nodes have no confidence slot.
+- [ ] Repeat the menu, child form, confidence form, and inspector at a narrow width. Check labels, controls, conversation counts, owner names, Close/Escape, focus return, and previously parked interaction drafts.
+
+## Previous release: code review and view consistency
 
 Reload both PCs for Worker 45; [deployment status](deployment-status.md) records the release.
 
@@ -8,7 +25,7 @@ Reload both PCs for Worker 45; [deployment status](deployment-status.md) records
 - [ ] On disposable source nodes, edit a saved dispute after the other participant changes its frame or removes its citation. Incompatible saved grounds should appear under **Earlier choices**, with an explanation requiring you to clear them before saving current choices. Earlier revisions should retain the original grounds.
 - [ ] Delete a disposable branch using the optional editor panel. Cancel should retain it; confirming deletion should close its old menu and return keyboard focus to the surviving parent.
 - [ ] When importing a backup as private copies, another author's confidence should be unassessed on your new copy. Your own backup scores, including zero, should remain yours.
-- [ ] Older topic, question and explainer nodes should have no **My confidence** action in any view. Your ordinary position nodes should continue to offer it.
+- [ ] Older topic, question and explainer nodes should have no confidence editor in any view. After the menu cleanup, ordinary nodes expose their persistent confidence slot instead of a menu action.
 
 ## Current: connection drawing and inspection
 
@@ -50,7 +67,7 @@ See [deployment status](deployment-status.md) for publication. Reload both PCs b
 
 Reload both PCs after the current release, then open a shared comparison. Use fresh maps if you want a clean start.
 
-- [ ] **Map/Create:** add ordinary nodes and Create reason. A reason should connect toward its conclusion, with one visible edge per pair. Try reason, cause, addresses and enables connections.
+- [ ] **Map/Create:** add ordinary children and choose the reason-to-parent relationship when appropriate. A reason should connect toward its conclusion, with one visible edge per pair. Try reason, cause, addresses and enables through **Inspect details → Connections → Connect existing node**.
 - [ ] **Compare:** select the other person's node and record Endorse, Disagree, or No position. It should appear as an attributed attachment without automatically editing either map or requiring a co-sign.
 - [ ] **Inquiry:** try Request reason, Request explanation, Propose alternative, and Offer reason. The other account should receive Respond in Inquiry; the sender should not have that response control.
 - [ ] **Argument:** choose Dispute reasoning on each frame and a typed connection. Check that the available grounds match the source, citation grounds appear only for cited nodes, Other opens a text field, and internal Signals are absent.
@@ -119,9 +136,9 @@ Reload both accounts. [Deployment status](deployment-status.md) identifies wheth
 
 - [ ] Revisit the comparison from the screenshot. Expand a branch on one map and leave the other folded. Connections should meet card boundaries without crossing the cards' faces, and their labels should stay on the line.
 - [ ] Open a relationship by its label, by clicking its line, and with the keyboard. Its saved meanings and authorship should still be accessible. A displayed node pair should still have only one visible edge.
-- [ ] Select one of your own Position nodes in Maps and choose **My confidence**. Save 73%, reopen the normal editor, save an unrelated text edit, and confirm 73% remains.
+- [ ] Select one of your own ordinary nodes in Maps and use its **Confidence** slot. Save 73%, reopen Edit, save an unrelated text edit, and confirm 73% remains.
 - [ ] In Compare, change your own confidence using its small percentage badge. Wait for **All changes saved**, then refresh the other account. It should see your score with your authorship, without an edit action for it.
-- [ ] Set a score to zero, then choose **Not assessed**. Zero should display as 0%; unassessed should have no score badge. Frame headings, topics and questions should not offer confidence.
+- [ ] Set a score to zero, then choose **Not assessed**. Zero should display as **Confidence 0%**; unassessed should display **Confidence —**. Frame headings and legacy topic/question/explainer nodes should not offer confidence.
 - [ ] Change confidence without editing the position. Existing comparison relationships and reasoning should not acquire a source-wording warning, and neither user's other scores should change.
 - [ ] Try the confidence form at a narrow width and check that entering a value, backing out and revisiting the map behave clearly.
 

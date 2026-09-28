@@ -45,7 +45,7 @@ export class WorkspaceController{
     ui('map-select').value=id;ui('map-heading').textContent=map.name;ui('map-person').textContent=`${this.workspace.participants.find(p=>p.id===map.ownerId)?.name||map.person} · ${map.mapType==='reference'?'Authored reference map':'Personal worldview'}`;
   }
   populateMaps(){
-    for(const id of ['map-select','compare-map-a','compare-map-b']){const select=ui(id);select.replaceChildren(wsOption('','Choose a map…'));for(const map of this.workspace.maps.filter(m=>!m.unavailable))select.append(wsOption(map.id,`${map.mapType==='reference'?'Reference: ':''}${map.name}`+(map.person?` · ${map.person}`:'')+(map.visibility==='shared'?' · Shared':'')));}
+    for(const id of ['map-select','compare-map-a','compare-map-b']){const select=ui(id);select.replaceChildren(wsOption('','Choose a map…'));for(const map of this.workspace.maps.filter(m=>!m.unavailable))select.append(wsOption(map.id,`${map.mapType==='reference'?'Reference: ':''}${map.name} · ${this.library.name(map)}`+(map.visibility==='shared'?' · Shared':'')));}
     ui('map-select').value=this.activeMapId;
     for(const side of ['a','b']){if(!this.workspace.maps.some(m=>m.id===this.sides[side].mapId))this.sides[side]={mapId:null,nodeId:null};ui(`compare-map-${side}`).value=this.sides[side].mapId||'';}
     this.library?.render();
@@ -147,10 +147,17 @@ export class WorkspaceController{
     if(this.accountMode)return this.account.startComparison(a,b);
     const thread=startComparisonThread(this.workspace,a,b);this.markDirty();return thread;
   }
+  comparisonSelectionError(){
+    const maps=['a','b'].map(side=>this.workspace.maps.find(map=>map.id===this.sides[side].mapId&&!map.unavailable));
+    if(!maps.every(Boolean))return 'Choose a map for each source. Unavailable maps are not listed.';
+    if(maps[0].id===maps[1].id)return 'Choose two different maps.';
+    if(this.accountMode&&!maps.some(map=>this.canEditMap(map)))return 'Choose one of your maps and another accessible map.';
+    return '';
+  }
   async startComparison(){
-    if(this.startingComparison||!this.canLeaveComparison())return;this.startingComparison=true;ui('comparison-workspace').inert=true;
+    if(this.startingComparison||!this.canLeaveComparison())return;const error=this.comparisonSelectionError();if(error){this.message(error);return;}this.startingComparison=true;this.library.context();ui('comparison-workspace').inert=true;
     try{const thread=await this.ensureComparison();this.clearComparison();this.openComparisonPair(comparisonPairKey(thread));this.message(this.accountMode?'Comparison saved. Select nodes to connect them or start a conversation.':'Comparison started. Save your workspace to keep it.');}
-    catch(error){this.message(error.message);}finally{this.startingComparison=false;ui('comparison-workspace').inert=false;}
+    catch(error){this.message(error.message);}finally{this.startingComparison=false;ui('comparison-workspace').inert=false;this.library.context();}
   }
   openRecord(id){
     if(!this.canLeaveComparison())return;const record=this.workspace.comparisons.find(c=>c.id===id);if(!record)return;this.activeComparisonPair=comparisonPairKey(record);this.clearComparison();this.editingRecord=id;this.discussion?.setRecordsOpen(true,{focus:false});
@@ -200,6 +207,7 @@ export class WorkspaceController{
   async record(){this.message('Earlier comparisons are read-only. Use the current Compare, Inquiry, and Argument modes for new interactions.');}
   collectWork(){
     if(this.argument?.dirty){this.message('Save the Argument form before downloading or saving the workspace.');return false;}
+    if(this.editor.hasChildDraft?.()){this.message('Finish or cancel the child node before saving or downloading the workspace.');return false;}
     if(!this.editor.flushDraft()){this.message('Resolve the node or connection fields before saving the workspace.');return false;}
     this.captureActive();if(this.comparisonDirty){this.message('Record the comparison before saving the workspace, or start a new comparison to discard that draft.');return false;}return true;
   }

@@ -106,10 +106,10 @@ export class AccountWorkspace{
   }
   status(message=null){
     const c=this.controller;accountUI('save-workspace').textContent=this.blocked?'Retry save':'Save now';accountUI('storage-status').dataset.state=c.workspaceDirty?'dirty':'saved';
-    accountUI('storage-status').textContent=message||(!this.actor?'Sign in to open your maps':this.saving?'Saving…':this.blocked?'Save needs attention':c.workspaceDirty?'Changes waiting to save':c.editor.hasDraft()?'Node changes waiting to save':c.discussion?.dirty?'Conversation draft · Add to map to save':c.argument?.dirty?'Argument draft - Save the form':c.comparisonDirty?'Comparison draft · Record to save':'All changes saved');
+    accountUI('storage-status').textContent=message||(!this.actor?'Sign in to open your maps':this.saving?'Saving…':this.blocked?'Save needs attention':c.workspaceDirty?'Changes waiting to save':c.editor.hasChildDraft?.()?'Child node draft · Add child node to save':c.editor.hasDraft()?'Node changes waiting to save':c.discussion?.dirty?'Conversation draft · Add to map to save':c.argument?.dirty?'Argument draft - Save the form':c.comparisonDirty?'Comparison draft · Record to save':'All changes saved');
   }
   schedule(){clearTimeout(this.timer);if(this.actor&&!this.blocked&&!this.loading)this.timer=setTimeout(()=>this.save(false),900);}
-  scheduleDraft(){this.status();clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>{if(this.controller.ready&&accountUI('edit-form').checkValidity()&&accountUI('connection-form').hidden){this.controller.editor.flushDraft();this.controller.captureActive();this.status();}},1100);}
+  scheduleDraft(){this.status();clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>{if(this.controller.ready&&!this.controller.editor.hasChildDraft?.()&&accountUI('edit-form').checkValidity()&&accountUI('connection-form').hidden){this.controller.editor.flushDraft();this.controller.captureActive();this.status();}},1100);}
   async save(flush=true){
     const c=this.controller;if(!this.actor||!c.ready||this.loading)return;if(this.saving){this.schedule();return;}
     clearTimeout(this.timer);if(flush&&!c.editor.flushDraft())return;c.captureActive();

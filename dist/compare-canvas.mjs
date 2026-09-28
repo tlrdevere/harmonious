@@ -1,6 +1,7 @@
 import {CARD_W,CARD_H} from './layout.mjs';
 import {createConnectionRouter} from './comparison-routing.mjs';
 import {roots} from './data.mjs';
+import {FRAME_COLORS,installFramePalette} from './frame-palette.mjs';
 import {NODE_KINDS,revealPath} from './model.mjs';
 import {confidenceBadge} from './confidence-ui.mjs';
 import {SourceConnectionsUI} from './source-connections-ui.mjs';
@@ -9,9 +10,10 @@ import {comparisonNodeKey,layoutComparison,visibleComparisonEndpoint,comparisonR
 
 export class ComparisonCanvas{
   constructor(host,onSelect,onRecord,options={}){
+    installFramePalette();
     this.options=options;
     this.onSelect=onSelect;this.onRecord=onRecord;this.states={a:{map:null,expanded:new Set(),selected:null,frame:'all'},b:{map:null,expanded:new Set(),selected:null,frame:'all'}};
-    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=['#008575','#3263cc','#8250bd'];this.animation=null;this.routeConnection=createConnectionRouter();
+    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=FRAME_COLORS;this.animation=null;this.routeConnection=createConnectionRouter();
     this.surface=document.createElement('div');this.surface.className='comparison-canvas';this.surface.tabIndex=0;this.surface.setAttribute('role','region');this.surface.setAttribute('aria-label','Both worldview maps on one canvas. Select a node in each map. Drag empty space to pan; scroll to zoom; use F to fit both maps.');
     this.world=document.createElement('div');this.world.className='comparison-world';this.surface.append(this.world);
     this.hint=document.createElement('div');this.hint.className='comparison-canvas-hint';this.hint.textContent='Choose a node in A, then one in B.';this.surface.append(this.hint);

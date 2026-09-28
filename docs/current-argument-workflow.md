@@ -1,19 +1,31 @@
 # Working in a shared Comparison
 
-Updated September 25, 2026. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera. [Deployment status](deployment-status.md) identifies the published version; [the grammar](interaction-grammar-v4.md) defines the actions.
+Updated September 28, 2026. The picker, frame palette, node menus, and child-draft changes described here are implemented locally and awaiting complete release verification and publication. Worker 45 remains the published baseline until [deployment status](deployment-status.md) records the new release. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera; [the grammar](interaction-grammar-v4.md) defines the actions.
+
+## Start or reopen a comparison
+
+From Library → Comparisons, choose **Choose maps**. Select the first and second source using the two visible map selectors, then select **Start / open comparison**. Each choice identifies the map and its owner. The selectors remain available when View options closes; View options contains display settings. An existing pair opens its saved comparison. **Compare with my map** preselects the other person's map while leaving your source for you to choose.
+
+Once the pair is open, its names and owners remain in the heading. **Change maps** returns to the same selectors and respects unfinished forms. Selecting a map does not change sharing. Empty or unavailable choices explain why a pair cannot start.
 
 ## Choose a mode
 
 | Mode | Use it to |
 | --- | --- |
-| Map / Create | Write and edit your own nodes, create reasons, and add typed connections. |
+| Map / Create | Edit your own nodes, add a child with an optional reason relationship, inspect details, and connect existing nodes. |
 | Inquiry | Request reason, Request explanation, Propose alternative, or Offer reason. |
 | Compare | Record Endorse, Disagree, or No position toward another person's node or connection. Find, link, or request a counterpart. |
 | Argument | Dispute reasoning, choosing the grounds relevant to a node's frame or a connection's type. |
 
 Select a source node or connection to see its available actions. The three frame headings are containers. A cited node offers additional source-related dispute grounds. Other opens free text; comments and a single node reference are optional. A dispute needs at least one ground. Internal Signals tags are never shown.
 
-In Map/Create, selecting a node opens its on-map menu. Edit opens the optional detail panel; Close returns focus to the node. Node footers omit redundant type and author labels. Confidence and expansion/add controls remain available, and signed-in edits use the global autosave indicator.
+In Map/Create, selecting a node opens its on-map menu. **Edit** occupies a separate section; **Add child node** and **Inspect details** are the main actions. **More actions** expands to reveal **Delete branch** and changes to **Fewer actions**. Close returns focus to the node. The optional inspector separates reading from editing, with **Definitions & standards** and **Connections** under inspection. Owners reach **Connect existing node** from Connections. Generic Compare navigation is absent from this menu.
+
+**Add child node**, including the node's plus control, opens the form directly. Wording, sources, and confidence remain a draft until the final **Add child node** submission. **Relationship to parent** defaults to **Organization only**; **This child is a reason for its parent** also creates the explicit child → parent reason connection. Cancel adds nothing. Leaving or switching maps checks before discarding an unfinished child, and declining keeps its values and parent. Autosave never submits a child draft. **Save now** and **Download backup** ask you to finish or cancel it, preserving its contents. Existing-node edits retain autosave.
+
+The three frame containers offer **Edit frame details**, child creation, and applicable inspection. Their fixed titles do not change, and they have no confidence, reason-to-parent choice, semantic connection creation, or Delete branch. Ordinary nodes directly beneath a frame use the same actions as deeper nodes. Frame identity uses the same lightish red for Status Quo, blue for Transformative Action, and green for Goal State in Map/Create and shared/source views, alongside visible frame names. Owner identity remains separate.
+
+Node footers omit redundant type and author labels in Map/Create. Confidence and expansion/add controls remain available, and signed-in edits use the global autosave indicator.
 
 Selecting a connection in Map/Create opens its on-map detail with its actual endpoints, direction and saved meanings. Additional connections have Edit/Remove actions for their owner; a parent–child branch describes organization rather than asserting a reason. Removing an additional connection does not remove that branch. View options controls additional connection visibility, with All visible as the default.
 
@@ -37,7 +49,9 @@ Unfinished forms are parked when you switch modes and restored when you return. 
 
 ## Meaning, confidence, and counterparts
 
-Definitions and standards are maintained centrally in Map Library and invoked at relevant sources. Confidence belongs to the node's author and can be assessed or cleared without asserting agreement. An independent copy does not inherit another author's confidence.
+Definitions and standards are maintained centrally in Map Library and invoked at relevant sources. In Map/Create they appear in **Inspect details → Definitions & standards**; shared source inspection retains its Meaning section and permitted read/edit controls.
+
+Eligible ordinary nodes show **Confidence —** when unassessed or **Confidence n%** when assessed. Null remains different from **0%**. Owners can set a score during creation, in Edit, or from the node's confidence value. Direct editing does not force open the inspector; saving or backing out returns focus to the value. Other authors' scores are read-only, and source-map browsing is read-only even for an owned map. Shared modes retain a separate **Edit in my map** route without a duplicate confidence menu action. Frame containers and older Topic/Question/Explainer records have no confidence control. An independent copy does not inherit another author's confidence, and assessing confidence does not assert agreement.
 
 Counterpart links identify comparable nodes separately from stances. Request counterpart is available in Compare for your own unlinked ordinary node. The other person can create or choose their own counterpart. Empty spots remain visible; a linked node does not offer another counterpart request.
 

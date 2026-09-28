@@ -28,7 +28,7 @@ export class DiscussionUI{
   constructor(c){
     this.c=c;this.canvas=c.canvas;this.layers={map:true,inquiries:true,arguments:true};this.target=null;this.dirty=false;
     this.groupTarget=null;this.counterparts=new CounterpartUI(this);this.adoption=new AdoptionUI(this);this.premises=new PremiseUI(this);this.reflections=new ReflectionUI(this);this.interactions=new InteractionUI(this);
-    this.canvas.options.canSetConfidence=(map,node)=>map.ownerId===this.actor()&&node.kind==='position';
+    this.canvas.options.canSetConfidence=(map,node)=>map.ownerId===this.actor()&&node.parent!==null&&node.kind==='position';
     this.canvas.options.onConfidence=(side,id)=>{if(!this.canLeave())return;this.c.selectSource(side,id);this.confidence();};
     this.canvas.options.afterBuild=()=>this.draw();this.canvas.options.afterGeometry=()=>this.position();this.canvas.options.afterCamera=()=>this.positionPopover();
     this.host=discussEl('section','','discussion-popover');this.host.hidden=true;this.host.setAttribute('aria-label','On-map conversation');this.canvas.surface.append(this.host);
@@ -45,8 +45,8 @@ export class DiscussionUI{
     this.controls=controls;
     this.viewOptions=discussEl('details','','comparison-view-options');
     const summary=discussEl('summary','View options'),options=discussEl('div','','comparison-options-body');
-    const startActions=document.querySelector('#comparison-workspace>.comparison-heading .comparison-register-actions');
-    this.optionsBody=options;options.append(document.querySelector('.comparison-map-toolbar'),startActions,this.canvas.layerControls,discussUI('comparison-view-modes'),earlier);
+    const changeMaps=discussButton('Change maps',()=>this.c.library.changeComparisonMaps(),'discussion-secondary');changeMaps.id='change-comparison-maps';changeMaps.setAttribute('aria-controls','comparison-map-setup');controls.append(changeMaps);
+    this.optionsBody=options;options.append(document.querySelector('.comparison-map-toolbar'),this.canvas.layerControls,discussUI('comparison-view-modes'),earlier);
     this.viewOptions.append(summary,options);controls.append(this.viewOptions);
     this.viewOptions.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();this.viewOptions.open=false;summary.focus();}});
     document.addEventListener('pointerdown',e=>{if(!this.viewOptions.contains(e.target))this.viewOptions.open=false;});
@@ -105,12 +105,12 @@ export class DiscussionUI{
     if(['entry','inference'].includes(this.target?.type)){const source=this.c.workspace.discussions.find(r=>r.id===this.target.entryId);this.target=source&&conversationAnchor(this.c.workspace.discussions,source);}
     this.viewId=null;this.groupTarget=null;if(this.target)this.actions();else this.list();
   }
-  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
-  close(){const entry=this.viewId,connectionReturn=this.connectionReturn;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.draw();const marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main'));(connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
+  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.confidenceReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
+  close(){const entry=this.viewId,connectionReturn=this.connectionReturn,confidenceReturn=this.confidenceReturn;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.confidenceReturn=null;this.draw();const marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main')),confidenceFocus=confidenceReturn&&this.canvas.cards.get(confidenceReturn)?.querySelector('.node-confidence');(confidenceFocus||connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
   shell(title){this.viewOptions.open=false;this.viewId=null;this.hostMode=this.mode();this.host.replaceChildren();this.host.hidden=false;const header=discussEl('header');header.append(discussEl('strong',title),discussButton('Close',()=>this.close()));this.host.append(header);this.positionPopover();}
   actionGroup(title,buttons){if(!buttons.length)return;const section=discussEl('section','','discussion-action-group'),actions=discussEl('div','','discussion-actions');section.append(discussEl('h3',title));actions.append(...buttons);section.append(actions);this.host.append(section);}
-  selectNode(side,id){if(!this.canLeave())return;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
-  selectTarget(target){if(!this.canLeave())return;this.target=target;this.returnFocus=document.activeElement;this.actions();}
+  selectNode(side,id){if(!this.canLeave())return;this.confidenceReturn=null;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
+  selectTarget(target){if(!this.canLeave())return;this.confidenceReturn=null;this.target=target;this.returnFocus=document.activeElement;this.actions();}
   attachmentCategory(record){const category=interactionCategory(record);return category==='counterparts'?'questions':category;}
   revealInteraction(id,{responseContext=false}={}){
     const r=this.allEntries().find(record=>record.id===id);if(!r)return false;
@@ -126,13 +126,14 @@ export class DiscussionUI{
   }
   confidence(){
     if(!this.canLeave())return;const target=this.target,source=discussionSource(this.c.workspace,target);
-    if(target?.type!=='node'||source?.map.ownerId!==this.actor()||source.item.kind!=='position')return;
-    this.shell('My confidence');this.host.append(confidenceForm(source.item,{cancel:()=>{this.dirty=false;this.actions();},save:value=>{
+    if(target?.type!=='node'||source?.map.ownerId!==this.actor()||source.item.parent===null||source.item.kind!=='position')return;
+    const side=['a','b'].find(key=>this.c.sides[key].mapId===target.mapId);this.confidenceReturn=comparisonNodeKey(side,target.nodeId);
+    this.shell('Confidence');this.host.append(confidenceForm(source.item,{cancel:()=>{this.dirty=false;this.close();},save:value=>{
       if(!this.c.editor.flushDraft())throw Error('Resolve the unfinished map edit before saving confidence.');this.c.captureActive();
       const map=this.c.workspace.maps.find(m=>m.id===target.mapId);setNodeConfidence(this.c.workspace,target,this.actor(),value);
       if(this.c.activeMapId===map.id){this.c.baseline=JSON.stringify({nodes:map.nodes,relations:map.relations});this.c.editor.updateConfidence(target.nodeId,value);}
-      this.dirty=false;this.c.markDirty();this.c.renderComparison();this.actions();
-    }}));this.positionPopover();
+      this.dirty=false;this.c.markDirty();this.c.renderComparison();this.close();
+    }}));this.positionPopover();this.host.querySelector('input')?.focus({preventScroll:true});
   }
   actions(){this.interactions.sourceActions();}
   legacyEditingAllowed(kind,target){
@@ -399,7 +400,7 @@ export class DiscussionUI{
     document.querySelector('.comparison-heading').hidden=!!this.thread();
     discussUI('comparison-form').hidden=!this.c.editingRecord;
     discussUI('argument-mode').hidden=!this.c.workspace.comparisons.some(r=>r.comparisonId===this.thread()?.id);
-    const threadKey=this.thread()?.id||null;if(this.viewThreadKey!==threadKey){this.viewOptions.open=!threadKey;this.viewThreadKey=threadKey;}
+    const threadKey=this.thread()?.id||null;if(this.viewThreadKey!==threadKey){this.viewOptions.open=false;this.viewThreadKey=threadKey;}
     discussUI('comparison-view-modes').hidden=discussUI('argument-mode').hidden;
     this.position();
   }

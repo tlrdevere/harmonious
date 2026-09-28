@@ -1,6 +1,10 @@
 # Harmonious next-work plan
 
-## Current priorities — September 27, 2026 (UTC)
+## Current priorities — September 28, 2026
+
+The owner approved execution of the [map selection, frame colors, and node-menu cleanup](node-menu-cleanup-plan.md). **Implemented locally; release verification is in progress:** comparison source selectors are directly usable; SQ is red, TA blue, and GS green; Edit, Add child node, inspection, and destructive actions are separated; reason creation is an option in the child form; and nullable Confidence has a consistent place on eligible nodes. Child creation stays a draft until explicit submission. The changes retain appropriate differences across Map/Create, source browsing, Inquiry, Compare, and Argument. Worker 45 remains the published baseline until verification and publication are recorded. The deferrals below are unchanged.
+
+## Preceding work — September 27, 2026 (UTC)
 
 The [connection drawing plan](connection-drawing-plan.md), informed by `harmonious3.png`, is implemented: truthful collapsed-branch access to real pairs, shared connection routing and on-map Map/Create connection inspection. [Deployment status](deployment-status.md) records publication and verification. The browser-specific investigation is closed. Radial node positions remain; further cross-depth counterpart placement work is deferred by the owner. [The preceding UI follow-up](ui-followup-2026-09-25.md) records the node wording, Inquiry-first ordering and map-editor cleanup.
 

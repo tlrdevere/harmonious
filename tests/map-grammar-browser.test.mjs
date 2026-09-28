@@ -36,20 +36,51 @@ try{
   assert.equal(await page.locator('#relation-view').inputValue(),'all','Additional connections are visible by default');
   assert.equal(await page.locator('#cards .node-meta').count(),0,'Own-map cards have no redundant kind or author footer');
   assert.equal(await page.locator('#inspector').isVisible(),false,'Selection opens the on-map menu without automatically opening the panel');
+  await mkdir('build/design-review',{recursive:true});await page.screenshot({path:'build/design-review/node-menu-desktop.png',fullPage:true});
+  const disclosure=page.locator('.on-map-actions .node-action-disclosure');await disclosure.focus();await page.keyboard.press('Enter');
+  assert.equal(await disclosure.getAttribute('aria-expanded'),'true');assert(await disclosure.evaluate(el=>el===document.activeElement),'Expanding More actions preserves keyboard focus on the disclosure');
+  assert(await page.locator('.on-map-actions').getByRole('button',{name:'Delete branch',exact:true}).isVisible());await page.keyboard.press('Enter');assert.equal(await disclosure.getAttribute('aria-expanded'),'false');assert(await disclosure.evaluate(el=>el===document.activeElement));
+  await page.locator('.on-map-actions').getByRole('button',{name:'Inspect details',exact:true}).click();
+  assert(await page.locator('#node-reading').isVisible());assert(await page.locator('#node-meaning').isVisible());assert.equal(await page.locator('#edit-form').isVisible(),false,'Inspection reads saved wording without starting an edit form');assert.match(await page.locator('#node-reading').innerText(),/Alice claim/);
+  await page.screenshot({path:'build/design-review/node-inspector-desktop.png',fullPage:true});
   await page.locator('.on-map-actions').getByRole('button',{name:'Edit',exact:true}).click();assert.equal(await page.locator('#inspector').isVisible(),true,'The optional panel remains available from Edit');
+  assert(await page.locator('#edit-form').isVisible());assert.equal(await page.locator('#node-reading').isVisible(),false,'Edit explicitly switches from reading to the editing fields');
   await page.locator('#close').click();await choose(claim.id);
-  assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Add node',exact:true}).count(),1);
-  await page.locator('.on-map-actions').getByRole('button',{name:'My confidence',exact:true}).click();
+  assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Add child node',exact:true}).count(),1);
+  assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:/^(Create reason|Connect|Definitions & standards|Compare|My confidence)$/}).count(),0);
+  assert.equal(await page.locator('.on-map-actions .node-action-group').count(),3);
+  await page.locator(`#cards .node[data-id="${claim.id}"] .node-confidence`).click();
+  assert(await page.locator('.on-map-actions .confidence-form input').evaluate(el=>el===document.activeElement),'Opening Confidence focuses its input for immediate keyboard entry');
+  await page.keyboard.press('Escape');assert.equal(await page.locator('.on-map-actions').isVisible(),false);assert(await page.locator(`#cards .node[data-id="${claim.id}"] .node-confidence`).evaluate(el=>el===document.activeElement),'Confidence Escape returns focus to the node value');
+  await page.locator(`#cards .node[data-id="${claim.id}"] .node-confidence`).click();
   await page.locator('.on-map-actions .confidence-form').getByRole('spinbutton').fill('61');await page.locator('.on-map-actions').getByRole('button',{name:'Save confidence',exact:true}).click();await saved();
   assert.equal(await page.locator('#inspector').isVisible(),false,'Saving confidence on the map does not force open the optional panel');
   for(const id of ['kind-group','structural-group','time-group'])assert.equal(await page.locator('#'+id).isVisible(),false);
   assert.equal(await page.locator('#add-example,#child-kind,#on-map-child-kind').count(),0);
   // Native buttons remain keyboard-operable, and a reason is an explicit child→claim connection.
-  const create=page.locator('.on-map-actions').getByRole('button',{name:'Create reason',exact:true});await create.focus();await page.keyboard.press('Enter');
-  await page.locator('#title').fill('A verifiable reason');await page.locator('#source-title').fill('Reference citation');await page.locator('#source-url').fill('https://example.org/source');await page.locator('#edit-form button[type=submit]').click();await saved();
-  assert.equal(await page.locator('#saved').innerText(),'Node updated.','Account mode does not incorrectly demand a manual workspace save');
+  await choose(claim.id);const create=page.locator('.on-map-actions').getByRole('button',{name:'Add child node',exact:true});await create.focus();await page.keyboard.press('Enter');
+  assert(await page.locator('#child-form').isVisible());assert.equal(await page.locator('#child-relationship').inputValue(),'organization');
+  const beforeChild=JSON.stringify(await data());await page.locator('#child-title').fill('A pending child');await page.waitForTimeout(1500);
+  assert.equal(JSON.stringify(await data()),beforeChild,'A valid child draft does not autosave a placeholder');assert.match(await page.locator('#storage-status').innerText(),/Child node draft/);
+  await page.locator('.account-controls>summary').click();await page.locator('#save-workspace').click();assert.match(await page.locator('#workspace-message').innerText(),/Finish or cancel the child node/);
+  await page.locator('.account-controls>summary').click();await page.locator('#download-workspace').click();assert.match(await page.locator('#workspace-message').innerText(),/Finish or cancel the child node/);assert.equal(await page.locator('#child-title').inputValue(),'A pending child');
+  page.once('dialog',d=>d.dismiss());await choose(goal.id);assert.equal(await page.locator('#child-title').inputValue(),'A pending child','Cancelled discard preserves the form');
+  await page.locator('#cancel-child').click();assert.equal(JSON.stringify(await data()),beforeChild,'Cancel adds neither a node nor a reason');
+  // Settings may be cancelled after accepting child-draft discard. Restore the
+  // preceding inspector state rather than leaving a blank child panel behind.
+  for(const inspected of [false,true]){
+    await choose(claim.id);if(inspected)await page.locator('.on-map-actions').getByRole('button',{name:'Inspect details',exact:true}).click();
+    await page.locator('.on-map-actions').getByRole('button',{name:'Add child node',exact:true}).click();await page.locator('#child-title').fill('Discard through map settings');
+    page.once('dialog',d=>d.accept());await page.locator('#map-settings').click();await page.locator('#close-map-dialog').click();
+    assert.equal(await page.locator('#child-form').isVisible(),false);assert.equal(await page.locator('#inspector').isVisible(),inspected,'Discard restores whether the optional inspector was open');
+    if(inspected){assert(await page.locator('#node-reading').isVisible());assert(await page.locator('#node-meaning').isVisible());await page.locator('#close').click();}
+    assert.equal(JSON.stringify(await data()),beforeChild,'Accepted draft discard adds no saved records');
+  }
+  await page.locator(`#cards .node[data-id="${claim.id}"] .node-add-child`).click();assert(await page.locator('#child-form').isVisible());
+  await page.locator('#child-title').fill('A verifiable reason');await page.locator('#child-form details>summary').click();await page.locator('#child-source-title').fill('Reference citation');await page.locator('#child-source-url').fill('https://example.org/source');await page.locator('#child-relationship').selectOption('reason');await page.locator('#child-confidence').fill('0');await page.locator('#child-submit').click();await saved();
+  assert.equal(await page.locator('#saved').innerText(),'Node added.','Creation explicitly adds the completed node');
   let current=await data();const reason=current.nodes.find(n=>n.title==='A verifiable reason'),edge=current.relations.find(e=>e.from===reason.id&&e.to===claim.id);
-  assert.equal(reason.kind,'position');assert.equal(reason.structuralType,'nesting');assert.equal(reason.parent,claim.id);assert.equal(edge.type,'reason');assert.equal(reason.sourceUrl,'https://example.org/source');
+  assert.equal(reason.kind,'position');assert.equal(reason.structuralType,'nesting');assert.equal(reason.parent,claim.id);assert.equal(edge.type,'reason');assert.equal(reason.sourceUrl,'https://example.org/source');assert.equal(reason.confidence,0);
   assert.equal(await page.locator('#relationships .semantic-edge').count(),1);
   assert.equal(await page.locator('#connections .edge:not(.spine)').count(),2,'Semantic reason replaces its duplicate parent line; only the two frame→claim structural lines remain');
   await page.locator('#close').click();const edgeHit=page.locator('#relationships .map-edge-hit');await edgeHit.focus();await page.keyboard.press('Enter');
@@ -66,10 +97,12 @@ try{
   const branchHit=page.getByRole('button',{name:'Inspect connection: Status Quo to Alice claim',exact:true});await branchHit.focus();await page.keyboard.press('Enter');
   await page.locator('#cards .node[data-id="status"] .toggle').click();assert.equal(await edgeMenu.isVisible(),false,'Folding an inspected connection closes its stale menu even if its selected parent stays visible');await page.locator('#all').click();
   await choose(reason.id);await page.locator('.on-map-actions').getByRole('button',{name:'Edit',exact:true}).click();
-  await page.locator('#add-child').click();assert.equal(await page.locator('#title').inputValue(),'New node');await page.locator('#title').fill('An ordinary nested statement');await page.locator('#edit-form button[type=submit]').click();await saved();
+  await page.locator('#add-child').click();assert.equal(await page.locator('#child-title').inputValue(),'');await page.locator('#child-title').fill('An ordinary nested statement');await page.locator('#child-submit').click();await saved();
   current=await data();const nested=current.nodes.find(n=>n.title==='An ordinary nested statement');assert.equal(nested.kind,'position');assert.equal(nested.structuralType,'nesting');assert.equal(current.relations.some(e=>e.from===nested.id||e.to===nested.id),false,'Plain nesting adds no semantic claim');
   await page.locator('#connect').click();assert.equal(await page.locator('#connection-target option[value="goal"]').count(),0);await page.locator('#connection-target').selectOption(goal.id);assert.deepEqual(await page.locator('#connection-type option').evaluateAll(options=>options.map(o=>o.value)),['reason','cause']);
   page.once('dialog',d=>d.accept());await page.locator('#cancel-connect').click();await page.locator('#close').click();if(await page.locator('#all').isEnabled())await page.locator('#all').click();await choose('status');assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Create reason',exact:true}).count(),0,'Frames are containers, not claims to justify');assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Connect',exact:true}).count(),0);
+  await page.locator('.on-map-actions').getByRole('button',{name:'Add child node',exact:true}).click();assert.equal(await page.locator('#child-relationship-group').isVisible(),false);await page.locator('#cancel-child').click();
+  await page.locator('.on-map-actions').getByRole('button',{name:'Edit frame details',exact:true}).click();assert(await page.locator('#title').isDisabled());await page.locator('#close').click();await choose('status');
   await page.locator('.on-map-actions').getByRole('button',{name:'Close',exact:true}).click();assert.equal(await page.locator('#cards .node[data-id="status"] .node-main').evaluate(el=>el===document.activeElement),true,'Closing the on-map menu returns focus to its node');await page.setViewportSize({width:390,height:844});await page.locator('#fit').click();await choose(reason.id);const bounds=await page.locator('.on-map-actions').boundingBox();assert(bounds.x>=0&&bounds.x+bounds.width<=390);assert.equal(await page.locator('#inspector').isVisible(),false);
   await mkdir('build/design-review',{recursive:true});await page.screenshot({path:'build/design-review/map-grammar-mobile.png',fullPage:true});await page.locator('.on-map-actions').getByRole('button',{name:'Close',exact:true}).click();await edgeHit.focus();await page.keyboard.press('Enter');const edgeBounds=await edgeMenu.boundingBox();assert(edgeBounds.x>=0&&edgeBounds.x+edgeBounds.width<=390&&edgeBounds.y>=0&&edgeBounds.y+edgeBounds.height<=844);await page.screenshot({path:'build/design-review/map-edge-mobile.png',fullPage:true});
   await page.setViewportSize({width:1440,height:1000});await edgeMenu.getByRole('button',{name:'Edit',exact:true}).click();await page.locator('#title').fill('An unsaved draft');
