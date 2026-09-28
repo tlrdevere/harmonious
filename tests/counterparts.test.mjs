@@ -3,7 +3,7 @@ import {pathToFileURL} from 'node:url';
 import {alice,bob,memoryStore,seedActor,edit,addNode,view} from './accounts.test.mjs';
 import {startAccountComparison} from '../worker/account-api.mjs';
 import {makeDiscussion,validateDiscussionEdit} from '../dist/discussion.mjs';
-import {counterpartLinks,counterpartPairs,counterpartRecords,counterpartState,counterpartRequestState,comparisonCounterparts} from '../dist/counterparts.mjs';
+import {counterpartLinks,counterpartPairs,counterpartRecords,counterpartState,counterpartRequestState,comparisonCounterparts,sameCounterpartSource} from '../dist/counterparts.mjs';
 import {validateWorkspace} from '../dist/workspace.mjs';
 
 export async function exerciseCounterparts(store){
@@ -32,6 +32,12 @@ export async function exerciseCounterparts(store){
   assert(!ws.discussions.some(r=>r.kind==='relationship'&&r.target.nodeId===an),'A counterpart link does not imply agreement');
   assert(!comparisonCounterparts(ws,states).reserved.some(t=>t.nodeId===an));
   const grouped=structuredClone(ws);grouped.discussions.push(makeDiscussion(grouped,{kind:'relationship',action:'agreement',comparisonId:thread.id,target,other},alice.id));
+  // A reused comparison can already contain unrelated pairs. Exercise that
+  // deterministically, without relying on the database suite's random map IDs
+  // to select the map pair populated by an earlier exercise.
+  const unrelatedA=addNode(grouped,alice,'Unrelated Alice projection source'),unrelatedB=addNode(grouped,bob,'Unrelated Bob projection source');
+  const unrelated=makeDiscussion(grouped,{kind:'relationship',action:'disagreement',comparisonId:thread.id,target:{...target,nodeId:unrelatedA.id},other:{...other,nodeId:unrelatedB.id}},alice.id);grouped.discussions.push(unrelated);
+  const involvesTarget=record=>sameCounterpartSource(record.target,target)||sameCounterpartSource(record.other,target),unrelatedLinks=counterpartLinks(grouped,thread.id).filter(record=>!involvesTarget(record));assert(unrelatedLinks.some(record=>record.id===unrelated.id));
   assert.equal(counterpartPairs(grouped,thread.id,target).length,1,'A counterpart and historical judgment share one pair');assert.equal(counterpartPairs(grouped,thread.id,target)[0].records.length,2,'Distinct recorded meanings remain inspectable');
   const beforeProjection=JSON.stringify(grouped),projection=counterpartState(grouped,thread.id,target);
   assert.equal(projection.count,1);assert.equal(projection.pairs[0].records.length,2);assert.equal(projection.kind,'linked');assert.equal(projection.request.id,request.id,'A saved pair takes precedence without discarding the request');
@@ -39,7 +45,7 @@ export async function exerciseCounterparts(store){
   for(const status of ['collapsed','filtered','missing','unavailable']){const p=counterpartState(grouped,thread.id,target,{endpoint:()=>({status})});assert.equal(p.pairs[0].status,status);assert.equal(p.count,1);assert.equal(p.kind,['missing','unavailable'].includes(status)?'unavailable':'linked');}
   assert.equal(counterpartState(grouped,thread.id,{...target,nodeId:'status'}).count,0,'A hidden child link does not transfer identity to its ancestor');
   const missing=structuredClone(grouped);missing.maps.find(m=>m.id===bm.id).nodes=missing.maps.find(m=>m.id===bm.id).nodes.filter(n=>n.id!==bn);
-  assert.equal(counterpartLinks(missing,thread.id).length,0,'Existing workflow eligibility still requires both endpoints');assert.equal(counterpartRecords(missing,thread.id).length,2,'Permitted history remains semantically linked after an endpoint disappears');assert.equal(comparisonCounterparts(missing,states).links.length,2);assert.equal(counterpartState(missing,thread.id,target).label,'Counterpart unavailable');
+  assert.equal(counterpartLinks(missing,thread.id).filter(involvesTarget).length,0,'Existing workflow eligibility still requires both endpoints of the affected pair');assert.deepEqual(counterpartLinks(missing,thread.id),unrelatedLinks,'Deleting this endpoint leaves unrelated valid pairs eligible');assert.equal(counterpartRecords(missing,thread.id).filter(involvesTarget).length,2,'Both recorded meanings remain semantically linked after their endpoint disappears');assert.deepEqual(counterpartRecords(missing,thread.id),counterpartRecords(grouped,thread.id),'All permitted pair history survives the missing endpoint');assert.equal(comparisonCounterparts(missing,states).links.filter(involvesTarget).length,2);assert.equal(counterpartState(missing,thread.id,target).label,'Counterpart unavailable');
   const inaccessible=structuredClone(grouped);Object.assign(inaccessible.maps.find(m=>m.id===bm.id),{unavailable:true,nodes:[]});assert.equal(counterpartState(inaccessible,thread.id,target).kind,'unavailable');
   const crossFrame=structuredClone(grouped);crossFrame.maps.find(m=>m.id===bm.id).nodes.find(n=>n.id===bn).parent='goal';assert.equal(counterpartState(crossFrame,thread.id,target).pairs[0].status,'cross-frame');
   const multiple=structuredClone(grouped),otherTarget={...other,nodeId:'another-permitted-endpoint'};multiple.discussions.push({...link,id:link.id+'-other',other:otherTarget});const multipleState=counterpartState(multiple,thread.id,target);assert.equal(multipleState.count,2);assert.equal(multipleState.label,'Linked counterparts (2)');assert.deepEqual(multipleState.pairs.map(p=>p.status),['visible','missing'],'A mixed set keeps distinct visibility states rather than labelling the whole set unavailable');
