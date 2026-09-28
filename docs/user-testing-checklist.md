@@ -1,8 +1,8 @@
 # Harmonious: what to check on your next visit
 
-## Upcoming: comparison connections and counterparts
+## First check: comparison connections and counterparts
 
-The [comparison clarity increment](comparison-clarity-plan.md) is being implemented and verified. Use [deployment status](deployment-status.md) to confirm publication before testing it on both PCs.
+The [comparison clarity increment](comparison-clarity-plan.md) is **live in Worker 48**, after all 48 local and 48 hosted checks and public verification. **Reload both PCs before testing.** [Deployment status](deployment-status.md) records publication and the exact application source.
 
 - [ ] Open two maps with similar SQ children, including the two Low union density nodes. Select one, then the other, and alternate among other visible nodes. Existing nodes, zoom, camera, folds, and filters should stay in place; selection should create no empty counterpart spot.
 - [ ] From your own node, choose **Link counterpart**. Search the other map, check the owner, parent path, and wording preview, then select and link the intended node. Nothing should be selected initially. Repeat starting from the other person's node, and repeat as the other account. Cancelling should create no link; linking should change neither source map.
@@ -15,7 +15,7 @@ The [comparison clarity increment](comparison-clarity-plan.md) is being implemen
 
 ## Current: editing on the node, confidence scale, and map copying
 
-September 28: this [follow-up](node-face-editing.md) is **live in Worker 47**, after all 47 local and 47 hosted checks and public verification. Reload both PCs before testing. [Deployment status](deployment-status.md) records publication and the exact application source.
+September 28: this [follow-up](node-face-editing.md) **shipped in Worker 47**, after all 47 local and 47 hosted checks and public verification. Reload both PCs before testing. [Deployment status](deployment-status.md) records publication and the exact application source.
 
 - [ ] From **Add child node** and the node's plus control, check that an unfinished child appears immediately on the map and its title has the cursor. Type without another click. Its expanded face should remain attached to that child at a readable size.
 - [ ] Enter a child title and wait beyond the autosave delay. The preview should remain unfinished and should not appear in the saved map on the other PC. **Save now** and **Download backup** should ask you to finish or cancel it. Cancel should remove the preview without adding a saved node or reason connection.
@@ -214,10 +214,10 @@ Reload both PCs before trying the new flow.
 
 - [ ] Select a node that already has a counterpart. **Request counterpart** should be absent from both its action window and counterpart chooser.
 - [ ] Check an example connected to its parent, and a counterpart pair with an agreement. Each node pair should have one visible line. Open the line's label/details to inspect saved meanings. Opposing judgments should show **Mixed judgments**; collapsing branches should not duplicate the line.
-- [ ] Select a non-frame node with no linked counterpart. Confirm a dashed **No counterpart linked** spot appears beside it on the other user's side.
-- [ ] Send **Request counterpart**, then refresh the other account. Confirm the empty spot persists.
-- [ ] As the recipient, choose **Create counterpart**, select its parent in your own map, and enter your wording. After saving, open your own map and confirm the node is there.
-- [ ] Repeat with **Choose existing node**. Confirm it links the selected node without creating a duplicate.
+- [ ] Select a non-frame node with no linked counterpart. Confirm **No counterpart linked** appears in its inspection controls, without creating an empty spot or moving either map or the camera.
+- [ ] Send **Request counterpart**, then refresh the other account. Confirm a **Counterpart requested** spot appears and persists when selection changes; opening or cancelling an unsent request should create no spot.
+- [ ] As the recipient, choose **Create counterpart in my map**, select its parent in your own map, and enter your wording. After saving, open your own map and confirm the node is there.
+- [ ] Repeat with **Link counterpart** from either participant's node. Explicitly choose an existing opposite node and confirm it links the pair without creating a duplicate or editing either source map.
 - [ ] Confirm a neutral **Counterparts** connection appears and no agreement/disagreement was recorded automatically. Within a frame, the pair should sit together; neither map's original parent connections should change.
 - [ ] Respond **No position yet** or **Not applicable** to another request. Confirm the large spot collapses to a status indicator. Reopen it from the requesting account.
 - [ ] Start a new counterpart draft and try closing it. Cancel the discard prompt and confirm your wording is preserved. Try the flow on a narrow window too.

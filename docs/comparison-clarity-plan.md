@@ -1,6 +1,6 @@
 # Comparison connections and counterpart controls
 
-Prepared September 28, 2026 from the owner's notes on `harmonious4.png`, `harmonious5.png`, `Harmonious6.png`, and `Harmonious7.png`. **Status: implemented; all 48 local release checks passed; hosted verification and publication pending.** Continue in the existing repository on `redesign/node-interactions`. The baseline is Worker 47, documented in [deployment status](deployment-status.md).
+Prepared September 28, 2026 from the owner's notes on `harmonious4.png`, `harmonious5.png`, `Harmonious6.png`, and `Harmonious7.png`. **Status: live in Worker 48, after all 48 local and 48 hosted checks and public verification.** Application source: `27269a60d04f5f8f84f59cd1fb445b626978cfaf` on `redesign/node-interactions`. Worker 47 was the baseline; [deployment status](deployment-status.md) records publication and verification.
 
 ## Outcome and scope
 
@@ -16,7 +16,7 @@ All four changes are implemented. Selection-driven reservations and implicit cam
 
 The shared comparison canvas omits decorative frame spines. Source paths use consistent solid styling and saved arrow direction. A bounded deterministic source-route batch allocates separate sibling ports when needed and reuses the same geometry for visible strokes, hit areas, labels, and inspection across Map/Create, source browsing, and shared modes. Endpoint highlighting and the compact connection key are implemented. Review also repaired the existing map-emphasis button grouping and retained appropriate dimming for source lines.
 
-All **48/48 local release checks passed**, including eight browser suites, account/database checks, standalone export and the production build. Report: `build/verification/2026-09-28T22-03-45-484Z-88496/summary.json`. Desktop/narrow screenshots cover the five-child selection case, collapsed frames, explicit requests, source editing/browsing, and deep/dense graphs. A portable-browser smoke check also passed. Hosted verification and publication are pending and will be recorded in [deployment status](deployment-status.md); the approved scope and acceptance criteria follow below.
+All **48/48 local release checks passed**, including eight browser suites, account/database checks, standalone export and the production build. Report: `build/verification/2026-09-28T22-03-45-484Z-88496/summary.json`. All **48/48 hosted checks passed** on the exact application commit in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36490788740). Public verification passed September 28 at **22:15:13 UTC**. Desktop/narrow screenshots cover the five-child selection case, collapsed frames, explicit requests, source editing/browsing, and deep/dense graphs. A portable-browser smoke check also passed. [Deployment status](deployment-status.md) records the published Worker and complete evidence; the original approved scope and acceptance criteria follow below.
 
 ## 1. Make selection stable
 
@@ -125,9 +125,9 @@ Use disposable local account fixtures for tests, not the owner's production maps
 
 Also exercise empty candidate maps, cross-frame choices, link withdrawal, closed/reopened requests, cancelled request composition, and declined draft discard. Preserve existing explicit-reservation tests for saved requests. If routing introduces a shared client module, register it in both the client-asset and standalone-export lists so browser and portable builds include it.
 
-Once implementation and focused checks pass, run the complete existing `scripts/verify.mjs` release runner. Worker 47's 47/47 result is the baseline, not evidence that this new work is verified; record the actual new run and count. Update the current workflow, interaction grammar, counterpart workflow, user checklist, and this plan to match what is implemented.
+The complete `scripts/verify.mjs` release runner passed all 48 checks for this increment. Worker 47's 47/47 result remains the preceding release's evidence. The current workflow, interaction grammar, counterpart workflow, user checklist, and this plan now describe the delivered behavior.
 
-For the implementation release, follow the established publication process: commit the reviewed application changes, push `redesign/node-interactions`, run hosted Release checks on that exact revision, deploy only after passing, then verify public assets/account gates and record the resulting Worker version in deployment status. Leave automatic deployment disabled. This planning task itself makes no application or deployment changes.
+The release followed the established publication process: commit the reviewed application changes, push `redesign/node-interactions`, pass hosted Release checks on that exact revision, deploy Worker 48, and verify public assets and account gates. [Deployment status](deployment-status.md) records the result. Automatic deployment remains disabled.
 
 ## Separate design decision: Aligned / In tension
 

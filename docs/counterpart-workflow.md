@@ -1,6 +1,6 @@
 # Counterparts in Compare
 
-The [comparison clarity increment](comparison-clarity-plan.md) updates the behavior below. Implementation and all 48 local release checks are complete; hosted verification and publication are pending. [Deployment status](deployment-status.md) remains the authority for what is live.
+The [comparison clarity increment](comparison-clarity-plan.md) is **live in Worker 48**, after all 48 local and 48 hosted checks and public verification. It delivers the behavior below. [Deployment status](deployment-status.md) records the exact source and publication evidence.
 
 ## Delivered behavior
 

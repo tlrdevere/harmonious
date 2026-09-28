@@ -4,6 +4,20 @@ Updated September 28, 2026 (UTC).
 
 ## Current release
 
+Comparison connections and counterpart controls deployed September 28, 2026 at **22:14:38 UTC** (6:14 p.m. in New York). Application source: `27269a60d04f5f8f84f59cd1fb445b626978cfaf` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **48**: `1f360dd4-48a6-4dc1-b53d-86e022e099ec`, serving **100%** of traffic. Deployment: `85c29e75-fe8d-4800-9535-c96577eac276`.
+- The [comparison clarity plan](comparison-clarity-plan.md) is implemented: ordinary selection preserves node positions and camera; counterpart linking opens a searchable, explicit chooser from either map; shared comparisons omit decorative frame spines; sibling routes use distinct ports and avoid misleading shared segments. Source lines, arrow direction, endpoint highlights and inspection share the same geometry across views. **View options → Connection key** explains the displayed connections.
+- **48/48 local release checks passed**, including eight browser suites, account/database checks, standalone export, production build and complete asset checks. Report: `build/verification/2026-09-28T22-03-45-484Z-88496/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows. The portable-browser comparison smoke check passed, and desktop/narrow screenshots were inspected.
+- **48/48 hosted release checks passed** on the exact pushed application commit in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36490788740), completed at **22:12:46 UTC**. Its job log confirms all 48 checks using Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/clarity-release-hosted.json` and `build/clarity-hosted-verification-evidence.json`.
+- Public verification at **22:15:13 UTC** confirms all **54 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers passing. Report: `build/public-clarity-verification.json`. Worker SHA-256: `6448aab2fe4722c7948aabaa1c15b32889bfc92f280691295ae5227f02920e75`.
+- All eight encrypted bindings, compatibility date `2026-09-08` and empty compatibility flags were inherited and verified unchanged. No database migration, production account test write, authentication change or dependency update was required. Automatic push/PR checks and automatic deployment remain disabled.
+- Independent review and browser regressions cover both participants, stable five-child selection, explicit/cancelled requests, multiple links, stale wording and ancestor paths, lost-acknowledgment retries, exact connection endpoints, semantic arrow direction, map emphasis, collapsed frames and deep/dense maps. Subsequent release-note commits change documentation only.
+
+**Reload both PCs before testing.** Start with **Comparison connections and counterparts** in [the checklist](user-testing-checklist.md). Worker 47 is the preceding compatible release. Pair-specific **Aligned / In tension** assessments remain a separate design decision; the [deferral list](next-work-plan.md#deferred-work) is unchanged.
+
+## Preceding node-face editing and map-copy release
+
 Node-face editing, confidence sliders, and map copying deployed September 28, 2026 at **21:11:22 UTC** (5:11 p.m. in New York). Application source: `d350313ac2d9fe7444a48359899a85ce7637abc0` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **47**: `688aa821-4287-499d-b8c2-dec09731cd90`, serving **100%** of traffic. Deployment: `d62c5a36-40d0-47f4-b2e7-a2486d9d8b11`.
