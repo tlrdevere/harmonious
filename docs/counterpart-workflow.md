@@ -1,6 +1,6 @@
 # Counterparts in Compare
 
-The [comparison positioning increment](comparison-positioning-plan.md) updates the behavior below and is being implemented and verified. Worker 48 remains the published baseline until [deployment status](deployment-status.md) records the new release.
+The [comparison positioning increment](comparison-positioning-plan.md) is **live in Worker 49**, after all 48 local and 48 hosted checks and public verification. [Deployment status](deployment-status.md) records the exact application source and publication.
 
 ## Delivered behavior
 

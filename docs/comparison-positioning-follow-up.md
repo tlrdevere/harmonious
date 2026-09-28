@@ -1,6 +1,6 @@
 # Comparison positioning: owner feedback after Worker 48
 
-Recorded September 28, 2026 from `harmonious 10.png` and `harmonious 11.png`. This diagnosis led to the [implementation plan](comparison-positioning-plan.md), now implemented and undergoing release verification. The findings below describe the preceding Worker 48 behavior; [deployment status](deployment-status.md) records publication.
+Recorded September 28, 2026 from `harmonious 10.png` and `harmonious 11.png`. This diagnosis led to the [implementation plan](comparison-positioning-plan.md), now implemented and **live in Worker 49** after all 48 local and 48 hosted checks and public verification. The findings below describe the preceding Worker 48 behavior; [deployment status](deployment-status.md) records publication.
 
 ## What the owner is seeing
 

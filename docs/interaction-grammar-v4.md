@@ -4,7 +4,7 @@ The original v4 grammar was implemented on `redesign/node-interactions` and depl
 
 ## September 28 comparison positioning follow-up
 
-The subsequent [comparison positioning follow-up](comparison-positioning-plan.md) is being implemented and verified. Ordinary nodes begin independently with compact ghost/status controls; only qualifying saved pairs produce adjacency. Ghosts are display affordances, not nodes, requests, or stances. Source geometry is shared across Inquiry, Compare, and Argument; linking/responding controls remain in Compare. Explicit links, earlier attributed pair records, unavailable-source privacy, request states, and withdrawal ownership retain their existing semantics. [Deployment status](deployment-status.md) identifies the published version.
+The [comparison positioning follow-up](comparison-positioning-plan.md) is **live in Worker 49**, after all 48 local and 48 hosted checks and public verification. Ordinary nodes begin independently with compact ghost/status controls; only qualifying saved pairs produce adjacency. Ghosts are display affordances, not nodes, requests, or stances. Source geometry is shared across Inquiry, Compare, and Argument; linking/responding controls remain in Compare. Explicit links, earlier attributed pair records, unavailable-source privacy, request states, and withdrawal ownership retain their existing semantics. [Deployment status](deployment-status.md) identifies the exact published source.
 
 ## September 28 comparison clarity follow-up
 

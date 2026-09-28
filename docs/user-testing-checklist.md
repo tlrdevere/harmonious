@@ -1,8 +1,8 @@
 # Harmonious: what to check on your next visit
 
-## Upcoming: independent nodes, ghosts, and comparison spacing
+## First check: independent nodes, ghosts, and comparison spacing
 
-The [positioning increment](comparison-positioning-plan.md) is being implemented and verified. Confirm publication in [deployment status](deployment-status.md), then reload both PCs before testing.
+The [positioning increment](comparison-positioning-plan.md) is **live in Worker 49**, after all 48 local and 48 hosted checks and public verification. **Reload both PCs before testing.** [Deployment status](deployment-status.md) records publication and the exact application source.
 
 - [ ] Open a new comparison with similarly ordered or copied nodes, including the four-child TA example. Every unlinked ordinary node should occupy its own position with a compact **No counterpart linked** control. Equal titles/order should not produce automatic pairs. Frame headings remain corresponding structural headings.
 - [ ] Open **Link counterpart** from a ghost on either side. No candidate should be selected initially. Cancel and confirm the camera and nodes stay put; reopen, explicitly choose the intended node, and save. Both real nodes should remain, now paired where eligible, with their saved connection inspectable.
@@ -15,7 +15,7 @@ The [positioning increment](comparison-positioning-plan.md) is being implemented
 
 ## Continuing checks: comparison connections and counterparts
 
-The [comparison clarity increment](comparison-clarity-plan.md) is **live in Worker 48**, after all 48 local and 48 hosted checks and public verification. **Reload both PCs before testing.** [Deployment status](deployment-status.md) records publication and the exact application source.
+The [comparison clarity increment](comparison-clarity-plan.md) **shipped in Worker 48**, after all 48 local and 48 hosted checks and public verification. The checks below reflect Worker 49's compact ghosts. [Deployment status](deployment-status.md) records publication and the exact application source.
 
 - [ ] Open two maps with similar SQ children, including the two Low union density nodes. Select one, then the other, and alternate among other visible nodes. Existing nodes, compact controls, zoom, camera, folds, and filters should stay in place; selection should create no additional counterpart spot.
 - [ ] From your own node, choose **Link counterpart**. Search the other map, check the owner, parent path, and wording preview, then select and link the intended node. Nothing should be selected initially. Repeat starting from the other person's node, and repeat as the other account. Cancelling should create no link; linking should change neither source map.
