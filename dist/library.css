@@ -271,3 +271,14 @@ body.comparison-full-canvas #comparison-commandbar .comparison-full-status{order
 .confidence-scale-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;font-size:11px;color:#637487}
 .confidence-scale .confidence-scale-clear{font-size:11px;padding:3px 5px;border:0;background:transparent;color:#52677d;text-decoration:underline;text-underline-offset:2px}
 .confidence-scale .confidence-scale-clear[aria-pressed="true"]{font-weight:650;text-decoration:none}
+
+/* Source meaning is carried by direction and detail, never by map-side dashes. */
+#world .source-connection-path,.comparison-world .source-connection-path{fill:none;stroke:#8396a1;stroke-width:1.6;stroke-dasharray:none;opacity:.68;vector-effect:non-scaling-stroke;pointer-events:none}
+#world .source-connection-path.source-connection-highlight,.comparison-world .source-connection-path.source-connection-highlight{stroke:#456572;stroke-width:2.7;opacity:1}
+:is(#world,.comparison-world) .node.source-endpoint-highlight{outline:3px solid #456572;outline-offset:4px}
+.connection-key{width:100%;border-top:1px solid #d7e0e7;padding-top:9px;color:#43596d;font-size:12px}
+.connection-key>summary{cursor:pointer;font-weight:600}
+.connection-key p{display:flex;align-items:center;gap:9px;margin:9px 0;line-height:1.4}
+.connection-key-sample{display:inline-block;flex:0 0 30px;position:relative;border-top:1.6px solid #8396a1}
+.connection-key-sample.directed::after{content:'';position:absolute;right:-1px;top:-4px;border-left:7px solid #8396a1;border-top:3px solid transparent;border-bottom:3px solid transparent}
+.connection-key-sample.counterpart{border-top-style:dashed}

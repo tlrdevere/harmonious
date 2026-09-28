@@ -29,7 +29,8 @@ for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mj
     if name=='reasoning-layout.mjs':
         code='const routeReasoningConnection=(()=>{\n'+code+'\nreturn routeReasoningConnection;})();'
     if name=='comparison-routing.mjs':
-        code='const {routeComparisonConnection,createConnectionRouter}=(()=>{\n'+code+'\nreturn {routeComparisonConnection,createConnectionRouter};})();'
+        names='routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute'
+        code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='reasoning-view.mjs':
         names='buildReasoningIndex,projectReasoning,searchReasoning,reasoningTargetKey,ReasoningViewState'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'

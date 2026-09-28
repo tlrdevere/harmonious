@@ -2,6 +2,8 @@
 
 ## Current priorities — September 28, 2026
 
+The active increment is [comparison connections and counterpart controls](comparison-clarity-plan.md), based on the owner's four annotated screenshots. It covers stable selection, direct counterpart linking from either side, removal of decorative comparison frame lines, and clearer sibling connection routes. **Implementation and verification are in progress.** Pair-specific Aligned / In tension assessments remain a separate design decision. The existing deferral list is unchanged.
+
 The [node-face editing and map-copy follow-up](node-face-editing.md) is **live in Worker 47**, after all 47 local and 47 hosted checks and public verification. [Deployment status](deployment-status.md) records application commit `d350313ac2d9fe7444a48359899a85ce7637abc0` and publication. Adding a child immediately shows an unsaved preview and focuses its title; Edit opens the node face, with longer context and sources under expandable Details. Confidence offers a slider and exact numeric entry, including an unassessed state. Owned Library cards now expose Copy map, using the existing creation form for a separate private copy. Draft and ownership boundaries remain intact, and the source workflow for copying selected content into an existing map remains separate. Next is the owner's [updated walkthrough](user-testing-checklist.md). The deferrals below are unchanged.
 
 ## Preceding release — Worker 46

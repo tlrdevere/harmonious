@@ -43,22 +43,24 @@ function simplify(points){
   }
   return result;
 }
-function ports(r,pad,others){
-  const box=bounds(r),outer=bounds(r,pad),choices=[
-    {point:{x:r.x,y:box.top},exit:{x:r.x,y:outer.top}},
-    {point:{x:box.right,y:r.y},exit:{x:outer.right,y:r.y}},
-    {point:{x:r.x,y:box.bottom},exit:{x:r.x,y:outer.bottom}},
-    {point:{x:box.left,y:r.y},exit:{x:outer.left,y:r.y}}
-  ];
+function ports(r,pad,others,preferred=null){
+  const box=bounds(r),outer=bounds(r,pad),choices=(preferred||['top','right','bottom','left'].map(side=>({side,offset:0}))).map(({side,offset=0})=>{
+    if(!['top','right','bottom','left'].includes(side)||!Number.isFinite(offset))throw Error('Invalid connection attachment point.');
+    const horizontal=side==='top'||side==='bottom',half=(horizontal?r.w:r.h)/2,at=Math.max(-Math.max(0,half-8),Math.min(Math.max(0,half-8),offset));
+    if(side==='top')return {point:{x:r.x+at,y:box.top},exit:{x:r.x+at,y:outer.top}};
+    if(side==='right')return {point:{x:box.right,y:r.y+at},exit:{x:outer.right,y:r.y+at}};
+    if(side==='bottom')return {point:{x:r.x+at,y:box.bottom},exit:{x:r.x+at,y:outer.bottom}};
+    return {point:{x:box.left,y:r.y+at},exit:{x:outer.left,y:r.y+at}};
+  });
   return choices.filter(p=>!others.some(o=>contains(o,p.exit))&&clear(p.point,p.exit,others));
 }
-function simpleRoute(starts,ends,obstacles){
+function simpleRoute(starts,ends,obstacles,penalty=null){
   let best=null,bestCost=Infinity;
   for(const start of starts)for(const end of ends){
     for(const corner of [{x:start.exit.x,y:end.exit.y},{x:end.exit.x,y:start.exit.y}]){
       const middle=simplify([start.exit,corner,end.exit]);
       if(middle.slice(1).some((p,i)=>!clear(middle[i],p,obstacles)))continue;
-      const points=simplify([start.point,...middle,end.point]),cost=points.slice(1).reduce((sum,p,i)=>sum+length(points[i],p),0)+Math.max(0,points.length-2)*BEND_COST;
+      const points=simplify([start.point,...middle,end.point]),cost=points.slice(1).reduce((sum,p,i)=>sum+length(points[i],p)+(penalty?.(points[i],p)||0),0)+Math.max(0,points.length-2)*BEND_COST;
       if(cost<bestCost-EPS){best=points;bestCost=cost;}
     }
   }
@@ -122,14 +124,14 @@ function gridRoute(starts,ends,obstacles,pad){
 
 // A bounded outside fallback avoids an unbounded grid allocation on dense,
 // irregular maps. Every candidate is still checked against every obstacle.
-function outsideRoute(starts,ends,obstacles,pad){
+function outsideRoute(starts,ends,obstacles,pad,penalty=null){
   const left=Math.min(...obstacles.map(r=>r.left))-pad,right=Math.max(...obstacles.map(r=>r.right))+pad,top=Math.min(...obstacles.map(r=>r.top))-pad,bottom=Math.max(...obstacles.map(r=>r.bottom))+pad;
   let best=null,bestCost=Infinity;
   for(const start of starts)for(const end of ends){
     const candidates=[... [left,right].map(x=>[start.exit,{x,y:start.exit.y},{x,y:end.exit.y},end.exit]),... [top,bottom].map(y=>[start.exit,{x:start.exit.x,y},{x:end.exit.x,y},end.exit])];
     for(const candidate of candidates){
       const middle=simplify(candidate);if(middle.slice(1).some((point,index)=>!clear(middle[index],point,obstacles)))continue;
-      const points=simplify([start.point,...middle,end.point]),cost=points.slice(1).reduce((sum,p,index)=>sum+length(points[index],p),0)+(points.length-2)*BEND_COST;
+      const points=simplify([start.point,...middle,end.point]),cost=points.slice(1).reduce((sum,p,index)=>sum+length(points[index],p)+(penalty?.(points[index],p)||0),0)+(points.length-2)*BEND_COST;
       if(cost<bestCost-EPS){best=points;bestCost=cost;}
     }
   }
@@ -171,9 +173,9 @@ export function routeReasoningConnection(fromRect,toRect,obstacles=[],options={}
   for(const clearance of options.clearance===undefined?[CLEARANCE,2]:[preferred]){
     const direct=options.direct===false?null:directRoute(from,to,others,clearance);if(direct)return drawing(direct,clearance);
     const otherBounds=others.map(r=>bounds(r,clearance)),fromBounds=bounds(from,clearance),toBounds=bounds(to,clearance),all=[...otherBounds,fromBounds,toBounds];
-    const starts=ports(from,clearance,[...otherBounds,toBounds]),ends=ports(to,clearance,[...otherBounds,fromBounds]);
+    const starts=ports(from,clearance,[...otherBounds,toBounds],options.fromPorts),ends=ports(to,clearance,[...otherBounds,fromBounds],options.toPorts);
     if(!starts.length||!ends.length)continue;
-    const points=simpleRoute(starts,ends,all)||gridRoute(starts,ends,all,clearance)||outsideRoute(starts,ends,all,clearance);
+    const points=simpleRoute(starts,ends,all,options.segmentPenalty)||gridRoute(starts,ends,all,clearance)||outsideRoute(starts,ends,all,clearance,options.segmentPenalty);
     if(points?.length>1)return drawing(points,clearance);
   }
   return {d:'',midpoint:null,points:[],segments:[],clearance:0,blocked:true};

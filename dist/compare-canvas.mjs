@@ -1,10 +1,11 @@
 import {CARD_W,CARD_H} from './layout.mjs';
-import {createConnectionRouter} from './comparison-routing.mjs';
+import {createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from './comparison-routing.mjs';
 import {roots} from './data.mjs';
 import {FRAME_COLORS,installFramePalette} from './frame-palette.mjs';
-import {NODE_KINDS,revealPath} from './model.mjs';
+import {NODE_KINDS,revealPath,graphEdges} from './model.mjs';
 import {confidenceBadge} from './confidence-ui.mjs';
-import {SourceConnectionsUI} from './source-connections-ui.mjs';
+import {SourceConnectionsUI,createSourceConnectionHighlights} from './source-connections-ui.mjs';
+import {groupSourceConnections,visibleNodePairKey,actualNodePairKey} from './conversation-tree.mjs';
 import {QUESTION_STATUSES,ANSWER_STATUSES} from './workspace.mjs';
 import {comparisonNodeKey,layoutComparison,visibleComparisonEndpoint,comparisonRecordEnds} from './comparison-layout.mjs';
 
@@ -13,7 +14,7 @@ export class ComparisonCanvas{
     installFramePalette();
     this.options=options;
     this.onSelect=onSelect;this.onRecord=onRecord;this.states={a:{map:null,expanded:new Set(),selected:null,frame:'all'},b:{map:null,expanded:new Set(),selected:null,frame:'all'}};
-    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=FRAME_COLORS;this.animation=null;this.routeConnection=createConnectionRouter();
+    this.camera={x:0,y:0,z:1};this.positions=new Map();this.records=[];this.colors=FRAME_COLORS;this.animation=null;this.routeConnection=createConnectionRouter();this.routeSources=createSourceConnectionRouter();this.sourceHighlights=createSourceConnectionHighlights();this.sourceRoutes=new Map();
     this.surface=document.createElement('div');this.surface.className='comparison-canvas';this.surface.tabIndex=0;this.surface.setAttribute('role','region');this.surface.setAttribute('aria-label','Both worldview maps on one canvas. Select a node in each map. Drag empty space to pan; scroll to zoom; use F to fit both maps.');
     this.world=document.createElement('div');this.world.className='comparison-world';this.surface.append(this.world);
     this.hint=document.createElement('div');this.hint.className='comparison-canvas-hint';this.hint.textContent='Choose a node in A, then one in B.';this.surface.append(this.hint);
@@ -67,9 +68,9 @@ export class ComparisonCanvas{
     const state=this.states[side];state.selected=id;
     if(id&&state.map){state.expanded=revealPath(state.map.nodes,id,state.expanded);let node=state.map.nodes.find(n=>n.id===id);while(node?.parent)node=state.map.nodes.find(n=>n.id===node.parent);if(state.frame!=='all'&&node?.id!==state.frame)state.frame='all';}
     this.reflow({animate:false});
-    // Once both sides have a selection, make that pair the working focus.
-    // The full map remains available through Fit both maps and normal panning.
-    if(focus||(this.states.a.selected&&this.states.b.selected))this.fitSelection();
+    // Ordinary selection preserves the camera. Explicit reveal/focus actions
+    // still bring hidden or searched-for sources into view.
+    if(focus)this.fitSelection();
   }
   reflow({fit=false,animate=true,anchor=null}={}){
     this.stopAnimation();const previous=this.positions,fromCamera={...this.camera},oldLanes=this.layout?.lanes||[];
@@ -90,12 +91,16 @@ export class ComparisonCanvas{
   stopAnimation(){if(this.animation!==null){cancelAnimationFrame(this.animation);this.animation=null;this.finishAnimation?.();this.finishAnimation=null;}}
   svgElement(tag,attributes={}){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [key,value]of Object.entries(attributes))el.setAttribute(key,value);return el;}
   buildWorld(){
-    this.world.replaceChildren();this.cards=new Map();this.laneElements=new Map();this.branches=[];this.links=[];
+    this.sourceHighlights.reset();this.world.replaceChildren();this.cards=new Map();this.laneElements=new Map();this.branches=[];this.links=[];this.sourcePairs=new Map();this.sourceRoutedPositions=null;
     for(const lane of this.layout.lanes){const el=document.createElement('div');el.className='comparison-map-lane';const label=document.createElement('div');label.className='comparison-map-label';for(const side of this.layout.overlay?['a','b']:[lane.side]){const badge=document.createElement('span');badge.className='map-letter';badge.textContent=side.toUpperCase();badge.dataset.identity=this.identity(side);const title=document.createElement('strong');title.textContent=`${this.states[side].map.name} · ${this.ownerName(this.states[side].map)}`;label.append(badge,title);}el.append(label);this.world.append(el);this.laneElements.set(lane.side,el);}
     const svg=this.svgElement('svg',{'aria-label':'Map connections'});svg.classList.add('comparison-lines');this.world.append(svg);
     for(const side of ['a','b']){
       const view=this.layout.maps[side],state=this.states[side];if(!view)continue;
-      for(const edge of view.layout.edges){if(!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;const path=this.svgElement('path',{stroke:edge.frame<0?'#899bb0':this.colors[edge.frame],fill:'none','stroke-width':2,'aria-hidden':'true','data-side':side,'data-identity':this.identity(side)});if(edge.kind==='spine'||side==='b')path.setAttribute('stroke-dasharray','6 5');path.classList.add('comparison-tree-edge');svg.append(path);this.branches.push({path,edge,side});}
+      for(const grouped of groupSourceConnections(graphEdges(state.map.nodes,state.map.relations))){
+        const edges=[...grouped].sort((a,b)=>Number(a.structural)-Number(b.structural)||a.id.localeCompare(b.id)),edge=edges[0];if(!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;
+        const fromKey=comparisonNodeKey(side,edge.from),toKey=comparisonNodeKey(side,edge.to),key=visibleNodePairKey(fromKey,toKey),routeKey=actualNodePairKey({mapId:state.map.id,nodeId:edge.from},{mapId:state.map.id,nodeId:edge.to});this.sourcePairs.set(key,{key,routeKey,fromKey,toKey,side,edge,edges});
+      }
+      for(const edge of view.layout.edges){if(edge.kind==='spine'&&!this.options.single||!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;const path=this.svgElement('path',{stroke:'#8396a1',fill:'none','stroke-width':1.6,'aria-hidden':'true','data-side':side,'data-identity':this.identity(side)});path.classList.add('comparison-tree-edge');if(edge.kind!=='spine')path.classList.add('source-connection-path');svg.append(path);this.branches.push({path,edge,side,key:visibleNodePairKey(comparisonNodeKey(side,edge.from),comparisonNodeKey(side,edge.to))});}
       const byId=new Map(state.map.nodes.map(n=>[n.id,n]));
       for(const [id,p]of view.positions){
         const node=byId.get(id),kids=view.layout.children.get(id),owner=this.ownerName(state.map),card=document.createElement('article');card.className=`node${node.parent===null?' root':''}${state.selected===id?' selected':''}`;card.dataset.frame=p.frame;card.dataset.side=side;card.dataset.identity=this.identity(side);
@@ -103,7 +108,7 @@ export class ComparisonCanvas{
         const title=document.createElement('div');title.className='node-title';title.textContent=node.title;const summary=document.createElement('div');summary.className='node-summary';summary.textContent=node.summary;main.append(title,summary);main.onclick=()=>this.onSelect(side,id);
         const bottom=document.createElement('div');bottom.className='node-bottom';const meta=document.createElement('span');meta.className='node-meta';meta.textContent=owner;meta.title=`${state.map.name} by ${owner}`;bottom.append(meta);
         const confidence=confidenceBadge(node,owner,this.options.canSetConfidence?.(state.map,node)?()=>this.options.onConfidence?.(side,id):null);if(confidence)bottom.append(confidence);
-        if(kids.length){const toggle=document.createElement('button');toggle.className='toggle';toggle.type='button';toggle.textContent=`${state.expanded.has(id)?'−':'＋'} ${kids.length}`;toggle.setAttribute('aria-label',`${state.expanded.has(id)?'Collapse':'Expand'} ${node.title} in map ${side.toUpperCase()}`);toggle.setAttribute('aria-expanded',String(state.expanded.has(id)));toggle.onclick=()=>{state.expanded.has(id)?state.expanded.delete(id):state.expanded.add(id);this.reflow({anchor:comparisonNodeKey(side,id)});};bottom.append(toggle);}
+        if(kids.length){const toggle=document.createElement('button');toggle.className='toggle';toggle.type='button';toggle.textContent=`${state.expanded.has(id)?'−':'＋'} ${kids.length}`;toggle.setAttribute('aria-label',`${state.expanded.has(id)?'Collapse':'Expand'} ${node.title} in map ${side.toUpperCase()}`);toggle.title=`${kids.length} child ${kids.length===1?'node':'nodes'}`;toggle.setAttribute('aria-description',toggle.title);toggle.setAttribute('aria-expanded',String(state.expanded.has(id)));toggle.onclick=()=>{state.expanded.has(id)?state.expanded.delete(id):state.expanded.add(id);this.reflow({anchor:comparisonNodeKey(side,id)});};bottom.append(toggle);}
         if(this.options.single){meta.textContent=this.options.nodeMeta?.(node)||(node.parent===null?'Frame':NODE_KINDS[node.kind].label);card.classList.toggle('pod-context',!!node.podContext);main.setAttribute('aria-label',`Select ${node.title}`);}
         card.append(main,bottom);this.world.append(card);this.cards.set(comparisonNodeKey(side,id),card);
       }
@@ -143,7 +148,8 @@ export class ComparisonCanvas{
     for(const lane of lanes){const el=this.laneElements.get(lane.side);el.style.transform=`translate(${lane.x}px,${lane.y}px)`;el.style.width=lane.width+'px';el.style.height=lane.height+'px';}
     const center=p=>p&&({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});
     const obstacles=[...this.positions.values(),...(this.layout.placeholders||[])].map(center);
-    for(const branch of this.branches){const {path,edge,side}=branch,a=center(this.positions.get(comparisonNodeKey(side,edge.from))),b=center(this.positions.get(comparisonNodeKey(side,edge.to)));branch.route=a&&b?this.routeConnection(a,b,obstacles):null;path.setAttribute('d',branch.route?.d||'');}
+    this.ensureSourceRoutes();
+    for(const branch of this.branches){const {path,edge,side}=branch,a=center(this.positions.get(comparisonNodeKey(side,edge.from))),b=center(this.positions.get(comparisonNodeKey(side,edge.to)));branch.route=edge.kind==='spine'?(a&&b?this.routeConnection(a,b,obstacles):null):this.sourceRoutes.get(branch.key);path.setAttribute('d',branch.route?.d||'');}
     for(const link of this.links){
       const a=center(this.positions.get(link.a.key)),b=center(this.positions.get(link.b.key));link.route=a&&b?this.routeConnection(a,b,obstacles):null;const route=link.route;
       link.path.setAttribute('d',route?.d||'');link.hit?.setAttribute('d',route?.d||'');
@@ -151,6 +157,13 @@ export class ComparisonCanvas{
     }
     this.sourceConnections?.position();this.options.afterGeometry?.();
   }
+  ensureSourceRoutes(){
+    if(this.sourceRoutedPositions===this.positions)return;
+    const center=p=>p&&({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});this.sourceObstacles=[...this.positions.values(),...(this.layout.placeholders||[])].map(center);
+    const requests=[];for(const pair of this.sourcePairs?.values()||[]){const from=center(this.positions.get(pair.fromKey)),to=center(this.positions.get(pair.toKey));if(from&&to)requests.push({key:pair.routeKey,from,to});}
+    const routes=this.routeSources(requests,this.sourceObstacles);this.sourceRoutes=new Map([...this.sourcePairs?.values()||[]].map(pair=>[pair.key,routes.get(pair.routeKey)]).filter(([,route])=>route));this.sourceRoutedPositions=this.positions;
+  }
+  sourceRouteLabel(key,size){this.ensureSourceRoutes();return labelSourceRoute(this.sourceRoutes.get(key),size,this.sourceObstacles);}
   fitCamera(points=null){
     const w=this.surface.clientWidth,h=this.surface.clientHeight;if(!w||!h)return this.camera;
     let bounds=this.layout.bounds;

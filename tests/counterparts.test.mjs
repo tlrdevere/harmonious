@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 import {alice,bob,memoryStore,seedActor,edit,addNode,view} from './accounts.test.mjs';
 import {startAccountComparison} from '../worker/account-api.mjs';
-import {makeDiscussion} from '../dist/discussion.mjs';
-import {counterpartLinks,counterpartRequestState,comparisonCounterparts} from '../dist/counterparts.mjs';
+import {makeDiscussion,validateDiscussionEdit} from '../dist/discussion.mjs';
+import {counterpartLinks,counterpartPairs,counterpartRequestState,comparisonCounterparts} from '../dist/counterparts.mjs';
 import {validateWorkspace} from '../dist/workspace.mjs';
 
 export async function exerciseCounterparts(store){
@@ -12,6 +12,7 @@ export async function exerciseCounterparts(store){
   let ws=(await view(store,alice)).workspace;const am=ws.maps.find(m=>m.ownerId===alice.id),bm=ws.maps.find(m=>m.ownerId===bob.id);
   const result=await startAccountComparison(store,alice.id,{aMapId:am.id,bMapId:bm.id}),thread=result.comparisonThread;
   const target={type:'node',mapId:am.id,nodeId:an},other={type:'node',mapId:bm.id,nodeId:bn};
+  assert.deepEqual(comparisonCounterparts(ws,{a:{map:am,selected:an},b:{map:bm,selected:bn}}).reserved,[],'Selecting ordinary nodes does not reserve or imply a counterpart');
   // These outcomes are deliberately sequential. A fast memory store can create
   // both in the same millisecond, which would test the ID tie-break instead.
   let outcomeClock=Date.parse('2026-01-01T00:00:00Z');
@@ -29,10 +30,16 @@ export async function exerciseCounterparts(store){
   assert.deepEqual(ws.maps.find(m=>m.id===am.id),originalMap,'Linking an existing counterpart does not edit the other map');
   assert(!ws.discussions.some(r=>r.kind==='relationship'&&r.target.nodeId===an),'A counterpart link does not imply agreement');
   assert(!comparisonCounterparts(ws,states).reserved.some(t=>t.nodeId===an));
+  const grouped=structuredClone(ws);grouped.discussions.push(makeDiscussion(grouped,{kind:'relationship',action:'agreement',comparisonId:thread.id,target,other},alice.id));
+  assert.equal(counterpartPairs(grouped,thread.id,target).length,1,'A counterpart and historical judgment share one pair');assert.equal(counterpartPairs(grouped,thread.id,target)[0].records.length,2,'Distinct recorded meanings remain inspectable');
   assert.deepEqual(validateWorkspace(JSON.parse(JSON.stringify(ws))),ws);
   await assert.rejects(()=>save(alice,{kind:'correspondence',action:'counterpart_link',target:other,other:target}),/already linked/);
-  await save(bob,{...link,status:'withdrawn'},link.id);ws=(await view(store,alice)).workspace;assert.equal(counterpartRequestState(ws,request),'Awaiting counterpart');
+  assert.throws(()=>validateDiscussionEdit(ws,link,makeDiscussion(ws,{...link,status:'withdrawn'},bob.id,link),alice.id),/Only the author/,'Only the link author may withdraw its record');
+  await save(bob,{...link,status:'withdrawn'},link.id);ws=(await view(store,alice)).workspace;assert.equal(counterpartRequestState(ws,request),'Awaiting counterpart');assert(comparisonCounterparts(ws,states).reserved.some(t=>t.nodeId===an),'An unanswered request regains its spot after the last link is withdrawn');
   await save(alice,reply('close_request'));ws=(await view(store,bob)).workspace;assert.equal(counterpartRequestState(ws,request),'Request closed');
+  const ownFirst=await save(alice,{kind:'correspondence',action:'counterpart_link',target,other});assert.equal(ownFirst.authorId,alice.id,'Either endpoint owner can link starting with their own node');
+  await save(alice,{...ownFirst,status:'withdrawn'},ownFirst.id);ws=(await view(store,alice)).workspace;assert.equal(counterpartRequestState(ws,request),'Request closed','Withdrawing the last link preserves a closed request');
+  const unavailable=structuredClone(ws);unavailable.maps.find(m=>m.id===bm.id).unavailable=true;assert.deepEqual(comparisonCounterparts(unavailable,{a:{map:unavailable.maps.find(m=>m.id===am.id),selected:an},b:{map:unavailable.maps.find(m=>m.id===bm.id)}}).reserved,[],'Unavailable maps do not manufacture replacement spots');
   let createdId,createdLink;
   await edit(store,bob,w=>{const n=addNode(w,bob,'Created and linked in one save');createdId=n.id;createdLink=makeDiscussion(w,{kind:'correspondence',action:'counterpart_link',comparisonId:thread.id,target,other:{type:'node',mapId:bm.id,nodeId:n.id}},bob.id);w.discussions.push(createdLink);});
   ws=(await view(store,alice)).workspace;assert(ws.maps.find(m=>m.id===bm.id).nodes.some(n=>n.id===createdId));assert(ws.discussions.some(r=>r.id===createdLink.id));assert.equal(counterpartRequestState(ws,request),'Counterpart linked','A map addition and its link persist together');

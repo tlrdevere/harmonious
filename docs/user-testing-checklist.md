@@ -1,5 +1,18 @@
 # Harmonious: what to check on your next visit
 
+## Upcoming: comparison connections and counterparts
+
+The [comparison clarity increment](comparison-clarity-plan.md) is being implemented and verified. Use [deployment status](deployment-status.md) to confirm publication before testing it on both PCs.
+
+- [ ] Open two maps with similar SQ children, including the two Low union density nodes. Select one, then the other, and alternate among other visible nodes. Existing nodes, zoom, camera, folds, and filters should stay in place; selection should create no empty counterpart spot.
+- [ ] From your own node, choose **Link counterpart**. Search the other map, check the owner, parent path, and wording preview, then select and link the intended node. Nothing should be selected initially. Repeat starting from the other person's node, and repeat as the other account. Cancelling should create no link; linking should change neither source map.
+- [ ] Open **View linked counterparts**, including a node linked to more than one opposite node. Each pair should appear once, with its saved meanings and authors available. **Link another counterpart** should work; retrying an existing pair should not duplicate it. Refresh after saving and confirm both accounts see the link.
+- [ ] Start and cancel **Request counterpart**: no map spot should appear. Send a request: **Counterpart requested** should remain visible when selection changes. Test Link, Create counterpart in my map, No position yet, close/reopen, and withdrawal of your own link on disposable nodes. A linked node should not offer a new request, and creating must remain restricted to your own map.
+- [ ] Collapse both maps to their three frame headings. There should be no automatic SQ-to-TA or TA-to-GS lines. Genuine saved connections remain available when their endpoints are shown. Open **View options → Connection key** and compare it with the displayed source lines, arrows, and counterpart links.
+- [ ] Recreate the SQ branching example with the second map collapsed. Low union density and Socialists should have separately traceable paths back to SQ, without the misleading shared vertical segment. Hover or keyboard-focus a line: its full route and both actual endpoint cards should highlight. Selecting it should show those same endpoints and saved meanings.
+- [ ] Check a child-to-parent reason, an ordinary parent branch, and a pair with more than one saved meaning. Each pair should have one visible route; arrows must follow the saved semantic direction. Repeat in Map/Create and source browsing as well as the shared modes.
+- [ ] Switch Inquiry, Compare, and Argument without changing expansion. Source positions and source-line geometry should remain stable. Test pan/zoom, hidden-branch connection access, a parked draft, declined discard, narrow windows, and keyboard Close/Escape. Frame numbers count children, not counterpart links.
+
 ## Current: editing on the node, confidence scale, and map copying
 
 September 28: this [follow-up](node-face-editing.md) is **live in Worker 47**, after all 47 local and 47 hosted checks and public verification. Reload both PCs before testing. [Deployment status](deployment-status.md) records publication and the exact application source.

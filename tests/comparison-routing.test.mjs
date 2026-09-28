@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import {routeComparisonConnection,createConnectionRouter} from '../dist/comparison-routing.mjs';
+import {routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from '../dist/comparison-routing.mjs';
 import {ComparisonCanvas} from '../dist/compare-canvas.mjs';
 import {ReasoningUI} from '../dist/reasoning-ui.mjs';
 import {CARD_W,CARD_H,layoutForest} from '../dist/layout.mjs';
-import {comparisonNodeKey} from '../dist/comparison-layout.mjs';
+import {comparisonNodeKey,layoutComparison} from '../dist/comparison-layout.mjs';
 
 const inside=(p,r)=>Math.abs(p.x-r.x)<r.w/2-.001&&Math.abs(p.y-r.y)<r.h/2-.001;
 const overlap=(a,b)=>Math.abs(a.x-b.x)<(a.w+b.w)/2&&Math.abs(a.y-b.y)<(a.h+b.h)/2;
@@ -71,10 +71,58 @@ cached.clear();assert.equal(cached.size,0);
 const roots=['status','action','goal'],nodes=[...roots.map(id=>({id,parent:null})),...['A','B','C','D'].map(id=>({id,parent:'status'})),{id:'A1',parent:'A'},{id:'A2',parent:'A'}];
 const radial=layoutForest(nodes,roots,new Set(nodes.map(n=>n.id))),positions=new Map([...radial.positions].map(([id,p])=>[comparisonNodeKey('a',id),p]));
 const mockPath=()=>({setAttribute(name,value){this[name]=value;}});
-const canvas=Object.assign(Object.create(ComparisonCanvas.prototype),{positions,cards:new Map([...positions.keys()].map(key=>[key,{style:{}}])),layout:{lanes:[],placeholders:[]},branches:radial.edges.map(edge=>({edge,side:'a',path:mockPath()})),links:[],routeConnection:createConnectionRouter(),options:{}});
+const sourcePairs=new Map(radial.edges.filter(edge=>edge.kind!=='spine').map(edge=>[edge.to,{key:edge.to,routeKey:edge.to,fromKey:comparisonNodeKey('a',edge.from),toKey:comparisonNodeKey('a',edge.to)}]));
+const canvas=Object.assign(Object.create(ComparisonCanvas.prototype),{positions,cards:new Map([...positions.keys()].map(key=>[key,{style:{}}])),layout:{lanes:[],placeholders:[]},sourcePairs,branches:radial.edges.map(edge=>({key:edge.to,edge,side:'a',path:mockPath()})),links:[],routeConnection:createConnectionRouter(),routeSources:createSourceConnectionRouter(),options:{}});
 const original=structuredClone(positions);canvas.drawGeometry();const routes=canvas.branches.map(branch=>branch.route);
-for(const branch of canvas.branches){assert(!branch.route.blocked);const from=positions.get(comparisonNodeKey('a',branch.edge.from)),to=positions.get(comparisonNodeKey('a',branch.edge.to)),rect=p=>({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});assert.deepEqual(branch.route,routeComparisonConnection(rect(from),rect(to),[...positions.values()].map(rect)));}
+for(const branch of canvas.branches){assert(!branch.route.blocked);assert.equal(branch.path.d,branch.route.d);const from=positions.get(comparisonNodeKey('a',branch.edge.from)),to=positions.get(comparisonNodeKey('a',branch.edge.to)),rect=p=>({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});assert(onBoundary(branch.route.points[0],rect(from)));assert(onBoundary(branch.route.points.at(-1),rect(to)));if(branch.edge.kind!=='spine')assert.equal(branch.route,canvas.sourceRoutes.get(branch.key),'Source renderers reuse the batch path instead of routing each branch again');}
 canvas.camera={x:300,y:-400,z:.35};canvas.drawGeometry();assert.deepEqual(positions,original);canvas.branches.forEach((branch,i)=>assert.equal(branch.route,routes[i]));
+
+// The screenshot's five SQ children share a parent. The neighboring collapsed
+// frame blocks the direct diagonal to Union and formerly produced a false fork
+// in the long vertical connection to Socialists.
+const sampleMap=id=>({id,nodes:[...roots.map(id=>({id,parent:null})),...['dsa','state','union','socialists','democrats'].map(name=>({id:id+'-'+name,parent:'status'}))],relations:[]});
+const leftMap=sampleMap('left'),rightMap=sampleMap('right'),states={a:{map:leftMap,expanded:new Set(['status']),frame:'all'},b:{map:rightMap,expanded:new Set(),frame:'all'}};
+const snapshot=structuredClone(states),paired=layoutComparison(states,roots,{reserved:[{mapId:leftMap.id,nodeId:'left-union'}]}),center=p=>({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});
+const sourceCards=[...paired.positions.values(),...paired.placeholders].map(center),requests=paired.maps.a.layout.edges.filter(edge=>edge.kind==='branch').map(edge=>({key:edge.to,from:center(paired.positions.get(comparisonNodeKey('a',edge.from))),to:center(paired.positions.get(comparisonNodeKey('a',edge.to)))}));
+function sharedLength(a,b){
+  let total=0;
+  for(const first of a.segments)for(const second of b.segments){
+    if(first.control||second.control)continue;
+    const vertical=Math.abs(first.from.x-first.to.x)<.001&&Math.abs(second.from.x-second.to.x)<.001&&Math.abs(first.from.x-second.from.x)<.001;
+    const horizontal=Math.abs(first.from.y-first.to.y)<.001&&Math.abs(second.from.y-second.to.y)<.001&&Math.abs(first.from.y-second.from.y)<.001;
+    if(vertical||horizontal){const axis=vertical?'y':'x',a0=Math.min(first.from[axis],first.to[axis]),a1=Math.max(first.from[axis],first.to[axis]),b0=Math.min(second.from[axis],second.to[axis]),b1=Math.max(second.from[axis],second.to[axis]);total+=Math.max(0,Math.min(a1,b1)-Math.max(a0,b0));}
+  }
+  return total;
+}
+const unionRequest=requests.find(r=>r.key==='left-union'),socialistsRequest=requests.find(r=>r.key==='left-socialists');
+assert(sharedLength(routeComparisonConnection(unionRequest.from,unionRequest.to,sourceCards),routeComparisonConnection(socialistsRequest.from,socialistsRequest.to,sourceCards))>100,'The fixture reproduces the original long coincident sibling stem');
+const sourceRouter=createSourceConnectionRouter({limit:2}),grouped=sourceRouter(requests,sourceCards);
+assert(sharedLength(grouped.get('left-union'),grouped.get('left-socialists'))<8,'Sibling routes do not look as though one begins on the other edge');
+assert(Math.hypot(grouped.get('left-union').points[0].x-grouped.get('left-socialists').points[0].x,grouped.get('left-union').points[0].y-grouped.get('left-socialists').points[0].y)>=8,'The sibling connections leave distinct points on their actual parent');
+function verifySourcePath(request,route,cards){
+  assert(route&&!route.blocked&&route.d,'Visible source connections survive route preferences');assert(onBoundary(route.points[0],request.from));assert(onBoundary(route.points.at(-1),request.to));
+  for(const segment of route.segments)for(let step=0;step<=60;step++){
+    const t=step/60,u=1-t,p=segment.control?{x:u*u*segment.from.x+2*u*t*segment.control.x+t*t*segment.to.x,y:u*u*segment.from.y+2*u*t*segment.control.y+t*t*segment.to.y}:{x:segment.from.x+(segment.to.x-segment.from.x)*t,y:segment.from.y+(segment.to.y-segment.from.y)*t};
+    for(const card of cards)assert(!inside(p,card),'The full rounded source route avoids card faces, including paired frames and placeholders');
+  }
+}
+for(const request of requests)verifySourcePath(request,grouped.get(request.key),sourceCards);
+assert.deepEqual(states,snapshot,'The route batch never changes authored parents or layout inputs');
+assert.equal(sourceRouter(requests.slice().reverse(),sourceCards.slice().reverse()),grouped,'Input enumeration order cannot change the route set or invalidate the cache');
+assert.deepEqual([...createSourceConnectionRouter()(requests.slice().reverse(),sourceCards.slice().reverse())],[...grouped],'Fresh routing is deterministic independent of enumeration order');
+const reversedRequests=requests.map(request=>({...request,from:request.to,to:request.from})),backward=sourceRouter(reversedRequests,sourceCards);
+for(const request of requests){const route=backward.get(request.key);assert.deepEqual(route.points,grouped.get(request.key).points.slice().reverse(),'Semantic reversal retains the physical route while reversing arrow attachment direction');verifySourcePath({...request,from:request.to,to:request.from},route,sourceCards);}
+const subset=sourceRouter(requests.filter(r=>r.key!=='left-union'),sourceCards);assert.notEqual(subset,grouped,'Changing only peer connections invalidates the complete batch even with unchanged cards');assert.equal(subset.size,requests.length-1);
+const extra=createSourceConnectionRouter()(requests.concat(requests[0]),sourceCards);assert.equal(extra.size,requests.length,'Repeating the same grouped request never adds a second route');
+const altered=sourceRouter(requests,sourceCards.map((r,index)=>index? r:{...r,x:r.x+1}));assert.notEqual(altered,grouped,'Changed obstacles invalidate routing');assert.equal(sourceRouter.size,2,'Complete-scene memoization remains bounded');sourceRouter.clear();assert.equal(sourceRouter.size,0);
+const labelRoute=grouped.get('left-union'),labelBefore=structuredClone(labelRoute),sourceLabel=labelSourceRoute(labelRoute,{w:80,h:20},sourceCards);assert(sourceLabel);for(const card of sourceCards)assert(!overlap(sourceLabel,card));assert.deepEqual(labelRoute,labelBefore,'Inspection label placement never changes the shared visible route');assert.equal(labelSourceRoute(undefined,{w:40,h:20},sourceCards),null);
+const straightSource=createSourceConnectionRouter()([{key:'clear',from:diagonalA,to:diagonalB}],[]).get('clear');assert.equal(straightSource.points.length,2,'Uncontested direct connections remain direct');
+
+// A busy grid bounds the additional peer-avoidance work while keeping every
+// unobstructed endpoint pair visible and preserving the original node geometry.
+const denseCards=Array.from({length:120},(_,i)=>({x:(i%12)*140,y:Math.floor(i/12)*120,w:80,h:60})),denseRequests=denseCards.slice(1,81).map((to,index)=>({key:'dense-'+String(index).padStart(3,'0'),from:denseCards[0],to})),denseBefore=structuredClone(denseCards),denseRouter=createSourceConnectionRouter(),started=performance.now(),denseRoutes=denseRouter(denseRequests,denseCards);
+assert.equal(denseRoutes.size,denseRequests.length);for(const request of denseRequests)verifySourcePath(request,denseRoutes.get(request.key),denseCards);assert.deepEqual(denseCards,denseBefore);assert.equal(denseRouter(denseRequests,denseCards),denseRoutes);assert(performance.now()-started<10000,'Dense routing stays within a bounded interactive budget');
+const blockedSource=createSourceConnectionRouter()([{key:'enclosed',from:lower,to:upper}],[{...lower,w:500,h:500}]).get('enclosed');assert(blockedSource.blocked);assert.equal(blockedSource.d,'','Only genuinely enclosed endpoints keep the existing safe blocked result');
 
 // Historical inference challenges end at the Supports control itself. Its
 // folded-follow-up control is an obstacle, not an enclosing phantom endpoint.
@@ -85,4 +133,4 @@ const reasoning=Object.assign(Object.create(ReasoningUI.prototype),{d:{canvas:re
 reasoning.position();const support=reasoning.links[0].route,target=reasoning.inferences.get(reason.id),attack=reasoning.links[1].route;
 assert(!marker.hidden&&support.label);assert.equal(target.y,support.label.y-support.label.h/2+badge.offsetHeight/2);assert(!attack.blocked);assert(onBoundary(attack.points.at(-1),target),'Inference critique connects to Supports, not its fold button or source card');
 reasoning.position();assert.equal(reasoning.links[0].route,support);assert.equal(reasoning.links[1].route,attack);
-console.log('Comparison routing passed: direct diagonal boundaries, robust obstacle intersection, modest detours, clear labels, bounded cache, unchanged radial geometry, renderer reuse and exact inference targets.');
+console.log('Comparison routing passed: sibling route separation, card avoidance, stable grouped batches, semantic direction, exact-path labels, peer-set cache invalidation, bounded dense routing, unchanged radial geometry, renderer reuse and inference targets.');

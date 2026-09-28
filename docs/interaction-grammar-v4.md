@@ -2,6 +2,10 @@
 
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
+## September 28 comparison clarity follow-up
+
+The subsequent [comparison clarity increment](comparison-clarity-plan.md) is being implemented and verified. It replaces **Find or view counterpart** with direct **Link counterpart**, **View linked counterparts**, **Link another counterpart**, and contextual request/create actions. Linking existing nodes is available from either map when the participant owns one endpoint; creation is restricted to their own map. Ordinary selection creates no counterpart placeholder and does not fit the camera. Only saved unanswered requests reserve requested-counterpart spots. Source styling and route tracing are shared across views, while mode actions stay distinct. This adds no Aligned / In tension pair-assessment type; existing counterpart and stance meanings remain unchanged. [Deployment status](deployment-status.md) records the published release.
+
 ## September 28 node-face editing and copying follow-up
 
 The accepted [node-face editing follow-up](node-face-editing.md) is **live in Worker 47**, after all 47 local and 47 hosted checks and public verification. [Deployment status](deployment-status.md) records the exact source and publication. Worker 46's preceding menu cleanup is recorded below. The new authoring behavior retains the existing interaction and connection semantics:

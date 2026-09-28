@@ -1,7 +1,8 @@
 import {WorkspaceController} from './workspace-ui.mjs';
 import {NodeActions} from './node-actions.mjs';
 import {MapConnectionsUI} from './map-connections-ui.mjs';
-import {createConnectionRouter} from './comparison-routing.mjs';
+import {createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from './comparison-routing.mjs';
+import {createSourceConnectionHighlights} from './source-connections-ui.mjs';
 import {groupSourceConnections,visibleNodePairKey} from './conversation-tree.mjs';
 import {NodeFaceEditor} from './node-face-editor.mjs';
 import {confidenceBadge,attachConfidenceScale} from './confidence-ui.mjs';
@@ -15,7 +16,7 @@ const svgNS='http://www.w3.org/2000/svg';
 let nodes=exampleMap(),relations=exampleRelations(),expanded=new Set(),selected=null,result,positions=new Map(),camera={x:0,y:0,z:1},animation=0,serial=0;
 let dirty=false,connectionDirty=false,activeRelation=null,editingRelation=null,relationDrawables=[],childDraft=null,inspectorMode='edit';
 let activeConnectionKey=null,routedPositions=null;
-const mapRoute=createConnectionRouter(),connectionRoutes=new Map();
+const mapRoute=createConnectionRouter(),sourceRoutes=createSourceConnectionRouter(),sourceHighlights=createSourceConnectionHighlights(),connectionRoutes=new Map();
 const elements=new Map(),colors=FRAME_COLORS;
 installFramePalette();
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -35,11 +36,11 @@ function relationSentence(edge){return `${nodeById(edge.from).title} ${RELATION_
 function makeLabel(text,structural=false){const group=svg('g',{class:`edge-label${structural?' structural-label':''}`}),width=text.length*7.2+20;group.dataset.width=width;group.append(svg('rect',{x:-width/2,y:-12,width,height:24}));const label=svg('text',{x:0,y:0});label.textContent=text;group.append(label);return group;}
 function inspectionPath(parent,path,edges){
   const edge=edges[0],key=visibleNodePairKey(edge.from,edge.to),group=svg('g',{class:`map-edge-group${key===activeConnectionKey?' active':''}`});
-  path.dataset.nodePair=key;
+  path.dataset.nodePair=key;path.classList.add('source-connection-path');
   const hit=svg('path',{class:'map-edge-hit',fill:'none',tabindex:'0',role:'button','aria-label':`Inspect connection: ${nodeById(edge.from).title} to ${nodeById(edge.to).title}`});hit.dataset.nodePair=key;
   const labelText=edges.length>1?`${edges.length} connection meanings`:edge.structural?(STRUCTURAL_TYPES[edge.type]?.label||'Branch'):(RELATION_TYPES[edge.type]?.label||'Connection'),label=makeLabel(labelText,edge.structural);
   const select=()=>inspectConnection(key,edges);hit.onclick=select;hit.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();select();}};
-  hit.onpointerdown=event=>event.stopPropagation();group.append(path,hit,label);parent.append(group);return {hit,label,key,edges};
+  hit.onpointerdown=event=>event.stopPropagation();group.append(path,hit,label);parent.append(group);sourceHighlights.bind(key,path,hit,[edge.from,edge.to].map(id=>elements.get(id)?.card));return {hit,label,key,edges};
 }
 function makeCard(n){
   const card=document.createElement('article');card.className='node';card.dataset.id=n.id;
@@ -59,7 +60,7 @@ function makeCard(n){
   $('cards').append(card);const el={card,main,title,summary,confidence,toggle,sign,count,add};elements.set(n.id,el);return el;
 }
 function syncCards(){
-  routedPositions=null;
+  routedPositions=null;sourceHighlights.reset();sourceHighlights.select(activeConnectionKey);
   workspaceController.captureActive();
   const neighbors=new Set(connectedEdges(selected).flatMap(e=>[e.from,e.to]));
   for(const [id,el]of elements)if(!result.positions.has(id)){el.card.remove();elements.delete(id);}
@@ -110,8 +111,12 @@ function draw(){
   // Camera-only redraws reuse the completed graph even when the graph is
   // larger than the bounded route cache. Layout animation replaces positions.
   if(routedPositions!==positions){
-  const boxes=new Map([...positions].map(([id,p])=>[id,{x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H}]));connectionRoutes.clear();
-  const routeEdge=(edge,path,hit,label,key)=>{const a=boxes.get(edge.from),b=boxes.get(edge.to);if(!a||!b||!path)return;const obstacles=[...boxes].filter(([id])=>id!==edge.from&&id!==edge.to).map(([,box])=>box),route=mapRoute(a,b,obstacles);path.setAttribute('d',route.d);hit?.setAttribute('d',route.d);if(hit){hit.style.display=route.blocked?'none':'';hit.setAttribute('tabindex',route.blocked?'-1':'0');}if(key)connectionRoutes.set(key,route);if(label){const labelRoute=mapRoute(a,b,obstacles,{w:Number(label.dataset.width),h:24});const point=labelRoute.d===route.d?labelRoute.label:null;label.style.display=point?'':'none';if(point)label.setAttribute('transform',`translate(${point.x},${point.y})`);}};
+  const boxes=new Map([...positions].map(([id,p])=>[id,{x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H}])),obstacles=[...boxes.values()];connectionRoutes.clear();
+  const requests=groupSourceConnections(graphEdges(renderNodes(),relations)).map(grouped=>{
+    const edge=[...grouped].sort((a,b)=>Number(a.structural)-Number(b.structural)||a.id.localeCompare(b.id))[0];
+    return {key:visibleNodePairKey(edge.from,edge.to),from:boxes.get(edge.from),to:boxes.get(edge.to)};
+  }).filter(request=>request.from&&request.to),routes=sourceRoutes(requests,obstacles);
+  const routeEdge=(edge,path,hit,label,key)=>{const a=boxes.get(edge.from),b=boxes.get(edge.to);if(!a||!b||!path)return;const route=edge.kind==='spine'?mapRoute(a,b,obstacles):routes.get(visibleNodePairKey(edge.from,edge.to));if(!route)return;path.setAttribute('d',route.d);hit?.setAttribute('d',route.d);if(hit){hit.style.display=route.blocked?'none':'';hit.setAttribute('tabindex',route.blocked?'-1':'0');}if(key)connectionRoutes.set(key,route);if(label){const point=labelSourceRoute(route,{w:Number(label.dataset.width),h:24},obstacles);label.style.display=point?'':'none';if(point)label.setAttribute('transform',`translate(${point.x},${point.y})`);}};
   for(const edge of result.edges)routeEdge(edge,edge.element,edge.hit,edge.label,edge.key);
   for(const item of relationDrawables)routeEdge(item.edge,item.path,item.hit,item.label,item.key);
   routedPositions=positions;
@@ -346,7 +351,7 @@ const workspaceController=new WorkspaceController({
   discardDraft:()=>closeInspector(true),
   updateConfidence:(id,value)=>{const n=nodeById(id);if(!n)return;n.confidence=value;if(selected===id){$('confidence').value=value===null?'':String(value);confidenceScale.sync();}syncCards();draw();},
   flushDraft:()=>{if(childDraft){workspaceController.message('Finish or cancel the child node before saving or downloading the workspace.');$('child-title').focus();return false;}if(connectionDirty)$('connection-form').requestSubmit();if(connectionDirty)return false;if(dirty)$('edit-form').requestSubmit();return !dirty;},
-  setMap:map=>{faceEditor.hide();nodeActions.hide();connectionMenu.hide();activeConnectionKey=null;mapRoute.clear();selected=null;dirty=false;connectionDirty=false;childDraft=null;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;$('child-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
+  setMap:map=>{faceEditor.hide();nodeActions.hide();connectionMenu.hide();activeConnectionKey=null;mapRoute.clear();sourceRoutes.clear();selected=null;dirty=false;connectionDirty=false;childDraft=null;activeRelation=null;editingRelation=null;$('inspector').hidden=true;$('connection-form').hidden=true;$('child-form').hidden=true;nodes=map.nodes;relations=map.relations;expanded=new Set();positions=new Map();update({fit:true,instant:true});},
   focusNode:id=>{expanded=revealPath(nodes,id,expanded);selected=id;update({instant:true});loadInspector('edit');showNodeFace($('edit-form'));}
 });
 const connectionMenu=new MapConnectionsUI(viewport,{

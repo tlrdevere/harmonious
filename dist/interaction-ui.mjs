@@ -35,9 +35,8 @@ export class InteractionUI{
     const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));
     const definitions=[];if(context)definitions.push(interactionButton('View definitions & standards',()=>d.openContexts(target)));if(own&&ordinary)definitions.push(interactionButton('Use definitions & standards',()=>this.c.library.definitions.choose(target)));d.actionGroup('Meaning',definitions);
     if(d.mode()==='compare'&&target.type==='node'&&ordinary){
-      const buttons=[interactionButton('Find or view counterpart',()=>d.counterparts.show(target))];
-      if(own&&!d.counterparts.links(target).length)buttons.push(interactionButton('Request counterpart',()=>{const request=d.counterparts.requests(target).at(-1);if(request)d.open(request.id);else d.compose('counterpart','counterpart');}));
-      d.actionGroup('Counterparts',buttons);
+      if(!d.counterparts.pairs(target).length)d.host.append(interactionEl('p','No counterpart linked.','field-help counterpart-state'));
+      d.actionGroup('Counterparts',d.counterparts.actions(target));
     }
     const attached=conversationThreads(d.allEntries(),{mode:d.mode()}).filter(r=>stableJSON(conversationAnchor(ws.discussions,r))===stableJSON(target));
     if(attached.length)d.host.append(interactionButton(`View ${attached.length} attached ${attached.length===1?'interaction':'interactions'}`,()=>this.list(target),'discussion-text-action'));
