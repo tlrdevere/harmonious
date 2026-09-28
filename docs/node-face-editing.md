@@ -16,3 +16,9 @@ The preview never enters account autosave or downloads. Existing discard checks 
 The radial layout and routing remain in place. The expanded face follows its node at a readable screen size and stays within the canvas at narrow widths. Native form controls support keyboard entry, and scrolling inside the face does not zoom the map. Form elements stay mounted across redraws and autosave.
 
 Browser coverage includes immediate preview and focus, cancellation and submission, autosave/caret preservation, expanded Details, slider/numeric/null behavior, narrow layout, private copy creation, empty maps, source access loss, and reload. Existing account/database, cross-mode, standalone, and build checks remain release gates. [Deployment status](deployment-status.md) records the verified release; the [deferral list](next-work-plan.md#deferred-work) is unchanged.
+
+## Frame-copy follow-up
+
+The owner reported default frame wording after **Create map → Start with → Copy**. Worker 46 initialized new maps with default frame records before copying only their descendants; Worker 47 already copies the source frame records too. Public `adoption.mjs` and `workspace-ui.mjs` were rechecked against the Worker 47 checkout and matched.
+
+The copy browser suite now explicitly exercises that picker route for preloaded owned/shared maps and for owned/shared maps whose three frames were freshly edited through the node-face UI. All four cases passed, checking each frame's short description, details, citation title, and URL in saved records and in the reopened editor after reload. The source maps remain unchanged. No application change or additional deployment was needed for these checks. An older open tab is a possible explanation for the report, not a confirmed diagnosis; a refresh loads the current copying code. Previously created copies are not automatically repaired.
