@@ -42,6 +42,30 @@ try{
   await record(a,bn.id,'Agree');assert.equal(await badge(a,bn.id).getAttribute('data-assessment'),'agree');assert.equal(await a.locator('.pair-assessment').count(),0,'One personal agreement is not a mutual agreement');
   await load(b);await record(b,an.id,'Agree');await load(a);assert.equal(await a.locator('.pair-assessment[data-pair-assessment="agree"]').count(),2);assert.equal(await a.locator('.discussion-relationship[data-pair-assessment="agree"]').count(),1);assert.match(await badge(a,an.id).innerText(),/Bob: Agree/);await checks(a);
   await centerPair(a);await a.screenshot({path:'build/design-review/assessment-mutual-agree-100pct-desktop.png',fullPage:true});
+  const pair=a.locator('.agreement-pair'),marker=a.locator('.agreement-marker');
+  assert.equal(await pair.getAttribute('data-state'),'agree','Mutual agreement creates one joined display');
+  assert.equal(await a.locator('.node.agreement-half-a,.node.agreement-half-b').count(),2);
+  const originalPositions=await a.locator('#compare-canvas .node').evaluateAll(cards=>cards.map(c=>[c.dataset.nodeId,c.style.transform]));
+  await pair.locator('.agreement-band').click();await pop(a).waitFor();assert.match(await pop(a).innerText(),/Both agree/);await a.keyboard.press('Escape');
+  assert(await pair.locator('.agreement-band').evaluate(el=>el===document.activeElement),'Pair detail closes to its visible band');
+  for(const zoom of [1,.75,.5,.25,.1,.02,.5,.6]){
+    await centerPair(a,zoom);
+    assert.deepEqual(await a.locator('#compare-canvas .node').evaluateAll(cards=>cards.map(c=>[c.dataset.nodeId,c.style.transform])),originalPositions,'Zoom never changes source coordinates');
+    const overview=await a.locator('#compare-canvas .comparison-canvas').evaluate(el=>el.classList.contains('agreement-overview'));
+    if(zoom<=.25)assert(overview);if(zoom>=.6)assert(!overview);
+    if(overview){
+      if(zoom===.25)assert(await marker.isVisible(),'A centered pair has a readable overview marker at 25%');
+      if(await marker.isVisible())for(const button of await marker.locator('.agreement-marker-node').all()){const r=await button.boundingBox();assert(r.width>=44&&r.height>=44,'Overview node targets keep a minimum screen size');assert(await button.getAttribute('aria-label'));}
+      else assert(await a.locator('.agreement-overflow').isVisible(),'Pairs too close to other nodes remain available without overlapping targets');
+    }
+    if([.5,.25,.1].includes(zoom))await a.screenshot({path:`build/design-review/agreement-overview-${Math.round(zoom*100)}.png`,fullPage:true});
+  }
+  await centerPair(a,.25);
+  const half=marker.locator('.agreement-marker-node').first(),label=await half.getAttribute('aria-label');
+  await half.click();await pop(a).waitFor();assert(label.includes(await pop(a).locator('header strong').innerText()),'Each overview half opens its original node');await a.keyboard.press('Escape');
+  assert(await marker.locator('.agreement-marker-node').first().evaluate(el=>el===document.activeElement),'Overview node focus returns after inspection');
+  await marker.locator('.agreement-marker-label').click();await pop(a).waitFor();await a.keyboard.press('Escape');assert(await marker.locator('.agreement-marker-label').evaluate(el=>el===document.activeElement));
+  await centerPair(a);
   await activate(a,badge(a,an.id));assert.match(await pop(a).innerText(),/Agree[\s\S]*Bob/);assert.equal(await pop(a).getByRole('button',{name:'Edit',exact:true}).count(),0,'A partner assessment opens their record without edit permission');await a.keyboard.press('Escape');assert(await badge(a,an.id).evaluate(el=>el===document.activeElement),'Closing keyboard inspection returns to the assessment badge');
   for(const mode of ['inquiry','argument','compare']){await a.locator('#reasoning-'+mode+'-mode').click();assert.equal(await a.locator('.pair-assessment[data-pair-assessment="agree"]').count(),2);await checks(a);}
   await a.setViewportSize({width:390,height:844});await centerPair(a,.6);await checks(a);assert(await a.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await a.screenshot({path:'build/design-review/assessment-mutual-agree-mobile.png',fullPage:true});await centerPair(a,1,bn.id);await checks(a);await a.screenshot({path:'build/design-review/assessment-own-100pct-mobile.png',fullPage:true});await badge(a,bn.id).click();const detail=await pop(a).boundingBox();assert(detail.x>=0&&detail.x+detail.width<=391,'Badge inspection remains inside a narrow viewport');await a.screenshot({path:'build/design-review/assessment-detail-mobile.png',fullPage:true});await close(a);await a.setViewportSize({width:1440,height:1000});
@@ -50,5 +74,43 @@ try{
   await record(a,bn.id,'Disagree');await edit(store,bob,workspace=>{const map=workspace.maps.find(m=>m.id===bm.id);map.nodes.find(n=>n.id===bn.id).summary+=' Revised wording.';synchronizeIdeas(workspace,map);});await load(a);assert(await badge(a,bn.id).evaluate(el=>el.classList.contains('needs-review')));assert.match(await badge(a,bn.id).getAttribute('aria-label'),/review needed/);assert.equal(await a.locator('.pair-assessment').count(),0,'Stale source wording suppresses mutual status');await activate(a,badge(a,bn.id));assert.match(await pop(a).innerText(),/Source changed/);await close(a);await record(a,bn.id,'Disagree');assert.equal(await a.locator('.pair-assessment[data-pair-assessment="disagree"]').count(),2);
   await activate(a,card(a,an.id).locator('.node-main'));a.once('dialog',dialog=>dialog.accept());await pop(a).getByRole('button',{name:'Unlink counterpart',exact:true}).click();await a.locator('.counterpart-placeholder').first().waitFor();assert.equal(await a.locator('.pair-assessment').count(),0);assert.equal(await a.locator('.node-assessment[data-assessment="disagree"]').count(),2,'Unlinking retains both personal assessments');assert.equal(await a.locator('.discussion-relationship[data-pair-assessment]').count(),0);await checks(a);
   await load(b);assert.equal(await b.locator('.pair-assessment').count(),0);assert.equal(await b.locator('.node-assessment[data-assessment="disagree"]').count(),2,'The other account sees the same independent assessments after unlink');assert.deepEqual(errors,[]);
-  console.log('Comparison assessment browser passed: two-account personal badges, explicit Agree, symmetric mutual statuses, inspection permissions, mode consistency, withdrawal, stale review, unlink preservation, fixed card geometry, and desktop/narrow screenshots.');
+  // Dense, mixed-status map: derived displays may not change any source record.
+  const nodes={alice:[],bob:[]},actions=[['endorse','endorse'],['disagree','disagree'],['endorse','disagree'],['decline','decline'],['endorse',null],['decline','endorse']];
+  for(const actor of [alice,bob])await edit(store,actor,workspace=>{
+    for(let i=0;i<24;i++){const node=addNode(workspace,actor,`Overview ${i} by ${actor.name}`);node.kind='position';node.summary=`${actor.name}'s distinct wording for overview pair ${i}.`;node.confidence=actor===alice?35:80;nodes[actor===alice?'alice':'bob'].push(node.id);}
+    synchronizeIdeas(workspace,workspace.maps.find(m=>m.ownerId===actor.id));
+  });
+  await edit(store,alice,workspace=>{for(let i=0;i<24;i++){
+    const left={type:'node',mapId:am.id,nodeId:nodes.alice[i]},right={type:'node',mapId:bm.id,nodeId:nodes.bob[i]};
+    workspace.discussions.push(makeDiscussion(workspace,{comparisonId:thread.id,kind:'correspondence',action:'counterpart_link',target:left,other:right},alice.id));
+    if(actions[i%6][0])workspace.discussions.push(makeDiscussion(workspace,{comparisonId:thread.id,kind:'interaction',mode:'compare',action:actions[i%6][0],target:right},alice.id));
+  }});
+  await edit(store,bob,workspace=>{for(let i=0;i<24;i++)if(actions[i%6][1])workspace.discussions.push(makeDiscussion(workspace,{comparisonId:thread.id,kind:'interaction',mode:'compare',action:actions[i%6][1],target:{type:'node',mapId:am.id,nodeId:nodes.alice[i]}},bob.id));});
+  await edit(store,bob,workspace=>{const map=workspace.maps.find(m=>m.id===bm.id);map.nodes.find(n=>n.id===nodes.bob[23]).summary+=' Later revision.';synchronizeIdeas(workspace,map);});
+  const sourceBefore=JSON.stringify((await view(store,alice)).workspace.maps);
+  await load(a);
+  for(const [state,count]of [['agree',4],['disagree',4],['mixed',7],['no-position',4],['unassessed',4],['review',1]])assert.equal(await a.locator(`.agreement-pair[data-state="${state}"]`).count(),count);
+  for(const mode of ['inquiry','argument','compare']){await a.locator('#reasoning-'+mode+'-mode').click();assert.equal(await a.locator('.agreement-pair').count(),24);}
+  await a.getByRole('button',{name:'Fit both maps',exact:true}).click();
+  const markers=a.locator('.agreement-marker:visible'),rects=await markers.evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}));
+  for(let i=0;i<rects.length;i++)for(let j=i+1;j<rects.length;j++){const p=rects[i],q=rects[j];assert(!(p.x<q.x+q.w&&p.x+p.w>q.x&&p.y<q.y+q.h&&p.y+p.h>q.y),'Readable pair targets do not overlap');}
+  assert(await a.locator('.agreement-overflow').isVisible(),'Crowded markers have an explicit individual-pair fallback');
+  await a.screenshot({path:'build/design-review/agreement-overview-dense.png',fullPage:true});
+  await a.locator('.agreement-overflow summary').click();await a.locator('.agreement-overflow-list button:visible').first().click();
+  assert(!(await a.locator('#compare-canvas .comparison-canvas').evaluate(el=>el.classList.contains('agreement-overview'))),'A crowded-pair choice zooms to readable original faces');
+  await a.locator('.comparison-view-options>summary').click();await a.locator('#compare-collapse-a').click();assert.equal(await a.locator('.agreement-pair').count(),0,'Collapsed counterparts are not fabricated into merged cards');
+  await a.locator('#compare-all-a').click();assert.equal(await a.locator('.agreement-pair').count(),24);await a.locator('#compare-frame-a').selectOption('goal');assert.equal(await a.locator('.agreement-pair').count(),0,'Filtered counterparts are not merged');await a.locator('#compare-frame-a').selectOption('all');await a.locator('.comparison-view-options>summary').click();
+  const touchContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,reducedMotion:'reduce',extraHTTPHeaders:{'x-test-actor':'alice'}}),touch=await touchContext.newPage();touch.on('pageerror',e=>errors.push(e.message));await load(touch);
+  assert(await touch.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  for(const r of await touch.locator('.agreement-marker:visible button').evaluateAll(els=>els.map(el=>({w:el.getBoundingClientRect().width,h:el.getBoundingClientRect().height}))))assert(r.w>=44&&r.h>=44,'Touch targets remain usable in overview');
+  await touch.screenshot({path:'build/design-review/agreement-overview-touch.png',fullPage:true});
+  assert.equal(JSON.stringify((await view(store,alice)).workspace.maps),sourceBefore,'Overview, modes, filtering and navigation never modify original wording, confidence or source connections');
+  const portable=await browser.newPage({viewport:{width:1200,height:900}});portable.on('pageerror',e=>errors.push(e.message));await portable.goto(pathToFileURL(resolve('review/Harmonious-radial.html')).href);
+  await portable.locator('#workspace-file').setInputFiles({name:'agreement-overview.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify((await view(store,alice)).workspace))});
+  await portable.waitForFunction(()=>document.getElementById('storage-status').textContent.includes('Workspace file opened'));
+  await portable.evaluate(id=>location.hash='comparison='+id,thread.id);
+  await portable.locator('.comparison-view-options>summary').click();for(const side of ['a','b'])await portable.locator('#compare-all-'+side).click();await portable.locator('.comparison-view-options>summary').click();
+  assert.equal(await portable.locator('.agreement-pair').count(),24,'Portable comparisons preserve the same pair display states');
+  assert.deepEqual(errors,[]);
+  console.log('Comparison assessment browser passed: joined original faces, complete overview states, dense-map collision handling, 2–100% zoom without layout movement, pair/node inspection and focus, two accounts, collapsed/filtered endpoints, touch targets, mode consistency, source immutability and existing assessment regressions.');
 }catch(error){let index=0;for(const context of browser.contexts())for(const page of context.pages())await page.screenshot({path:`build/design-review/assessment-failure-${index++}.png`,fullPage:true});if(errors.length)console.error(errors);throw error;}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

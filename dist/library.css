@@ -298,3 +298,55 @@ body.comparison-full-canvas #comparison-commandbar .comparison-full-status{order
 .discussion-relationship[data-pair-assessment="agree"]{stroke:#398557;stroke-width:2.4}
 .discussion-relationship[data-pair-assessment="disagree"]{stroke:#af4b4b;stroke-width:2.4}
 .source-wording{max-height:9em;overflow:auto}
+
+/* Pair appearance never changes the source cards' size or graph coordinates. */
+.comparison-world .node{z-index:2}
+.agreement-pair{--pair-ink:#52667c;--pair-fill:#edf2f7;position:absolute;z-index:1;pointer-events:none;border-radius:12px;box-sizing:border-box}
+.agreement-pair[data-state="agree"],.agreement-marker[data-state="agree"]{--pair-ink:#287445;--pair-fill:#e5f3e9}
+.agreement-pair[data-state="disagree"],.agreement-marker[data-state="disagree"]{--pair-ink:#a43e49;--pair-fill:#fae7e9}
+.agreement-pair[data-state="mixed"],.agreement-marker[data-state="mixed"]{--pair-ink:#74509e;--pair-fill:#f0eafa}
+.agreement-pair[data-state="review"],.agreement-marker[data-state="review"]{--pair-ink:#8b681b;--pair-fill:#fff2d4}
+.agreement-pair[data-state="agree"]{border:3px solid var(--pair-ink);background:var(--pair-fill)}
+.agreement-band{position:absolute;left:0;top:0;width:100%;height:27px;padding:3px 12px;pointer-events:auto;border:0;border-top:5px solid var(--pair-ink);border-radius:10px 10px 0 0;background:var(--pair-fill);color:var(--pair-ink);font-size:13px;line-height:17px}
+.agreement-band:hover{background:var(--pair-fill);color:var(--pair-ink)}
+.agreement-pair[data-state="agree"] .agreement-band{top:-3px}
+.agreement-pair[data-state="unassessed"] .agreement-band{border-top-style:dashed}
+.comparison-world .node.agreement-half-a{border-top-right-radius:0;border-bottom-right-radius:0}
+.comparison-world .node.agreement-half-b{border-top-left-radius:0;border-bottom-left-radius:0}
+.agreement-overview-layer{position:absolute;inset:0;z-index:7;pointer-events:none}
+.agreement-marker{--pair-ink:#52667c;--pair-fill:#edf2f7;position:absolute;top:0;left:0;height:70px;pointer-events:auto;color:var(--pair-ink)}
+.agreement-marker-label{display:block;width:100%;height:24px;padding:1px 3px;border:0;border-radius:7px 7px 0 0;background:var(--pair-fill);color:var(--pair-ink);font-size:11px;line-height:20px;overflow:hidden;text-overflow:ellipsis}
+.agreement-marker-halves{display:flex;gap:7px;height:46px}
+.agreement-marker-node{flex:1;min-width:44px;height:46px;padding:0;border:1px solid #cbd6df;border-bottom:6px solid #66778b;border-radius:0 0 8px 8px;background:#eef2f6;color:#485d73;font-size:24px;font-weight:650;line-height:36px}
+.agreement-marker-node[data-state="agree"]{border-bottom-color:#287445;background:#e5f3e9;color:#23633b}
+.agreement-marker-node[data-state="disagree"]{border-bottom-color:#a43e49;background:#fae7e9;color:#91323d}
+.agreement-marker-node[data-state="unassessed"]{border-bottom-style:dashed}
+.agreement-marker-node[data-state="review"]{border-bottom-color:#8b681b;background:#fff2d4;color:#795b16}
+.agreement-marker[data-state="agree"] .agreement-marker-halves,.agreement-marker[data-state="mixed"] .agreement-marker-halves{gap:0}
+.agreement-marker[data-state="agree"] .agreement-marker-node:first-child,.agreement-marker[data-state="mixed"] .agreement-marker-node:first-child{border-bottom-right-radius:0;border-right:0}
+.agreement-marker[data-state="agree"] .agreement-marker-node:last-child,.agreement-marker[data-state="mixed"] .agreement-marker-node:last-child{border-bottom-left-radius:0;border-left:0}
+.agreement-marker[data-state="mixed"] .agreement-marker-node{border-bottom-color:#74509e}
+.agreement-marker-label:hover{background:var(--pair-fill);color:var(--pair-ink)}
+.agreement-silhouette{display:none}
+.agreement-overview .agreement-pair{border:0;background:none}
+.agreement-overview .agreement-band{opacity:0}
+.agreement-overview .agreement-band:focus-visible{opacity:1}
+.agreement-overview .agreement-silhouette{position:absolute;inset:29px 3px 3px;display:flex;gap:16px;overflow:hidden;border-radius:9px}
+.agreement-silhouette span{display:flex;align-items:center;justify-content:center;flex:1;min-width:0;font-size:64px;font-weight:700;background:#e5eaf0;color:#43566c;border:var(--overview-stroke) solid #65778e}
+.agreement-silhouette [data-state="agree"]{background:#4a9b6b;border-color:#287445;color:#fff}
+.agreement-silhouette [data-state="disagree"]{background:#c3606b;border-color:#963441;color:#fff}
+.agreement-silhouette [data-state="review"]{background:#e9bd55;border-color:#8b681b;color:#543c0d}
+.agreement-silhouette [data-state="unassessed"]{background:#fff;border-style:dashed}
+.agreement-overview .agreement-pair[data-state="agree"] .agreement-silhouette{gap:0;background:#4a9b6b}
+.agreement-pair[data-state="agree"] .agreement-silhouette span:first-child{border-right:0}
+.agreement-pair[data-state="agree"] .agreement-silhouette span:last-child{border-left:0}
+.agreement-pair[data-state="mixed"] .agreement-silhouette{border-bottom:var(--overview-stroke) solid #74509e}
+.agreement-overview .node[data-agreement-pair]{opacity:0}
+.agreement-overview .node[data-agreement-pair] :is(.node-title,.node-summary,.node-assessments,.node-bottom){opacity:0}
+.agreement-overview .node[data-agreement-pair]:focus-within,.agreement-overview .node[data-agreement-pair]:focus-within :is(.node-title,.node-summary,.node-assessments,.node-bottom){opacity:1}
+.agreement-overflow{position:absolute;left:12px;bottom:12px;z-index:9;max-width:calc(100% - 24px);font-size:12px;background:#fff;border:1px solid #bfcdd9;border-radius:8px;padding:8px 10px;color:#40556a;cursor:default;touch-action:auto}
+.agreement-overflow summary{cursor:pointer}
+.agreement-overflow-list{display:grid;max-height:180px;overflow:auto;margin-top:8px;gap:6px}
+.agreement-overflow-list button{max-width:100%;white-space:normal;text-align:left;font-size:12px}
+.agreement-pair[hidden],.agreement-overview-layer[hidden],.agreement-marker[hidden],.agreement-overflow[hidden],.agreement-overflow-list button[hidden]{display:none}
+@media(pointer:coarse){.agreement-marker-label{height:44px;font-size:12px}.agreement-marker{height:90px}.agreement-overflow summary{min-height:28px;display:flex;align-items:center}}

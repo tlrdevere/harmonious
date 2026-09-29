@@ -1,6 +1,18 @@
 # Harmonious: what to check on your next visit
 
-## First check: counterpart controls and assessments
+## First check: joined agreement cards and overview
+
+See [deployment status](deployment-status.md) for publication, then refresh both PCs.
+
+- [ ] Link two ordinary nodes and have each participant Agree with the other's node. Check that one joined card encloses both originals, including different wording and confidence values. Each half still opens its own node.
+- [ ] Use the shared status band to inspect the pair, named assessments and connection history. Close with the keyboard and confirm focus returns to that band.
+- [ ] Check Both disagree, Agree / Disagree, Agree / No position, two No position assessments, and a missing assessment. Their labels, split/joined shapes and symbols should remain distinct. Change source wording: Needs review must replace strong mutual styling.
+- [ ] Zoom below 45%, then back past 55%. Large overview symbols should remain readable without moving the nodes. Select either symbol to open its original node; close and check focus returns. Try this in Compare, Inquiry and Argument.
+- [ ] Use Fit on a dense map. Small pair silhouettes remain visible; larger markers must avoid other cards and each other. Open **pairs need closer zoom** and choose one to center its original faces at a readable scale.
+- [ ] Collapse or filter one endpoint: no joined pair should pretend the hidden counterpart is visible. Unlink: the joined appearance disappears, and both source nodes and personal assessments remain.
+- [ ] Repeat in a narrow touch window and a portable comparison file. Check pan, blank-click dismissal, unfinished drafts, source connections, frame colors and confidence controls.
+
+## Continuing check: counterpart controls and assessments
 
 This update is **live in Worker 52**, after all 53 local and 53 hosted checks, the additive database migration and public verification. See [deployment status](deployment-status.md), then refresh both PCs.
 

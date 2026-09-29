@@ -3,7 +3,7 @@ import {alice,bob,memoryStore,seedActor,edit,addNode,view} from './accounts.test
 import {startAccountComparison} from '../worker/account-api.mjs';
 import {makeDiscussion,discussionSnapshots} from '../dist/discussion.mjs';
 import {counterpartUnlinkInput} from '../dist/counterparts.mjs';
-import {nodeAssessment,counterpartAssessment} from '../dist/interaction-presentation.mjs';
+import {nodeAssessment,counterpartAssessment,counterpartDisplay} from '../dist/interaction-presentation.mjs';
 
 const store=memoryStore();
 for(const actor of [alice,bob]){await seedActor(store,actor);await edit(store,actor,ws=>{ws.maps.find(m=>m.ownerId===actor.id).visibility='shared';addNode(ws,actor,actor.name+' assessment');addNode(ws,actor,actor.name+' alternative');});}
@@ -59,4 +59,22 @@ for(const [left,right,expected] of [['endorse','endorse','agree'],['disagree','d
   stance(ws,bob,a,'endorse');stance(ws,alice,b,'endorse');assert.equal(mutual(ws).state,'agree','A single historical pair can support new, explicit individual assessments');
   const extra={...b,nodeId:bm.nodes.find(n=>n.title.endsWith('alternative')).id};ws.discussions.push({...earlier,id:earlier.id+'legacy-second',other:extra});assert.equal(mutual(ws),null,'Legacy multiple counterpart choices suppress an ambiguous mutual status');assert.equal(mutual(ws,b),null,'The opposite endpoint also checks for ambiguous reverse linking');
 }
-console.log('Comparison assessment model passed: latest explicit stance, withdrawal without resurrection, symmetric mutual status, stale-source review, scoped ownership, unlink preservation, missing and legacy-multiple counterparts.');
+{
+  const states=[['endorse','agree'],['disagree','disagree'],['decline','no-position'],[null,'unassessed']];
+  for(const [left,l]of states)for(const [right,r]of states){
+    const ws=linked();if(left)stance(ws,bob,a,left);if(right)stance(ws,alice,b,right);
+    const expected=[l,r].includes('unassessed')?'unassessed':l===r?l:'mixed',before=JSON.stringify(ws);
+    const display=counterpartDisplay(ws,thread.id,a),reverse=counterpartDisplay(ws,thread.id,b);
+    assert.equal(display.state,expected);assert.equal(reverse.state,expected);
+    assert.deepEqual(display.assessments.map(s=>s.state),[l,r]);
+    assert.deepEqual(reverse.assessments.map(s=>s.state),[r,l]);
+    assert.equal(JSON.stringify(ws),before,'Complete overview projection preserves both source maps and histories');
+  }
+  const ws=linked();stance(ws,bob,a,'endorse');stance(ws,alice,b,'decline');
+  ws.maps.find(m=>m.id===a.mapId).nodes.find(n=>n.id===a.nodeId).summary+=' Changed';
+  assert.equal(counterpartDisplay(ws,thread.id,a).state,'review','Review takes precedence over mixed or incomplete assessments');
+  ws.discussions.at(-1).status='withdrawn';assert.equal(counterpartDisplay(ws,thread.id,a).state,'review');
+  ws.discussions.push(makeDiscussion(ws,counterpartUnlinkInput(ws,thread.id,a,b),bob.id));
+  assert.equal(counterpartDisplay(ws,thread.id,a),null,'Unlinking removes the complete pair display too');
+}
+console.log('Comparison assessment model passed: latest explicit stance, withdrawal without resurrection, all 16 overview combinations, symmetric mutual status, stale-source review, scoped ownership, unlink preservation, missing and legacy-multiple counterparts.');

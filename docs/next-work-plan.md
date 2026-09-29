@@ -2,6 +2,8 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
+The owner approved execution of the **joined agreement card plus simplified overview**, recorded in the [implementation plan](agreement-overview-plan.md). Implementation is complete and undergoing release verification. It makes mutual agreement, disagreement and asymmetric assessments recognizable at a distance while preserving both original nodes and stable positions. [Deployment status](deployment-status.md) identifies the published release.
+
 The owner's [counterpart controls and assessment changes](counterpart-controls-and-assessments.md) are **live in Worker 52**, after all 53 local and 53 hosted release checks, the additive database migration and public verification. New links use one free counterpart in the same frame; either participant can unlink with attributed history; creation is request-only; personal Agree/Disagree/No position badges and reciprocal Both agree/Both disagree indicators are visible. Blank clicks close transient windows through draft guards. Next, refresh both PCs and continue the owner's [counterpart walkthrough](user-testing-checklist.md). The separate Aligned / In tension proposal and the deferral list remain unchanged.
 
 ## Preceding release — Worker 51
@@ -45,7 +47,7 @@ The owner's subsequent [code and view-consistency review](code-review-2026-09-27
 - **Return-visit catch-up:** explicitly deferred by the owner. The proposed “What changed since my last visit?” comparison summary, seen/unread tracking and links to new contributions or changed source wording are not active work.
 - **Participant introduction and worked example:** explicitly deferred by the owner. Optional first-session guidance, meaningful-node guidance and a worked exchange using the current interaction modes or an example from the presentation are not active work.
 - **Change-context discoverability follow-up:** explicitly deferred by the owner. The proposed review/improvement of how people recover earlier wording and the discussion behind a change is not active work. Existing histories, source snapshots and changed-source warnings remain supported.
-- Manual dragging/rearranging, the future pod model, automatic merging, multiple pinned windows, arbitrary reasoning links and richer disagreement-resolution tools remain deferred.
+- Manual dragging/rearranging, the future pod model, automatic merging of source records, multiple pinned windows, arbitrary reasoning links and richer disagreement-resolution tools remain deferred. The approved [visual agreement grouping](agreement-overview-plan.md) is a separate display change that preserves both source records.
 - The [dependency disclosure/advisory review](dependency-review.md) remains a separate deferred maintenance follow-up.
 
 ## Earlier priorities — September 22, 2026 (UTC)

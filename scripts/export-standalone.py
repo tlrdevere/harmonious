@@ -19,7 +19,7 @@ for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mj
         names='INTERACTION_ACTIONS,INTERACTION_DISPUTES,INTERACTION_CHOICES,interactionActions,interactionLabel,interactionMode,interactionSource,interactionClassification,optionsForClassification,interactionOptions,interactionRecipient,canRespondInteraction,interactionReferenceChoices,interactionReference,interactionHealth,makeInteraction,validateInteractionRecord,validateInteractionEdit'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='interaction-presentation.mjs':
-        names='entryMode,interactionCategory,isConversationRoot,interactionPresentation,conversationThreads,searchInteractions,nodeAssessment,counterpartAssessment'
+        names='entryMode,interactionCategory,isConversationRoot,interactionPresentation,conversationThreads,searchInteractions,nodeAssessment,counterpartAssessment,counterpartDisplay'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='interaction-search-ui.mjs':
         code='const InteractionSearchUI=(()=>{\n'+code+'\nreturn InteractionSearchUI;})();'

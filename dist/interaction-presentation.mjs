@@ -24,15 +24,24 @@ export function nodeAssessment(workspace,comparisonId,target,authorId){
 }
 
 export function counterpartAssessment(workspace,comparisonId,target){
+  const display=counterpartDisplay(workspace,comparisonId,target);
+  return display&&['agree','disagree'].includes(display.state)?display:null;
+}
+
+// A display state is not a new opinion or relationship record. In particular,
+// missing information must never acquire the meaning of an explicit disagreement.
+export function counterpartDisplay(workspace,comparisonId,target){
   const pairs=counterpartState(workspace,comparisonId,target).pairs;
   if(pairs.length!==1)return null;
   const other=pairs[0].other,source=accessibleSource(workspace,target),opposite=accessibleSource(workspace,other);
-  if(!source||!opposite||source.map.ownerId===opposite.map.ownerId)return null;
+  if(!source||!opposite||source.map.ownerId===opposite.map.ownerId||target.type!=='node'||other.type!=='node')return null;
+  if([target,other].some(t=>!workspace.maps.find(m=>m.id===t.mapId)?.nodes.find(n=>n.id===t.nodeId)?.parent))return null;
   const reverse=counterpartState(workspace,comparisonId,other).pairs;
   if(reverse.length!==1||!sameCounterpartSource(reverse[0].other,target))return null;
   const a=nodeAssessment(workspace,comparisonId,target,opposite.map.ownerId),b=nodeAssessment(workspace,comparisonId,other,source.map.ownerId);
-  if(a.needsReview||b.needsReview||!['agree','disagree'].includes(a.state)||a.state!==b.state)return null;
-  return {state:a.state,label:a.state==='agree'?'Both agree':'Both disagree',assessments:[a,b],target,other};
+  const state=a.needsReview||b.needsReview?'review':[a,b].some(s=>s.state==='unassessed')?'unassessed':a.state===b.state?a.state:'mixed';
+  const label={agree:'Both agree',disagree:'Both disagree','no-position':'Both no position',mixed:'Mixed positions',unassessed:'Awaiting assessment',review:'Needs review'}[state];
+  return {state,label,assessments:[a,b],target,other};
 }
 
 export const isConversationRoot=record=>!!record&&record.kind!=='context'&&!isResponse(record);

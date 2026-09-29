@@ -1,6 +1,6 @@
 import {InteractionUI} from './interaction-ui.mjs';
 import {InteractionSearchUI} from './interaction-search-ui.mjs';
-import {entryMode,interactionCategory,conversationThreads,nodeAssessment,counterpartAssessment} from './interaction-presentation.mjs';
+import {entryMode,interactionCategory,conversationThreads,nodeAssessment,counterpartAssessment,counterpartDisplay} from './interaction-presentation.mjs';
 import {counterpartRecords} from './counterparts.mjs';
 import {interactionMode,interactionLabel} from './interaction-grammar.mjs';
 import {CounterpartUI} from './counterpart-ui.mjs';
@@ -32,7 +32,8 @@ export class DiscussionUI{
     this.groupTarget=null;this.counterparts=new CounterpartUI(this);this.adoption=new AdoptionUI(this);this.premises=new PremiseUI(this);this.reflections=new ReflectionUI(this);this.interactions=new InteractionUI(this);
     this.canvas.options.canSetConfidence=(map,node)=>map.ownerId===this.actor()&&node.parent!==null&&node.kind==='position';
     this.canvas.options.onConfidence=(side,id)=>{if(!this.canLeave())return;this.c.selectSource(side,id);this.confidence();};
-    this.canvas.options.afterBuild=()=>this.draw();this.canvas.options.afterGeometry=()=>this.position();this.canvas.options.afterCamera=()=>this.positionPopover();
+    this.agreementView=new ComparisonAgreementView(this);
+    this.canvas.options.afterBuild=()=>this.draw();this.canvas.options.afterGeometry=()=>this.position();this.canvas.options.afterCamera=()=>{this.positionPopover();this.agreementView.position();};
     this.canvas.options.onBlankClick=()=>this.host.hidden?true:this.close({focus:false});
     this.host=discussEl('section','','discussion-popover');this.host.hidden=true;this.host.setAttribute('aria-label','On-map conversation');this.canvas.surface.append(this.host);
     this.host.addEventListener('toggle',()=>this.positionPopover(),true);
@@ -110,11 +111,12 @@ export class DiscussionUI{
     if(['entry','inference'].includes(this.target?.type)){const source=this.c.workspace.discussions.find(r=>r.id===this.target.entryId);this.target=source&&conversationAnchor(this.c.workspace.discussions,source);}
     this.viewId=null;this.groupTarget=null;if(this.target)this.actions();else this.list();
   }
-  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.canvas.sourceHighlights.select(null);this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.confidenceReturn=null;this.assessmentReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
+  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.agreementView.returnControl=null;this.canvas.sourceHighlights.select(null);this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.confidenceReturn=null;this.assessmentReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
   close({focus=true}={}){
-    const entry=this.viewId,connectionReturn=this.connectionReturn,confidenceReturn=this.confidenceReturn,assessmentReturn=this.assessmentReturn,counterpartReturn=this.counterparts.returnControl;
+    const entry=this.viewId,connectionReturn=this.connectionReturn,confidenceReturn=this.confidenceReturn,assessmentReturn=this.assessmentReturn,counterpartReturn=this.counterparts.returnControl,agreementReturn=this.agreementView.returnControl;
     if(!this.canLeave())return false;
     this.groupTarget=null;this.target=null;this.counterparts.returnControl=null;this.draw();if(!focus)return true;
+    if(this.agreementView.focusReturn(agreementReturn))return true;
     const assessmentFocus=assessmentReturn&&this.canvas.cards.get(assessmentReturn)?.querySelector('button.node-assessment');
     if(assessmentFocus){assessmentFocus.focus({preventScroll:true});return true;}
     if(counterpartReturn&&this.counterparts.focusReturn?.(counterpartReturn))return true;
@@ -428,6 +430,7 @@ export class DiscussionUI{
     discussUI('argument-mode').hidden=!this.c.workspace.comparisons.some(r=>r.comparisonId===this.thread()?.id);
     const threadKey=this.thread()?.id||null;if(this.viewThreadKey!==threadKey){this.viewOptions.open=false;this.viewThreadKey=threadKey;}
     discussUI('comparison-view-modes').hidden=discussUI('argument-mode').hidden;
+    this.agreementView.draw();
     this.position();
   }
   drawAssessments(){
@@ -452,6 +455,7 @@ export class DiscussionUI{
   badge(text,target,action,aria,style=''){const b=discussButton(text,action,`discussion-badge discussion-drawing ${style}`);b.setAttribute('aria-label',aria);b.title=aria;if(target.type==='entry')b.dataset.entry=target.entryId;this.canvas.world.append(b);this.items.push({type:'badge',target,b});}
   position(){
     if(!this.items)return;this.entryPositions=new Map();this.connectionPositions=new Map();const routeBounds=[],occupied=comparisonDisplayRects(this.canvas.layout,this.canvas.positions);
+    for(const entry of this.agreementView.entries){const points=entry.members.map(m=>this.canvas.positions.get(m.key));if(points.every(Boolean)){const x=Math.min(...points.map(p=>p.x)),y=Math.min(...points.map(p=>p.y));occupied.push({x:x-3,y:y-32,w:Math.max(...points.map(p=>p.x))+CARD_W-x+6,h:32});}}
     this.canvas.ensureSourceRoutes();
     const overlaps=(x,y,w,h)=>occupied.some(r=>x<r.x+r.w+12&&x+w+12>r.x&&y<r.y+r.h+12&&y+h+12>r.y);
     for(const item of this.items){
@@ -475,7 +479,7 @@ export class DiscussionUI{
       }
     }
     if(occupied.length){const visible=[...occupied,...routeBounds],x=Math.min(0,...visible.map(r=>r.x)),y=Math.min(0,...visible.map(r=>r.y));this.canvas.layout.bounds={x,y,width:Math.max(...visible.map(r=>r.x+r.w))+32-x,height:Math.max(...visible.map(r=>r.y+r.h))+32-y};}
-    this.counterparts.position();this.reasoning.position();this.positionPopover();
+    this.counterparts.position();this.reasoning.position();this.positionPopover();this.agreementView.position();
   }
   positionPopover(){
     if(this.host.hidden)return;const {surface,camera}=this.canvas,p=this.point(this.target),width=Math.min(350,surface.clientWidth-24);
@@ -493,5 +497,109 @@ export class DiscussionUI{
     if(tools&&!tools.hidden&&x<tools.offsetLeft+tools.offsetWidth+8&&x+width>tools.offsetLeft-8)minY=Math.max(minY,tools.offsetTop+tools.offsetHeight+10);
     this.host.style.maxHeight=Math.max(80,surface.clientHeight-minY-12)+'px';
     this.host.style.left=x+'px';this.host.style.top=Math.max(minY,Math.min(surface.clientHeight-this.host.offsetHeight-12,y))+'px';
+  }
+}
+
+// Comparison-only decoration: source cards and their graph coordinates stay
+// independent. Screen-space controls remain readable without moving the map.
+class ComparisonAgreementView{
+  constructor(d){
+    this.d=d;this.canvas=d.canvas;this.entries=[];this.overview=false;
+    this.layer=discussEl('div','','agreement-overview-layer');this.canvas.surface.append(this.layer);
+    this.overflow=discussEl('details','','agreement-overflow');this.overflow.hidden=true;
+    this.overflow.append(discussEl('summary'),discussEl('div','','agreement-overflow-list'));this.canvas.surface.append(this.overflow);
+    for(const el of [this.layer,this.overflow])el.addEventListener('pointerdown',e=>e.stopPropagation());
+    this.overflow.addEventListener('wheel',e=>e.stopPropagation());
+    this.overflow.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();this.overflow.open=false;this.overflow.querySelector('summary').focus();}});
+  }
+  draw(){
+    const {canvas,d}=this,ws=d.c.workspace,thread=d.thread();
+    const focused=this.layer.contains(document.activeElement)?{id:document.activeElement.dataset.group,part:document.activeElement.dataset.part}:null;
+    canvas.world.querySelectorAll('.agreement-pair').forEach(el=>el.remove());
+    for(const card of canvas.cards.values()){delete card.dataset.agreementPair;card.classList.remove('agreement-half-a','agreement-half-b');}
+    this.layer.replaceChildren();this.entries=[];this.overflow.lastChild.replaceChildren();
+    if(thread&&d.layers.map)for(const group of canvas.layout.groups?.values()||[]){
+      if(group.kind!=='pair'||group.members.length!==2)continue;
+      const members=[...group.members].sort((a,b)=>a.side.localeCompare(b.side)),target=m=>({type:'node',mapId:m.mapId,nodeId:m.nodeId});
+      const display=counterpartDisplay(ws,thread.id,target(members[0]));
+      if(!display||!members.some(m=>m.mapId===display.other.mapId&&m.nodeId===display.other.nodeId))continue;
+      const edge=d.items.find(item=>item.connection?.key===actualNodePairKey(target(members[0]),target(members[1])));
+      if(!edge)continue;
+      const names=members.map(m=>ws.maps.find(map=>map.id===m.mapId)?.nodes.find(n=>n.id===m.nodeId)?.title||'Node');
+      const descriptions=display.assessments.map((a,i)=>`${d.name(a.authorId)}: ${a.label} about ${names[i]}${a.needsReview?' · Needs review':''}`);
+      const detail=`${display.label}. ${descriptions.join('. ')}`;
+      const el=discussEl('div','','agreement-pair'),open=()=>{
+        const current=d.projectConnections().groups.find(g=>g.key===edge.connection.key);
+        if(current&&d.openConnection(current,display.label,edge.connection,{details:true})){
+          d.host.querySelector('header').after(...descriptions.map(text=>discussEl('p',text,'discussion-body')));
+          this.returnControl={id:group.id,part:'pair'};d.positionPopover();d.host.querySelector('header button')?.focus({preventScroll:true});
+        }
+      };
+      el.dataset.state=display.state;el.dataset.group=group.id;
+      const silhouette=discussEl('div','','agreement-silhouette');silhouette.setAttribute('aria-hidden','true');
+      for(const a of display.assessments){const half=discussEl('span',a.needsReview?'!':{agree:'✓',disagree:'×','no-position':'—',unassessed:'○'}[a.state]);half.dataset.state=a.needsReview?'review':a.state;silhouette.append(half);}
+      const band=discussButton(display.label,open,'agreement-band');band.title=detail;band.setAttribute('aria-label','Inspect counterpart pair: '+detail);el.append(silhouette,band);canvas.world.append(el);
+      const marker=discussEl('div','','agreement-marker');marker.dataset.state=display.state;marker.dataset.group=group.id;
+      const pairButton=discussButton(display.label,open,'agreement-marker-label');pairButton.dataset.group=group.id;pairButton.dataset.part='pair';pairButton.setAttribute('aria-label','Inspect counterpart pair: '+detail);pairButton.title=detail;
+      const halves=discussEl('div','','agreement-marker-halves'),buttons=[];
+      members.forEach((m,i)=>{
+        const assessment=display.assessments[i],symbol=assessment.needsReview?'!':{agree:'✓',disagree:'×','no-position':'—',unassessed:'○'}[assessment.state];
+        const button=discussButton(symbol,()=>{
+          canvas.onSelect(m.side,m.nodeId);
+          if(!d.host.hidden&&d.target?.mapId===m.mapId&&d.target?.nodeId===m.nodeId){this.returnControl={id:group.id,part:m.key};d.host.querySelector('header button')?.focus({preventScroll:true});}
+        },'agreement-marker-node');
+        button.dataset.state=assessment.needsReview?'review':assessment.state;button.dataset.side=m.side;button.dataset.group=group.id;button.dataset.part=m.key;
+        button.setAttribute('aria-label',`Select ${names[i]} by ${d.name(ws.maps.find(map=>map.id===m.mapId).ownerId)}. ${descriptions[i]}`);button.title=button.getAttribute('aria-label');halves.append(button);buttons.push(button);
+        const card=canvas.cards.get(m.key);card.dataset.agreementPair=group.id;
+        if(display.state==='agree')card.classList.add('agreement-half-'+m.side);
+      });
+      marker.append(pairButton,halves);this.layer.append(marker);
+      const listButton=discussButton(`${names[0]} / ${names[1]} · ${display.label}`,()=>{
+        if(!d.canLeave())return;
+        const a=canvas.positions.get(members[0].key),b=canvas.positions.get(members[1].key);if(!a||!b)return;
+        canvas.stopAnimation();canvas.camera={z:Math.max(.75,canvas.camera.z),x:0,y:0};
+        canvas.camera.x=canvas.surface.clientWidth/2-(a.x+b.x+CARD_W)/2*canvas.camera.z;
+        canvas.camera.y=canvas.surface.clientHeight/2-(a.y+b.y+CARD_H)/2*canvas.camera.z;
+        this.overflow.open=false;canvas.drawCamera();band.focus({preventScroll:true});
+      });listButton.title=detail;this.overflow.lastChild.append(listButton);
+      this.entries.push({group,members,el,band,marker,pairButton,buttons,listButton,display});
+    }
+    this.position();if(focused)this.focusReturn(focused);
+  }
+  focusReturn(control){
+    if(!control)return false;const entry=this.entries.find(e=>e.group.id===control.id);if(!entry)return false;
+    let button=control.part==='pair'?this.overview&&!entry.marker.hidden?entry.pairButton:entry.band:this.overview&&!entry.marker.hidden?entry.buttons.find(b=>b.dataset.part===control.part):this.canvas.cards.get(control.part)?.querySelector('.node-main');
+    if(this.overview&&entry.marker.hidden){this.overflow.open=true;button=entry.listButton;}
+    if(!button?.isConnected)return false;button.focus({preventScroll:true});return true;
+  }
+  position(){
+    const {canvas}=this,{z,x,y}=canvas.camera;
+    this.overview=this.overview?z<.55:z<.45;
+    canvas.surface.classList.toggle('agreement-overview',this.overview);
+    this.layer.hidden=!this.overview;const w=canvas.surface.clientWidth,h=canvas.surface.clientHeight,occupied=[],hidden=[],sourceRects=this.overview?comparisonDisplayRects(canvas.layout,canvas.positions).map(r=>({...r,x:x+r.x*z,y:y+r.y*z,w:r.w*z,h:r.h*z})):[];
+    const surface=canvas.surface.getBoundingClientRect();
+    for(const el of canvas.surface.querySelectorAll('.comparison-map-controls,.comparison-canvas-hint,.reasoning-tools:not([hidden])')){
+      const r=el.getBoundingClientRect();if(r.width&&r.height)occupied.push({x:r.x-surface.x,y:r.y-surface.y,w:r.width,h:r.height});
+    }
+    // Keep a stable order. A focused marker is retained first; crowded pairs
+    // remain individual entries in the closer-zoom list rather than fake clusters.
+    const entries=[...this.entries].sort((a,b)=>Number(b.marker.contains(document.activeElement))-Number(a.marker.contains(document.activeElement))||a.group.id.localeCompare(b.group.id));
+    for(const entry of entries){
+      const points=entry.members.map(m=>canvas.positions.get(m.key));if(points.some(p=>!p)){entry.el.hidden=true;entry.marker.hidden=true;continue;}
+      const left=Math.min(...points.map(p=>p.x)),top=Math.min(...points.map(p=>p.y)),width=Math.max(...points.map(p=>p.x))+CARD_W-left,height=Math.max(...points.map(p=>p.y))+CARD_H-top;
+      entry.el.style.transform=`translate(${left-3}px,${top-29}px)`;entry.el.style.width=width+6+'px';entry.el.style.height=height+32+'px';entry.el.style.setProperty('--overview-stroke',Math.min(24,1.5/z)+'px');entry.el.hidden=false;
+      entry.marker.hidden=true;entry.listButton.hidden=true;
+      if(!this.overview)continue;
+      const mw= Math.min(160,Math.max(112,width*z)),mh=matchMedia('(pointer:coarse)').matches?90:70,rawX=x+(left+width/2)*z-mw/2,rawY=y+(top+height)*z-mh;
+      if(rawX+mw<0||rawY+mh<0||rawX>w||rawY>h)continue;
+      const r={x:Math.max(4,Math.min(w-mw-4,rawX)),y:Math.max(4,Math.min(h-mh-48,rawY)),w:mw,h:mh};
+      const obstacles=occupied.concat(sourceRects.filter(o=>!entry.members.some(m=>m.key===o.key)));
+      if(obstacles.some(o=>r.x<o.x+o.w+4&&r.x+r.w+4>o.x&&r.y<o.y+o.h+4&&r.y+r.h+4>o.y)){hidden.push(entry);entry.listButton.hidden=false;continue;}
+      occupied.push(r);entry.marker.hidden=false;entry.marker.style.transform=`translate(${r.x}px,${r.y}px)`;entry.marker.style.width=mw+'px';
+    }
+    this.overflow.hidden=!this.overview||!hidden.length;this.overflow.firstChild.textContent=`${hidden.length} ${hidden.length===1?'pair needs':'pairs need'} closer zoom`;
+    const controls=canvas.surface.querySelector('.comparison-map-controls')?.getBoundingClientRect();
+    this.overflow.style.bottom=(w<600&&controls?h-(controls.top-surface.top)+8:12)+'px';
+    if(this.overflow.hidden)this.overflow.open=false;
   }
 }

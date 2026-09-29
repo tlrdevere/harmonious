@@ -4,6 +4,8 @@ The original v4 grammar was implemented on `redesign/node-interactions` and depl
 
 ## September 29 counterpart controls and assessments
 
+The [joined-card and overview follow-up](agreement-overview-plan.md) adds derived display states without introducing a new stance or shared source record. Mutual agreement visually joins two originals; different explicit positions, no position, absent assessments and review-required sources remain distinct. A zoomed-out presentation preserves source coordinates and source-edge identity across shared modes. Deployment status records publication.
+
 The [counterpart controls follow-up](counterpart-controls-and-assessments.md) **shipped in Worker 52**, after all 53 local and 53 hosted checks, the additive database migration and public verification. It restricts new links to free nodes in the same frame, supports attributed unlinking by either participant, and limits creation to explicit counterpart requests. Ordinary menus omit redundant view/link-another/read-source controls. **Agree** is the visible name of the existing `endorse` action. Personal assessments appear on cards; **Both agree / Both disagree** is derived only from matching, current reciprocal assessments on a one-to-one pair. No position and Not assessed remain distinct and produce no mutual verdict. Blank-canvas clicks dismiss transient windows through existing draft safeguards. Publication is recorded in [deployment status](deployment-status.md).
 
 ## September 29 canvas dragging fix
