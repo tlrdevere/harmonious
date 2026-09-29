@@ -50,3 +50,14 @@
 .connection-source-label{margin:4px 0;font-size:12px;line-height:1.5;color:#4c6273;overflow-wrap:anywhere}
 .collapsed-connection-pair>.discussion-list-item{margin-top:7px}
 .collapsed-connection-pair>button:last-child{margin-top:8px;font-size:12px}
+
+.argument-log{margin:12px 0 18px}.argument-log h3{margin:0 0 10px}
+.argument-log-entry{border:1px solid #ccd9e3;border-radius:9px;margin:8px 0;background:#f8fbfd;overflow-wrap:anywhere}
+.argument-log-entry>summary{padding:12px;cursor:pointer;line-height:1.5;min-height:44px}
+.argument-log-entry>summary:focus-visible{outline:2px solid #347d82;outline-offset:2px}
+.argument-log-entry>summary>strong{font-size:13px}.argument-log-date,.argument-log-preview,.argument-log-response,.argument-log-expand{display:block;margin-top:5px}
+.argument-log-date{font-size:11px;color:#627687}.argument-log-preview{font-size:12px;white-space:pre-wrap}
+.argument-log-response{font-size:12px;font-weight:650;color:#234d68}.argument-log-expand{font-size:11px;color:#496779}
+.argument-log-detail{padding:0 12px 12px;border-top:1px solid #dce5eb;background:white}.argument-log-detail h4{margin:16px 0 8px}
+.argument-log-reply{border-left:3px solid #7d9cae;padding:8px 10px;margin:10px 0}.argument-log-history{margin-top:12px}
+.argument-log-detail>button{margin:8px 8px 0 0}

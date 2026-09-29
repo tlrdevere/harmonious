@@ -102,7 +102,7 @@ export class AccountWorkspace{
     if(c.activeMapId&&(reset||oldContent!==stableJSON(c.activeMap())))c.loadMap(c.activeMapId);
     const selected=workspace.comparisons.find(record=>record.id===c.editingRecord);
     if(selected&&!c.comparisonDirty){c.sides={a:{mapId:selected.aMapId,nodeId:selected.aNodeId},b:{mapId:selected.bMapId,nodeId:selected.bNodeId}};c.loadComparisonForm(selected);}
-    c.populateMaps();if(c.mode==='compare')c.renderComparison();c.participation.actorId=this.actor.id;c.participation.peopleSelection=null;c.participation.refresh();if(c.mode==='argument')c.argument.render();if(reset)c.openComparisonRoute();return true;
+    c.populateMaps();if(c.mode==='compare')c.renderComparison();c.participation.actorId=this.actor.id;c.participation.peopleSelection=null;c.participation.refresh();if(c.mode==='argument')c.argument.render();d?.interactions?.refreshArgumentLog();if(reset)c.openComparisonRoute();return true;
   }
   status(message=null){
     const c=this.controller;accountUI('save-workspace').textContent=this.blocked?'Retry save':'Save now';accountUI('storage-status').dataset.state=c.workspaceDirty?'dirty':'saved';

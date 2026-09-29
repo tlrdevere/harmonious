@@ -35,6 +35,8 @@ Selecting a connection in Map/Create opens its on-map detail with its actual end
 
 ## Read and find interactions
 
+In Argument, selecting a node shows **Disputes** immediately near the top of its window. Each entry shows the author, date, categories, a short comment preview, and either **No response yet** or the response count and latest response. Expand an entry to read its full wording and all responses together; the intended recipient can Respond there. Manage controls retain the existing edit and withdrawal flows. Withdrawn disputes appear in a separate expandable history. The log is scoped to the selected node and comparison. Account refresh updates an open log while preserving expanded entries, scroll and focus; draft safeguards still apply. See deployment status for publication of this follow-up.
+
 Source badges count initiating conversations, excluding their responses. A badge opens exactly that category of conversations. Collapsing a branch keeps its attachments reachable from the visible ancestor. Select Conversations to browse the current mode; Withdrawn interactions opens historical threads.
 
 Rows identify the action, author, source, and a compact preview of the selected choices or comment. Response rows show the outcome, such as Partly accept, rather than a generic Respond label. Open a row for full wording and options; withdrawn responses remain labeled within their parent thread.

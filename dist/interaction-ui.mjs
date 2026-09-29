@@ -20,6 +20,7 @@ export class InteractionUI{
     if(!source){d.host.append(interactionEl('p','Select a node or connection.'));return;}
     const own=source.map.ownerId===d.actor(),ordinary=target.type==='edge'||source.item.parent!==null;
     d.host.append(interactionEl('p',d.name(source.map.ownerId),'discussion-byline'));
+    if(d.mode()==='argument'&&target.type==='node')this.argumentLog();
     const wording=[source.item.summary,source.item.details,source.item.note].filter(Boolean).join('\n');
     if(wording)d.host.append(interactionEl('p',wording,'discussion-body source-wording'));
     if(source.item.sourceTitle||source.item.sourceUrl){const citation=interactionEl('p',source.item.sourceTitle||'Source','field-help');if(source.item.sourceUrl){const a=interactionEl('a','Open source');a.href=source.item.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';citation.append(' · ',a);}d.host.append(citation);}
@@ -39,8 +40,66 @@ export class InteractionUI{
       d.actionGroup('Counterparts',d.counterparts.actions(target));
     }
     const attached=conversationThreads(d.allEntries(),{mode:d.mode()}).filter(r=>stableJSON(conversationAnchor(ws.discussions,r))===stableJSON(target));
-    if(attached.length)d.host.append(interactionButton(`View ${attached.length} attached ${attached.length===1?'interaction':'interactions'}`,()=>this.list(target),'discussion-text-action'));
+    const remaining=attached.filter(r=>!(d.mode()==='argument'&&target.type==='node'&&r.kind==='interaction'&&r.action==='dispute'));
+    if(remaining.length)d.host.append(interactionButton(`View ${remaining.length} attached ${remaining.length===1?'interaction':'interactions'}`,()=>this.list(target),'discussion-text-action'));
     d.positionPopover();
+  }
+  responses(id){return this.d.allEntries().filter(r=>r.kind==='interaction'&&r.action==='respond'&&r.target.entryId===id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));}
+  argumentLog(){
+    const d=this.d,ws=this.c.workspace,section=interactionEl('section','','argument-log');
+    const entries=d.recentConversations(d.allEntries().filter(r=>r.kind==='interaction'&&r.action==='dispute'&&stableJSON(r.target)===stableJSON(d.target)));
+    const active=entries.filter(r=>r.status==='active'),withdrawn=entries.filter(r=>r.status==='withdrawn');
+    section.append(interactionEl('h3',`Disputes (${active.length})`));
+    if(!active.length)section.append(interactionEl('p','No disputes recorded on this node yet.','field-help'));
+    const render=r=>{
+      const p=interactionPresentation(ws,r),replies=this.responses(r.id),current=replies.filter(reply=>reply.status==='active'),latest=current.at(-1);
+      const card=interactionEl('details','','argument-log-entry'),summary=interactionEl('summary'),body=interactionEl('div','','argument-log-detail');
+      card.dataset.dispute=r.id;
+      summary.append(interactionEl('strong',`${d.name(r.authorId)} · ${p.choices.join(' · ')}`),interactionEl('small',new Date(r.createdAt).toLocaleString(),'argument-log-date'));
+      const excerpt=text=>text.length>160?text.slice(0,157)+'…':text;
+      if(r.body||r.interaction.otherText)summary.append(interactionEl('span',excerpt([r.body,r.interaction.otherText].filter(Boolean).join(' · ')),'argument-log-preview'));
+      const outcome=latest?interactionPresentation(ws,latest).label:null;
+      summary.append(interactionEl('span',latest?`${current.length} ${current.length===1?'response':'responses'} · Latest: ${d.name(latest.authorId)} — ${outcome}`:'No response yet','argument-log-response'));
+      if(latest?.body)summary.append(interactionEl('span',excerpt(latest.body),'argument-log-preview'));
+      summary.append(interactionEl('span','Details','argument-log-expand'));
+      if(r.status==='withdrawn')body.append(interactionEl('p','Withdrawn dispute','discussion-state'));
+      this.content(r,body);
+      body.append(interactionEl('h4','Responses'));
+      if(!replies.length)body.append(interactionEl('p','No response yet.','field-help'));
+      for(const reply of replies){
+        const response=interactionEl('section','','argument-log-reply');response.dataset.response=reply.id;
+        response.append(interactionEl('strong',`${d.name(reply.authorId)}${reply.status==='withdrawn'?' · Withdrawn response':''}`),interactionEl('small',new Date(reply.createdAt).toLocaleString(),'argument-log-date'));
+        this.content(reply,response);
+        if(reply.authorId===d.actor()&&reply.status==='active')response.append(interactionButton('Manage response',()=>this.open(reply.id),'discussion-text-action'));
+        body.append(response);
+      }
+      if(r.status==='active'&&r.interaction.recipientId===d.actor())body.append(interactionButton('Respond',()=>{d.target={type:'entry',entryId:r.id};this.compose('respond');},'primary'));
+      if(r.authorId===d.actor())body.append(interactionButton('Manage dispute',()=>this.open(r.id),'discussion-text-action'));
+      card.append(summary,body);card.addEventListener('toggle',()=>d.positionPopover());return card;
+    };
+    for(const r of active)section.append(render(r));
+    if(withdrawn.length){const history=interactionEl('details','','argument-log-history');history.append(interactionEl('summary',`Withdrawn disputes (${withdrawn.length})`));for(const r of withdrawn)history.append(render(r));section.append(history);}
+    section.argumentSnapshot=stableJSON(ws);d.host.append(section);
+  }
+  refreshArgumentLog(){
+    const d=this.d,old=d.host?.querySelector('.argument-log');
+    if(!old||d.host.hidden||d.mode()!=='argument'||d.target?.type!=='node'||d.dirty||d.saving||d.host.querySelector('form'))return;
+    if(old.argumentSnapshot===stableJSON(this.c.workspace))return;
+    const open=new Set([...old.querySelectorAll('details[open][data-dispute]')].map(el=>el.dataset.dispute)),historyOpen=old.querySelector('.argument-log-history')?.open;
+    const focused=document.activeElement,focusId=old.contains(focused)&&focused.closest('[data-dispute]')?.dataset.dispute,responseId=focused?.closest('[data-response]')?.dataset.response,scroll=d.host.scrollTop;
+    this.argumentLog();const next=d.host.querySelector('.argument-log:last-child');old.replaceWith(next);
+    for(const el of next.querySelectorAll('[data-dispute]'))el.open=open.has(el.dataset.dispute);
+    const history=next.querySelector('.argument-log-history');if(history)history.open=!!historyOpen;
+    if(focusId){const card=[...next.querySelectorAll('[data-dispute]')].find(el=>el.dataset.dispute===focusId),scope=responseId?[...card?.querySelectorAll('[data-response]')||[]].find(el=>el.dataset.response===responseId):card,button=focused.matches('button')&&[...scope?.querySelectorAll('button')||[]].find(el=>el.textContent===focused.textContent);(button||card?.querySelector('summary'))?.focus({preventScroll:true});}
+    d.positionPopover();d.host.scrollTop=scroll;
+  }
+  content(r,host){
+    const d=this.d,ws=this.c.workspace,p=interactionPresentation(ws,r);
+    for(const label of p.choices)host.append(interactionEl('p',label,'interaction-selected'));
+    for(const text of [r.interaction.otherText,r.body].filter(Boolean))host.append(interactionEl('p',text,'discussion-body'));
+    if(r.interaction.reference){const ref=r.interaction.reference,accessible=interactionReferenceChoices(ws,r.comparisonId).some(choice=>stableJSON(choice.target)===stableJSON(ref.target));const box=interactionEl('section','','interaction-reference-preview');box.append(interactionEl('strong','Referenced node'));if(accessible)box.append(interactionEl('p',ref.snapshot.label),interactionButton('Show referenced node',()=>{if(d.canLeave())this.c.library.openSource(ref.target.mapId,ref.target.nodeId);}));else box.append(interactionEl('p','Reference no longer available','field-help'));host.append(box);}
+    const health=discussionHealth(ws,r);if(['changed','unavailable'].includes(health.state))host.append(interactionEl('p',health.label,'review-warning'));
+    if(r.action==='dispute'&&r.history.length){const history=interactionEl('details','','interaction-history');history.append(interactionEl('summary','Earlier versions'));for(const revision of r.history){const section=interactionEl('section'),presentation=interactionPresentation(ws,revision);section.append(interactionEl('strong',`Version ${revision.version}`));for(const label of presentation.choices)section.append(interactionEl('p',label,'interaction-selected'));for(const text of [revision.interaction.otherText,revision.body].filter(Boolean))section.append(interactionEl('p',text,'discussion-body'));history.append(section);}host.append(history);}
   }
   compose(action,old=null){
     const d=this.d;if(!d.canLeave())return;
@@ -116,16 +175,11 @@ export class InteractionUI{
     d.activateMode(interactionMode(r));d.target={type:'entry',entryId:id};d.shell(interactionPresentation(this.c.workspace,r).label);d.viewId=id;
     d.host.append(interactionEl('p',`${d.name(r.authorId)} · ${r.targetLabel}`,'discussion-byline'));
     const parent=r.target.type==='entry'?this.c.workspace.discussions.find(p=>p.id===r.target.entryId):null;
-    const choices=optionsForClassification(r.interaction.classification,r.action,r.interaction.version),labels=new Map(choices.map(o=>[o.id,o.label]));
-    for(const option of r.interaction.options)d.host.append(interactionEl('p',labels.get(option)||option.replaceAll('_',' '),'interaction-selected'));
-    if(r.interaction.otherText)d.host.append(interactionEl('p',r.interaction.otherText,'discussion-body'));if(r.body)d.host.append(interactionEl('p',r.body,'discussion-body'));
-    if(r.interaction.reference){const ref=r.interaction.reference,accessible=interactionReferenceChoices(this.c.workspace,r.comparisonId).some(choice=>stableJSON(choice.target)===stableJSON(ref.target));const box=interactionEl('section','','interaction-reference-preview');box.append(interactionEl('strong','Referenced node'));if(accessible)box.append(interactionEl('p',ref.snapshot.label),interactionButton('Show referenced node',()=>{if(d.canLeave())this.c.library.openSource(ref.target.mapId,ref.target.nodeId);}));else box.append(interactionEl('p','Reference no longer available','field-help'));d.host.append(box);}
-    const health=discussionHealth(this.c.workspace,r);if(['changed','unavailable'].includes(health.state))d.host.append(interactionEl('p',health.label,'review-warning'));
+    this.content(r,d.host);
     if(r.status==='active'&&r.action!=='respond'&&['request_reason','request_explanation','propose_alternative','offer_reason','dispute'].includes(r.action)&&r.interaction.recipientId===d.actor())d.actionGroup('Your response',[interactionButton('Respond',()=>this.compose('respond'))]);
     if(r.status==='withdrawn')d.host.append(interactionEl('p','Withdrawn','discussion-state'));
-    const replies=d.allEntries().filter(reply=>reply.kind==='interaction'&&reply.action==='respond'&&reply.target.entryId===id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
+    const replies=this.responses(id);
     if(replies.length){d.host.append(interactionEl('h3','Responses'));for(const reply of replies){const row=this.row(reply);if(reply.id===selectedResponse){row.setAttribute('aria-current','true');row.dataset.selectedResponse=reply.id;}d.host.append(row);}}
-    if(r.action==='dispute'&&r.history.length){const history=interactionEl('details','','interaction-history');history.append(interactionEl('summary','Earlier versions'));for(const revision of r.history){const section=interactionEl('section'),presentation=interactionPresentation(this.c.workspace,revision);section.append(interactionEl('strong',`Version ${revision.version}`));for(const label of presentation.choices)section.append(interactionEl('p',label,'interaction-selected'));for(const text of [revision.interaction.otherText,revision.body].filter(Boolean))section.append(interactionEl('p',text,'discussion-body'));history.append(section);}d.host.append(history);}
     if(parent)d.host.append(interactionButton('Back to '+interactionPresentation(this.c.workspace,parent).label,()=>d.revealInteraction(parent.id),'discussion-text-action'));
     this.application.actions(r);
     if(r.status==='active'&&r.authorId===d.actor())d.actionGroup('Manage',[interactionButton('Edit',()=>this.compose(r.action,r)),interactionButton('Withdraw',()=>{if(confirm('Withdraw this interaction?'))d.save({...r,status:'withdrawn'},r);})]);

@@ -176,12 +176,14 @@ try{
   for(const selectedMode of ['inquiry','argument']){await mode(a,selectedMode);assert(await pop(a).isHidden(),'A counterpart draft parks outside Compare');assert.deepEqual(await geometry(a),ghostGeometry);}
   await mode(a,'compare');assert.equal(await a.locator('#counterpart-node').inputValue(),explicitChoice);a.once('dialog',dialog=>dialog.dismiss());await click(a,'Cancel');assert.equal(await a.locator('#counterpart-node').inputValue(),explicitChoice,'Declining discard retains the explicit ghost choice');a.once('dialog',dialog=>dialog.accept());await click(a,'Cancel');assert.deepEqual(await geometry(a),ghostGeometry);assert(await a.locator('.counterpart-placeholder button:focus').count(),'Cancelled ghost chooser returns focus to its rebuilt initiating control');assert.equal(JSON.stringify((await view(store,alice)).workspace),beforeGhostChoice,'Opening, parking and cancelling a ghost creates no saved record');
   await mode(a,'argument');await node(a,'Daytime meeting');
-  assert(await button(a,'View 1 attached interaction').isVisible(),'A response does not inflate the source attachment count');
-  await click(a,'View 1 attached interaction');
-  assert.deepEqual(await pop(a).locator('.discussion-list-item').evaluateAll(rows=>rows.map(r=>r.dataset.entry)),[dispute.id]);
-  const disputeRow=pop(a).locator(`[data-entry="${dispute.id}"]`);
+  assert(await pop(a).getByRole('heading',{name:'Disputes (1)',exact:true}).isVisible(),'A response does not inflate the dispute count');
+  assert.deepEqual(await pop(a).locator('[data-dispute]').evaluateAll(rows=>rows.map(r=>r.dataset.dispute)),[dispute.id]);
+  const disputeRow=pop(a).locator(`[data-dispute="${dispute.id}"]>summary`);
   assert.match(await disputeRow.innerText(),/It's false/);assert.match(await disputeRow.innerText(),/The data is outdated/);
+  assert.match(await disputeRow.innerText(),/1 response · Latest: Bob — Partly accept/);
   await disputeRow.click();
+  assert(await pop(a).locator(`[data-response="${response.id}"]`).isVisible(),'Full responses appear within the expanded dispute');
+  await click(a,'Manage dispute');
   const direct=await detail(a);
   assert(direct.choices.includes("It's false"));assert(direct.choices.includes('The data is outdated'));
   assert(direct.bodies.includes('The attendance estimate omits remote participants.'));
