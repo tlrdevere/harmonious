@@ -46,7 +46,11 @@ try{
   const saved=p=>p.waitForFunction(()=>document.getElementById('storage-status')?.textContent.includes('All changes saved'));
   const pop=p=>p.locator('.discussion-popover'),action=(p,name)=>pop(p).getByRole('button',{name,exact:true}).click();
   const expand=async p=>{await p.locator('.comparison-view-options>summary').click();await p.locator('#compare-all-a').click();await p.locator('#compare-all-b').click();await p.locator('.comparison-view-options>summary').click();await p.getByRole('button',{name:'Fit both maps',exact:true}).click();};
-  const node=(p,name)=>p.locator('#compare-canvas .node-main').filter({has:p.getByText(name,{exact:true})}).click();
+  const node=async(p,name)=>{
+    const marker=p.locator('.agreement-marker-node');
+    for(const control of await marker.all())if((await control.getAttribute('aria-label'))?.startsWith(`Select ${name} by `)&&await control.isVisible()){await control.click();return;}
+    await p.locator('#compare-canvas .node-main').filter({has:p.getByText(name,{exact:true})}).click();
+  };
   const cp=(p,name)=>p.locator(`.counterpart-placeholder[data-source-label="${name}"]`);
   const checkGhostSizes=async page=>{
     const result=await page.locator('#compare-canvas').evaluate(host=>{const cards=[...host.querySelectorAll('article.node')],issues=[],geometry=[];for(const ghost of host.querySelectorAll('.counterpart-placeholder')){
