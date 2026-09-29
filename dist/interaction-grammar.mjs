@@ -31,7 +31,7 @@ export const INTERACTION_CHOICES={
 const eq=(a,b)=>stableJSON(a)===stableJSON(b),check=(ok,message)=>{if(!ok)throw Error(message);};
 const exact=(value,keys)=>value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).length===keys.length&&keys.every(k=>Object.hasOwn(value,k));
 export const interactionActions=mode=>(INTERACTION_ACTIONS[mode]||[]).map(([id,label])=>({id,label}));
-export const interactionLabel=value=>value==='respond'||value?.action==='respond'?'Respond':Object.values(INTERACTION_ACTIONS).flat().find(([id])=>id===(typeof value==='string'?value:value?.action))?.[1]||'Interaction';
+export const interactionLabel=value=>value?.interaction?.version===6?'Reply':value==='respond'||value?.action==='respond'?'Respond':Object.values(INTERACTION_ACTIONS).flat().find(([id])=>id===(typeof value==='string'?value:value?.action))?.[1]||'Interaction';
 export const interactionMode=record=>record?.kind==='interaction'?record.interaction?.mode:null;
 export const interactionSource=(ws,target)=>{const map=ws.maps.find(m=>m.id===target?.mapId&&!m.unavailable);const item=target?.type==='node'?map?.nodes.find(n=>n.id===target.nodeId):target?.type==='edge'&&map?graphEdges(map.nodes,map.relations).find(e=>e.id===target.edgeId):null;return item?{map,item}:null;};
 export function interactionClassification(ws,target){
@@ -50,6 +50,7 @@ export const ARGUMENT_CATEGORIES=[
 // Version 4 remains the historical catalog. Authoring explicitly uses version 5.
 export function optionsForClassification(c,action,version=4){
  if(!c)return [];
+ if(version===6)return action==='respond'&&c.targetType==='entry'&&c.parentAction==='dispute'?choices([['reply','Reply']]):[];
  const node=c.targetType==='node',edge=c.targetType==='edge'||c.targetType==='inference';
  let rows=[];
  if(action==='dispute'){
@@ -66,8 +67,9 @@ export function optionsForClassification(c,action,version=4){
  return [...rows,...(rows.length||action==='endorse'?[other()]:[])].map(o=>({...o,...(edge&&action==='dispute'?{group:'About the connection'}:{})}));
 }
 export const interactionOptions=(ws,target,action)=>optionsForClassification(interactionClassification(ws,target),action,action==='dispute'?5:4);
-export function interactionRecipient(ws,target,action){const parent=ws.discussions?.find(r=>r.id===target?.entryId);return parent?parent.authorId:interactionSource(ws,target)?.map.ownerId||null;}
+export function interactionRecipient(ws,target,action,actor=null,version=4){const parent=ws.discussions?.find(r=>r.id===target?.entryId);return parent?version===6&&parent.authorId===actor?parent.interaction?.recipientId:parent.authorId:interactionSource(ws,target)?.map.ownerId||null;}
 export const canRespondInteraction=(r,actor)=>r?.kind==='interaction'&&r.status==='active'&&r.interaction?.recipientId===actor&&['request_reason','request_explanation','propose_alternative','offer_reason','dispute'].includes(r.action);
+export const canReplyArgument=(r,actor)=>r?.kind==='interaction'&&r.action==='dispute'&&r.status==='active'&&r.interaction?.mode==='argument'&&[r.authorId,r.interaction.recipientId].includes(actor);
 export function interactionReferenceChoices(ws,comparisonId){
  const thread=ws.comparisonThreads?.find(t=>t.id===comparisonId);if(!thread)return [];
  return ws.maps.filter(m=>!m.unavailable&&thread.participants.every(actor=>m.ownerId===actor||m.visibility==='shared')).flatMap(map=>map.nodes.filter(n=>n.parent!==null).map(n=>({target:{type:'node',mapId:map.id,nodeId:n.id},label:n.title,mapId:map.id,mapName:map.name,ownerId:map.ownerId})));
@@ -85,16 +87,17 @@ export function interactionHealth(ws,r){
  if(r.interaction.reference){try{changed=!eq(interactionReference(ws,r.comparisonId,r.interaction.reference.target),r.interaction.reference)||changed;}catch{return {state:'unavailable'};}}
  return {state:changed?'changed':'current'};
 }
-export function makeInteraction(ws,input,actor,version=input.action==='dispute'?5:4){
+export function makeInteraction(ws,input,actor,version=input.action==='dispute'?5:input.action==='respond'&&input.options?.includes('reply')?6:4){
  const classification=interactionClassification(ws,input.target),parent=ws.discussions?.find(r=>r.id===input.target?.entryId),allowed=optionsForClassification(classification,input.action,version),selected=input.options||[];
  check(Array.isArray(selected)&&selected.every(id=>allowed.some(o=>o.id===id))&&new Set(selected).size===selected.length,'Choose options that apply to this source.');
  const options=allowed.filter(o=>selected.includes(o.id)).map(o=>o.id),mode=input.action==='respond'?parent?.interaction?.mode:input.mode;
- return {version,mode,options,otherText:options.includes('other')?(input.otherText||'').trim():'',reference:interactionReference(ws,input.comparisonId,input.reference),recipientId:interactionRecipient(ws,input.target,input.action),classification,signals:allowed.filter(o=>selected.includes(o.id)&&o.signal).map(o=>({optionId:o.id,tag:o.signal}))};
+ return {version,mode,options,otherText:options.includes('other')?(input.otherText||'').trim():'',reference:interactionReference(ws,input.comparisonId,input.reference),recipientId:interactionRecipient(ws,input.target,input.action,actor,version),classification,signals:allowed.filter(o=>selected.includes(o.id)&&o.signal).map(o=>({optionId:o.id,tag:o.signal}))};
 }
 export function validateInteractionRecord(r){
  if(r.kind!=='interaction'){check(!r.interaction,'Interaction metadata belongs only to a grammar interaction.');return;}
  const m=r.interaction,c=m?.classification;
- check(exact(m,['version','mode','options','otherText','reference','recipientId','classification','signals'])&&(m.version===4||m.version===5&&r.action==='dispute')&&Object.hasOwn(INTERACTION_ACTIONS,m.mode),'Invalid interaction metadata.');
+ check(exact(m,['version','mode','options','otherText','reference','recipientId','classification','signals'])&&(m.version===4||m.version===5&&r.action==='dispute'||m.version===6&&r.action==='respond'&&m.mode==='argument')&&Object.hasOwn(INTERACTION_ACTIONS,m.mode),'Invalid interaction metadata.');
+ if(m.version===6)check(typeof r.body==='string'&&r.body.trim().length>0,'Write a reply before sending.');
  check(exact(c,['targetType','frame','edgeType','hasSource','parentAction'])&&c.targetType===r.target.type&&typeof c.hasSource==='boolean','Invalid interaction source classification.');
  check(r.action==='respond'||interactionActions(m.mode).some(a=>a.id===r.action),'Choose an interaction for this mode.');
  const allowed=optionsForClassification(c,r.action,m.version),selected=m.options;
@@ -111,9 +114,10 @@ export function validateInteractionEdit(ws,old,r,actor){
  if(r.kind!=='interaction'){check(!r.interaction,'Interaction metadata belongs only to a grammar interaction.');return;}
  for(const v of [...r.history,r]){validateInteractionRecord(v);check(v.action===r.action&&v.interaction.mode===r.interaction.mode&&v.interaction.recipientId===r.interaction.recipientId,'An interaction keeps its action, mode, and recipient.');}
  if(old)check(old.action===r.action&&old.interaction.mode===r.interaction.mode&&old.interaction.recipientId===r.interaction.recipientId,'An interaction keeps its action, mode, and recipient.');
+ if(old)check((old.interaction.version===6)===(r.interaction.version===6),'A reply keeps its original type.');
  check(r.action!=='dispute'||r.interaction.version===5,'Refresh Harmonious and choose the current dispute categories.');
  const parent=ws.discussions.find(e=>e.id===r.target.entryId),source=interactionSource(ws,r.target);
- if(r.action==='respond')check(r.target.type==='entry'&&canRespondInteraction(parent,actor),'Only the intended recipient can respond to this interaction.');
+ if(r.action==='respond')check(r.target.type==='entry'&&(r.interaction.version===6?canReplyArgument(parent,actor):canRespondInteraction(parent,actor)),'Only the intended recipient can respond, or either dispute participant can reply.');
  else check((source&&source.map.ownerId!==actor&&(r.target.type!=='node'||source.item.parent!==null))||(['entry','inference'].includes(r.target.type)&&parent?.authorId!==actor&&parent?.kind==='argument'&&parent.action==='reason'),'Select the other person’s ordinary node or connection.');
  const expected=makeInteraction(ws,{...r,...r.interaction},actor);
  check(eq(expected,r.interaction),'The interaction source or referenced node changed. Reopen it before saving.');

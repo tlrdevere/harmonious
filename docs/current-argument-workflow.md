@@ -49,6 +49,8 @@ Show on map reveals the original source and opens the same detail as an attachme
 
 Only the intended recipient can Respond to an active request, proposal, offer, or dispute, within its originating mode. Choose one outcome. Compare stances do not acquire a generic response control.
 
+In Argument, both dispute participants can continue with **Reply**, using a required message and an optional node reference. The first recipient response retains its existing outcome choices; subsequent replies require no outcome selection. Each reply belongs directly to the original dispute and appears chronologically in its expanded log, with no fixed number of exchanges or forced turn-taking. Authors can edit or withdraw their own replies; earlier versions remain stored. Existing responses remain intact. Replying does not resolve the dispute or change either map or comparison assessment. See deployment status for publication of this follow-up.
+
 Recording a stance or accepting an interaction does not edit either map. A separate Review action previews an owned copy, revision, or added reason; Apply to my map commits that change. Copies retain independent authorship. Responses do not automatically close or resolve disputes.
 
 Unfinished forms are parked when you switch modes and restored when you return. Opening another target uses the existing discard safeguard. Reload after All changes saved to check persistence on another PC.

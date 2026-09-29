@@ -205,6 +205,12 @@ export function makeDiscussion(ws,input,actor,old=null){
   const r={id:old?.id||((isAdoptionReceipt(input)||['interaction','counterpart_unlink'].includes(input.kind))&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
   if(input.unlinkedRecordIds!==undefined)r.unlinkedRecordIds=structuredClone(input.unlinkedRecordIds);
   if(input.kind==='interaction')r.interaction=input.status==='withdrawn'&&old&&discussionEqual(input.interaction,old.interaction)?structuredClone(old.interaction):makeInteraction(ws,{...input,...(input.interaction||old?.interaction||{})},actor);
+  if(r.interaction?.version===6){
+    // Keep observed conversation order when participant clocks differ.
+    const earlier=old?[old]:ws.discussions.filter(e=>e.comparisonId===r.comparisonId&&(e.id===r.target.entryId||e.kind==='interaction'&&e.action==='respond'&&e.target.entryId===r.target.entryId));
+    const latest=earlier.reduce((time,e)=>Math.max(time,Date.parse(old?e.updatedAt:e.createdAt)||0),0);
+    r.updatedAt=new Date(Math.max(Date.parse(now),latest+1)).toISOString();if(!old)r.createdAt=r.updatedAt;
+  }
   if(input.adoption!==undefined)r.adoption=structuredClone(input.adoption);else if(old?.adoption)r.adoption=structuredClone(old.adoption);
   if(input.premise!==undefined)r.premise=structuredClone(input.premise);else if(old?.premise)r.premise=structuredClone(old.premise);
   if(input.reflection!==undefined)r.reflection=structuredClone(input.reflection);else if(old?.reflection)r.reflection=structuredClone(old.reflection);

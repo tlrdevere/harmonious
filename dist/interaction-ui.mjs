@@ -1,4 +1,4 @@
-import {interactionActions,interactionOptions,optionsForClassification,interactionMode,interactionLabel,interactionReferenceChoices} from './interaction-grammar.mjs';
+import {interactionActions,interactionOptions,optionsForClassification,interactionMode,interactionLabel,interactionReferenceChoices,canReplyArgument} from './interaction-grammar.mjs';
 import {makeDiscussion,discussionSource,discussionTargetLabel,discussionSourceSnapshot,discussionHealth} from './discussion.mjs';
 import {conversationAnchor} from './conversation-tree.mjs';
 import {validateWorkspace} from './workspace.mjs';
@@ -73,7 +73,7 @@ export class InteractionUI{
         if(reply.authorId===d.actor()&&reply.status==='active')response.append(interactionButton('Manage response',()=>this.open(reply.id),'discussion-text-action'));
         body.append(response);
       }
-      if(r.status==='active'&&r.interaction.recipientId===d.actor())body.append(interactionButton('Respond',()=>{d.target={type:'entry',entryId:r.id};this.compose('respond');},'primary'));
+      this.replyControl(r,body);
       if(r.authorId===d.actor())body.append(interactionButton('Manage dispute',()=>this.open(r.id),'discussion-text-action'));
       card.append(summary,body);card.addEventListener('toggle',()=>d.positionPopover());return card;
     };
@@ -93,6 +93,12 @@ export class InteractionUI{
     if(focusId){const card=[...next.querySelectorAll('[data-dispute]')].find(el=>el.dataset.dispute===focusId),scope=responseId?[...card?.querySelectorAll('[data-response]')||[]].find(el=>el.dataset.response===responseId):card,button=focused.matches('button')&&[...scope?.querySelectorAll('button')||[]].find(el=>el.textContent===focused.textContent);(button||card?.querySelector('summary'))?.focus({preventScroll:true});}
     d.positionPopover();d.host.scrollTop=scroll;
   }
+  replyControl(record,host){
+    const d=this.d,root=record.action==='respond'?this.c.workspace.discussions.find(r=>r.id===record.target.entryId):record;
+    if(!canReplyArgument(root,d.actor()))return false;
+    const first=root.interaction.recipientId===d.actor()&&!this.responses(root.id).length;
+    host.append(interactionButton(first?'Respond':'Reply',()=>{d.target={type:'entry',entryId:root.id};this.compose(first?'respond':'reply');},'primary'));return true;
+  }
   content(r,host){
     const d=this.d,ws=this.c.workspace,p=interactionPresentation(ws,r);
     for(const label of p.choices)host.append(interactionEl('p',label,'interaction-selected'));
@@ -103,17 +109,18 @@ export class InteractionUI{
   }
   compose(action,old=null){
     const d=this.d;if(!d.canLeave())return;
+    const continuation=action==='reply'||old?.interaction.version===6;if(continuation)action='respond';
     const target=old?.target||d.target,ws=this.c.workspace,parent=target.type==='entry'?ws.discussions.find(r=>r.id===target.entryId):null;
     const mode=old?interactionMode(old):action==='respond'?interactionMode(parent):d.mode();
-    d.activateMode(mode);d.target=target;d.shell(old?'Edit '+interactionLabel(old):interactionLabel(action));
+    d.activateMode(mode);d.target=target;d.shell(old?'Edit '+interactionLabel(old):continuation?'Reply':interactionLabel(action));
     const converting=action==='dispute'&&old?.interaction.version===4;
-    const form=interactionEl('form','','interaction-form'),choices=interactionOptions(ws,target,action),selected=new Set(converting?[]:old?.interaction.options||[]);
+    const form=interactionEl('form','','interaction-form'),choices=continuation?[]:interactionOptions(ws,target,action),selected=new Set(continuation?['reply']:converting?[]:old?.interaction.options||[]);
     if(old&&action==='dispute'&&!choices.length){d.host.append(interactionEl('p','This source no longer offers dispute choices. You can keep the saved interaction or withdraw it from its details.','review-warning'),interactionButton('Back to interaction',()=>this.open(old.id)));d.positionPopover();return;}
     const reviewed=discussionSourceSnapshot(ws,target),recordId=old?.id||'discussion-'+crypto.randomUUID(),nodeId='node-'+crypto.randomUUID();
     let stagedEdit=null,stagedDraft=null;
     form.append(interactionEl('p',`About: ${discussionTargetLabel(ws,target)}`,'discussion-target-note'));
     if(action==='dispute'&&target.type==='node'&&reviewed?.wording.summary)form.append(interactionEl('p',reviewed.wording.summary,'discussion-body disputed-node-description'));
-    const previousChoices=old?optionsForClassification(old.interaction.classification,action,old.interaction.version):[],earlierChoices=[...selected].filter(id=>!choices.some(option=>option.id===id)).map(id=>previousChoices.find(option=>option.id===id)||{id,label:id.replaceAll('_',' ')});
+    const previousChoices=old?optionsForClassification(old.interaction.classification,action,old.interaction.version):[],earlierChoices=continuation?[]:[...selected].filter(id=>!choices.some(option=>option.id===id)).map(id=>previousChoices.find(option=>option.id===id)||{id,label:id.replaceAll('_',' ')});
     if(converting){form.append(interactionEl('p','This argument used the earlier dispute choices. Choose one or more current categories to save an edit. Its previous wording and choices stay in history.','review-warning'),interactionEl('p','Earlier choices: '+old.interaction.options.map(id=>previousChoices.find(o=>o.id===id)?.label||id).join(' · '),'field-help'));}
     const groups=new Map();if(earlierChoices.length){form.append(interactionEl('p','The source changed since this interaction was saved. Clear the earlier choices below before saving an updated interaction. The previous version keeps its original choices.','review-warning'));groups.set('Earlier choices',earlierChoices);}
     for(const option of choices){const group=option.group||'Options';if(!groups.has(group))groups.set(group,[]);groups.get(group).push(option);}
@@ -124,7 +131,7 @@ export class InteractionUI{
       form.append(fieldset);
     }
     form.append(otherWrap);syncOther();
-    const comment=interactionEl('textarea');comment.rows=3;comment.maxLength=10000;comment.value=converting?[old.body,old.interaction.otherText].filter(Boolean).join('\n\n'):old?.body||'';interactionField(form,action==='propose_alternative'?'Proposed wording or comment (optional)':'Comment (optional)',comment,'interaction-comment');
+    const comment=interactionEl('textarea');comment.rows=3;comment.maxLength=10000;comment.required=continuation;comment.value=converting?[old.body,old.interaction.otherText].filter(Boolean).join('\n\n'):old?.body||'';interactionField(form,continuation?'Reply':action==='propose_alternative'?'Proposed wording or comment (optional)':'Comment (optional)',comment,'interaction-comment');
     const refs=interactionReferenceChoices(ws,d.thread()?.id),reference=interactionEl('select');reference.append(new Option('No node reference',''));
     for(const r of refs)reference.append(new Option(`${r.mapName} · ${r.label}`,JSON.stringify(r.target)));
     reference.append(new Option('Create a node in my map…','new'));
@@ -137,7 +144,7 @@ export class InteractionUI{
     interactionField(newFields,'Your shared map',mapSelect,'interaction-new-map');interactionField(newFields,'Frame',frameSelect,'interaction-new-frame');interactionField(newFields,'New node',nodeTitle,'interaction-new-title');
     newFields.append(interactionEl('p','Saving creates this node in your map and references it here.','field-help'));referenceWrap.append(newFields);form.append(referenceWrap);
     const syncReference=()=>{newFields.hidden=reference.value!=='new';nodeTitle.required=!newFields.hidden;mapSelect.required=!newFields.hidden;d.positionPopover();};reference.onchange=()=>{d.dirty=true;syncReference();};syncReference();if(oldReference)referenceWrap.open=true;
-    const submit=interactionEl('button',old?'Save changes':action==='respond'?'Send response':mode==='compare'?'Record position':'Send '+(action==='dispute'?'dispute':action==='offer_reason'?'offer':action==='propose_alternative'?'proposal':'request'),'primary');submit.type='submit';form.append(submit);d.host.append(form);
+    const submit=interactionEl('button',old?'Save changes':continuation?'Send reply':action==='respond'?'Send response':mode==='compare'?'Record position':'Send '+(action==='dispute'?'dispute':action==='offer_reason'?'offer':action==='propose_alternative'?'proposal':'request'),'primary');submit.type='submit';form.append(submit);d.host.append(form);
     form.onsubmit=async e=>{e.preventDefault();if(d.saving)return;if(earlierChoices.some(option=>selected.has(option.id))){this.error(form,'Clear the earlier choices that are no longer offered for this source before saving.');d.positionPopover();return;}d.saving=true;d.dirty=true;d.host.inert=true;
       try{
         if(!this.c.editor.flushDraft())throw Error('Finish your map edit first.');this.c.captureActive();
@@ -145,7 +152,7 @@ export class InteractionUI{
         const draft=stableJSON({input,newNode:reference.value==='new'?{mapId:mapSelect.value,frame:frameSelect.value,title:nodeTitle.value}:null});
         const prepare=workspace=>{
           const already=workspace.discussions.find(r=>r.id===recordId);
-          if(!old&&already)return {workspace,record:already};
+          if(!old&&already){if(continuation&&stagedDraft&&draft!==stagedDraft)throw Error('Your earlier reply was saved, but this draft has further changes. Your draft is still here. Copy it before closing and reopening the saved reply.');return {workspace,record:already};}
           if(old&&stableJSON(already)!==stableJSON(old)){
             if(stagedEdit&&stableJSON(already)===stableJSON(stagedEdit)){
               if(draft===stagedDraft)return {workspace,record:already};
@@ -161,7 +168,7 @@ export class InteractionUI{
             const title=nodeTitle.value.trim();if(!title)throw Error('Enter a title for the node you want to add.');
             map.nodes.push({id:nodeId,parent:frameSelect.value,title,summary:'',details:'',kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:'',confidence:null});map.revision++;map.updatedAt=new Date().toISOString();synchronizeIdeas(candidate,map);input.interaction.reference={type:'node',mapId:map.id,nodeId};
           }
-          const record=makeDiscussion(candidate,input,d.actor(),old);candidate.discussions=candidate.discussions.filter(r=>r.id!==record.id);candidate.discussions.push(record);validateWorkspace(candidate);if(old){stagedEdit=structuredClone(record);stagedDraft=draft;}return {workspace:candidate,record};
+          const record=makeDiscussion(candidate,input,d.actor(),old);candidate.discussions=candidate.discussions.filter(r=>r.id!==record.id);candidate.discussions.push(record);validateWorkspace(candidate);if(old)stagedEdit=structuredClone(record);stagedDraft=draft;return {workspace:candidate,record};
         };
         const result=this.c.account?await this.c.account.commitCandidate(prepare):prepare(this.c.workspace);
         if(!this.c.account){this.c.workspace=result.workspace;this.c.markDirty();if(this.c.activeMapId)this.c.loadMap(this.c.activeMapId);}
@@ -176,7 +183,8 @@ export class InteractionUI{
     d.host.append(interactionEl('p',`${d.name(r.authorId)} · ${r.targetLabel}`,'discussion-byline'));
     const parent=r.target.type==='entry'?this.c.workspace.discussions.find(p=>p.id===r.target.entryId):null;
     this.content(r,d.host);
-    if(r.status==='active'&&r.action!=='respond'&&['request_reason','request_explanation','propose_alternative','offer_reason','dispute'].includes(r.action)&&r.interaction.recipientId===d.actor())d.actionGroup('Your response',[interactionButton('Respond',()=>this.compose('respond'))]);
+    const argumentReply=this.replyControl(r,d.host);
+    if(!argumentReply&&r.status==='active'&&r.action!=='respond'&&['request_reason','request_explanation','propose_alternative','offer_reason','dispute'].includes(r.action)&&r.interaction.recipientId===d.actor())d.actionGroup('Your response',[interactionButton('Respond',()=>this.compose('respond'))]);
     if(r.status==='withdrawn')d.host.append(interactionEl('p','Withdrawn','discussion-state'));
     const replies=this.responses(id);
     if(replies.length){d.host.append(interactionEl('h3','Responses'));for(const reply of replies){const row=this.row(reply);if(reply.id===selectedResponse){row.setAttribute('aria-current','true');row.dataset.selectedResponse=reply.id;}d.host.append(row);}}

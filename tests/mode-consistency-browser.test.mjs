@@ -188,9 +188,9 @@ try{
   assert(direct.choices.includes("It's false"));assert(direct.choices.includes('The data is outdated'));
   assert(direct.bodies.includes('The attendance estimate omits remote participants.'));
   assert.match(await pop(a).locator(`[data-entry="${response.id}"]`).innerText(),/Partly accept/);
-  assert.equal(await button(a,'Respond').count(),0,'The initiator cannot respond to their own dispute');
+  assert.equal(await button(a,'Respond').count(),0,'The initiator does not choose an initial response outcome');assert(await button(a,'Reply').isVisible(),'Either dispute participant can continue replying');
   assert.equal(await pop(a).getByText('Factual',{exact:true}).count(),0,'Internal Signals stay hidden');
-  await open(b,dispute.id,'argument');assert(await button(b,'Respond').isVisible(),'Only the recipient has Respond');
+  await open(b,dispute.id,'argument');assert(await button(b,'Reply').isVisible(),'The recipient can continue after an earlier response');
 
   // Every entry point opens the same detail, never a legacy generic Context card.
   await open(a,dispute.id,'argument');assert.deepEqual(await detail(a),direct);

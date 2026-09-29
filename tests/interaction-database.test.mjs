@@ -3,7 +3,7 @@ import {readFile,readdir} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
 import {alice,bob,seedActor,view,edit} from './accounts.test.mjs';
 import {AccountError} from '../worker/account-policy.mjs';
-import {exerciseInteractionGrammar} from './interaction-grammar.test.mjs';
+import {exerciseInteractionGrammar,exerciseArgumentReplies} from './interaction-grammar.test.mjs';
 import {makeDiscussion} from '../dist/discussion.mjs';
 import {optionsForClassification,makeInteraction} from '../dist/interaction-grammar.mjs';
 
@@ -24,7 +24,7 @@ for(const [type,keys] of [['node',['status','action','goal']],['edge',['reason',
 const store={async snapshot(){return (await db.query('select public.harmonious_snapshot() as data')).rows[0].data;},async commit(actor,generation,changes){try{return (await db.query('select public.harmonious_commit($1::uuid,$2::bigint,$3::jsonb) as data',[actor,generation,JSON.stringify(changes)])).rows[0].data;}catch(e){throw new AccountError(e.message,e.code==='PT409'?409:e.code==='PT403'?403:400);}}};
 try{
  await seedActor(store,alice);await seedActor(store,bob);
- const fixtures=await exerciseInteractionGrammar(store,{database:true}),snapshot=await store.snapshot();
+ const fixtures=await exerciseInteractionGrammar(store,{database:true});const replies=await exerciseArgumentReplies(store,fixtures),snapshot=await store.snapshot();
  const ws=(await view(store,alice)).workspace,fresh=makeDiscussion(ws,{kind:'interaction',action:'dispute',comparisonId:fixtures.thread.id,target:fixtures.refs.Bob,interaction:{mode:'argument',options:['factual_basis']}},alice.id);
  const direct=async(value,actor=alice.id)=>store.commit(actor,snapshot.revision,[{kind:'discussion',id:value.id,expectedRevision:0,value}]);
  const fork=patch=>({...structuredClone(fresh),id:crypto.randomUUID(),...patch});
@@ -32,6 +32,11 @@ try{
  const wrongOption=fork();wrongOption.interaction.options=['unachievable'];wrongOption.interaction.signals=[{optionId:'unachievable',tag:'Factual'}];await assert.rejects(()=>direct(wrongOption),/options/);
  const wrongFrame=fork();wrongFrame.interaction.classification.frame='goal';await assert.rejects(()=>direct(wrongFrame),/classification/);
  const foreign=fork();foreign.interaction.recipientId=alice.id;await assert.rejects(()=>direct(foreign),/recipient/);
+ const validReply=makeDiscussion((await view(store,alice)).workspace,{kind:'interaction',action:'respond',target:{type:'entry',entryId:fixtures.dispute.id},comparisonId:fixtures.thread.id,body:'A valid follow-up',interaction:{mode:'argument',options:['reply']}},alice.id);
+ for(const body of ['', ' \t\n ']){const empty={...structuredClone(validReply),id:crypto.randomUUID(),body};await assert.rejects(()=>direct(empty),/Write a reply/);}
+ const recipient=structuredClone(validReply);recipient.id=crypto.randomUUID();recipient.interaction.recipientId=alice.id;await assert.rejects(()=>direct(recipient),/recipient/);
+ const inquiry=structuredClone(validReply);inquiry.id=crypto.randomUUID();inquiry.target.entryId=fixtures.request.id;await assert.rejects(()=>direct(inquiry),/classification|participants/);
+ const nested=structuredClone(validReply);nested.id=crypto.randomUUID();nested.target.entryId=replies[2].id;await assert.rejects(()=>direct(nested),/classification|participants/);
  await assert.rejects(()=>direct(fixtures.stale),/wording changed/);
  await assert.rejects(()=>direct(fixtures.staleEdge),/wording changed/);
  const response=structuredClone(fixtures.response);response.id=crypto.randomUUID();response.authorId=alice.id;response.interaction.recipientId=bob.id;await assert.rejects(()=>direct(response),/intended recipient/);

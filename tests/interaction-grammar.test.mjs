@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 import {alice,bob,memoryStore,seedActor,edit,view,addNode} from './accounts.test.mjs';
-import {startAccountComparison,handleAccountAPI,INTERACTION_CAPABILITY,ARGUMENT_CAPABILITY} from '../worker/account-api.mjs';
+import {startAccountComparison,handleAccountAPI,INTERACTION_CAPABILITY,ARGUMENT_CAPABILITY,REPLIES_CAPABILITY} from '../worker/account-api.mjs';
 import {validateAccountChanges,projectAccountWorkspace} from '../worker/account-policy.mjs';
 import {makeDiscussion,discussionHealth} from '../dist/discussion.mjs';
 import {createOwnedMap,synchronizeIdeas} from '../dist/adoption.mjs';
@@ -76,15 +76,33 @@ export async function exerciseInteractionGrammar(store,{database=false}={}){
  await edit(store,bob,w=>{const m=w.maps.find(m=>m.id===refs.Bob.mapId);m.nodes.find(n=>n.id===refs.Bob.nodeId).title='Changed source wording';synchronizeIdeas(w,m);});
  return {thread,refs,dispute,request,response,cited,citedReply,stale,staleEdge};
 }
+export async function exerciseArgumentReplies(store,{thread,dispute,request,response}){
+ const before=(await view(store,alice)).workspace.maps,replies=[];
+ const reply=async(actor,target=dispute.id,body='A continuing reply')=>{let result;await edit(store,actor,ws=>{result=makeDiscussion(ws,{kind:'interaction',action:'respond',comparisonId:thread.id,target:{type:'entry',entryId:target},body,interaction:{mode:'argument',options:['reply']}},actor.id);ws.discussions.push(result);});return result;};
+ for(let i=0;i<14;i++){const actor=i%2?bob:alice,r=await reply(actor,dispute.id,'Exchange '+i);assert.equal(r.interaction.version,6);assert.equal(r.interaction.recipientId,actor===alice?bob.id:alice.id);assert.equal(r.target.entryId,dispute.id);replies.push(r);}
+ await reply(bob,dispute.id,'Another thought without waiting for a turn');
+ await assert.rejects(()=>reply(alice,request.id),/apply to this source/);
+ await assert.rejects(()=>reply(alice,response.id),/apply to this source/);
+ await assert.rejects(()=>reply(alice,replies[1].id),/apply to this source/);
+ await assert.rejects(()=>reply(alice,dispute.id,' \n\t '),/Write a reply/);
+ await edit(store,alice,ws=>{const old=ws.discussions.find(r=>r.id===replies[0].id),next=makeDiscussion(ws,{...old,body:'Edited follow-up'},alice.id,old);assert.equal(next.history[0].body,'Exchange 0');ws.discussions=ws.discussions.map(r=>r.id===old.id?next:r);});
+ await edit(store,bob,ws=>{const old=ws.discussions.find(r=>r.id===replies[1].id);ws.discussions=ws.discussions.map(r=>r.id===old.id?makeDiscussion(ws,{...old,status:'withdrawn'},bob.id,old):r);});
+ const ws=(await view(store,bob)).workspace;
+ assert(replies.every(reply=>ws.discussions.some(r=>r.id===reply.id)),'Both participants retain the exchange including withdrawn history');
+ assert.equal(ws.discussions.find(r=>r.id===dispute.id).status,'active','Replies never resolve the dispute');
+ assert.deepEqual((await view(store,alice)).workspace.maps,before,'Replies never edit source maps');
+ return replies;
+}
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
- const store=memoryStore();await seedActor(store,alice);await seedActor(store,bob);const result=await exerciseInteractionGrammar(store),snap=await store.snapshot();
+ const store=memoryStore();await seedActor(store,alice);await seedActor(store,bob);const result=await exerciseInteractionGrammar(store);await exerciseArgumentReplies(store,result);const snap=await store.snapshot();
  assert.throws(()=>validateAccountChanges(snap,alice.id,[{kind:'discussion',id:result.stale.id,expectedRevision:0,value:result.stale}]),/changed/);
  assert.equal(discussionHealth((await view(store,alice)).workspace,result.dispute).state,'changed');
  const env={APP_ORIGIN:'https://harmonious.example',SUPABASE_URL:'https://project.supabase.co',SUPABASE_PUBLISHABLE_KEY:'public-test',SUPABASE_SECRET_KEY:'server-test',SIGNUP_MODE:'public'};
  const request=async(capabilities='',body,selectedStore=store)=>handleAccountAPI(new Request(env.APP_ORIGIN+'/api/workspace',{method:body?'PUT':'GET',headers:{origin:env.APP_ORIGIN,'X-Harmonious-Capabilities':capabilities,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})}),env,{store:selectedStore,auth:{identify:async()=>({actor:alice,cookies:[]})}});
  for(const body of [undefined,{changes:[]}]){const response=await request('',body);assert.equal(response.status,409);assert.equal((await response.json()).requiredCapability,INTERACTION_CAPABILITY);}
  const oldClient=await request(INTERACTION_CAPABILITY);assert.equal(oldClient.status,409);assert.equal((await oldClient.json()).requiredCapability,ARGUMENT_CAPABILITY);
- assert.equal((await request(INTERACTION_CAPABILITY+','+ARGUMENT_CAPABILITY)).status,200);
+ const oldArguments=await request(INTERACTION_CAPABILITY+','+ARGUMENT_CAPABILITY);assert.equal(oldArguments.status,409);assert.equal((await oldArguments.json()).requiredCapability,REPLIES_CAPABILITY);
+ assert.equal((await request([INTERACTION_CAPABILITY,ARGUMENT_CAPABILITY,REPLIES_CAPABILITY].join(','))).status,200);
  const noArguments={snapshot:async()=>({...structuredClone(snap),records:structuredClone(snap.records.filter(r=>r.kind!=='discussion'))}),commit:async()=>{throw Error('An obsolete client must not reach commit');}};
  assert.equal((await request(INTERACTION_CAPABILITY,undefined,noArguments)).status,200,'Unaffected old tabs can still read');
  const obsolete=structuredClone(result.dispute);obsolete.interaction.version=4;obsolete.interaction.options=['false'];obsolete.interaction.signals=[{optionId:'false',tag:'Factual'}];
