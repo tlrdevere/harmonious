@@ -1,5 +1,16 @@
 # Harmonious: what to check on your next visit
 
+## Pending release: test accounts without email
+
+Check [deployment status](deployment-status.md) before testing this feature.
+
+- [ ] As the organizer, open the account menu → **Test accounts**. Create a unique username/display name and copy the generated login details.
+- [ ] In another browser, choose **Use a test account**. Sign in with those details without supplying an email or entering a verification code. Reload and confirm the same account and maps return.
+- [ ] Create a separate account for a second tester. Confirm private maps remain separate and shared comparisons/dialogues work normally.
+- [ ] Confirm testers have no Test accounts menu or account-administration access. Ordinary email sign-in should still require its code.
+- [ ] Replace a test password from the organizer's list. The old password should fail and the replacement should work; existing maps and contributions should remain.
+- [ ] Check the organizer dialog on a narrow screen. Copy login details before closing; closing clears the displayed password.
+
 ## Next check: node-focused Argument dialogue
 
 The dialogue canvas is **live in Worker 58**, after all **55 local and 55 hosted checks**, the additive database migration and live verification. Refresh both accounts before testing. See [deployment status](deployment-status.md).

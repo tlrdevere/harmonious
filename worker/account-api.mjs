@@ -1,6 +1,7 @@
 import {AccountError,initialAccountChanges,projectAccountWorkspace,validateAccountChanges} from './account-policy.mjs';
 import {AccountAuth,accountConfiguration,accountSignupConfiguration,requireAccountOrigin,accountBody} from './account-auth.mjs';
 import {SupabaseStore} from './supabase-store.mjs';
+import {TestAccounts,canManageTestAccounts} from './test-accounts.mjs';
 import {startComparisonThread,comparisonPairKey} from '../dist/workspace.mjs';
 import {accountKey,stableJSON} from '../dist/account-model.mjs';
 import {adoptionFulfillmentId,isAdoptionReceipt} from '../dist/adoption-fulfillment.mjs';
@@ -81,11 +82,15 @@ export async function handleAccountAPI(request,env,dependencies={}){
     if(!['GET','POST','PUT'].includes(request.method))throw new AccountError('Method not allowed.',405);
     if(request.method!=='GET')requireAccountOrigin(request,env);
     if(path==='/api/auth/code'&&request.method==='POST')return accountResponse(await auth.requestCode(await accountBody(request,4096),request));
+    if(path==='/api/auth/test-login'&&request.method==='POST'){const session=await auth.signInTest(await accountBody(request,4096));return accountResponse({signedIn:true},200,session.cookies);}
     if(path==='/api/auth/verify'&&request.method==='POST'){const session=await auth.verifyCode(await accountBody(request,4096));cookies=session.cookies;return accountResponse({signedIn:true},200,cookies);}
     if(path==='/api/auth/logout'&&request.method==='POST')return accountResponse({signedIn:false},200,await auth.logout(request));
     const session=await auth.identify(request);cookies=session.cookies;
-    if(path==='/api/session'&&request.method==='GET')return accountResponse({actor:session.actor?{id:session.actor.id,name:session.actor.name}:null,configured:true,signup:accountSignupConfiguration(env)},200,cookies);
+    if(path==='/api/session'&&request.method==='GET')return accountResponse({actor:session.actor?{id:session.actor.id,name:session.actor.name}:null,canManageTestAccounts:canManageTestAccounts(env,session.actor),configured:true,signup:accountSignupConfiguration(env)},200,cookies);
     if(!session.actor)throw new AccountError('Sign in to open your maps.',401);
+    if(path==='/api/admin/test-accounts'&&request.method==='GET')return accountResponse(await new TestAccounts(auth).list(session.actor,Number(new URL(request.url).searchParams.get('page')||1)),200,cookies);
+    if(path==='/api/admin/test-accounts'&&request.method==='POST')return accountResponse(await new TestAccounts(auth).create(session.actor,await accountBody(request,4096)),201,cookies);
+    if(path==='/api/admin/test-accounts/reset'&&request.method==='POST')return accountResponse(await new TestAccounts(auth).reset(session.actor,await accountBody(request,4096)),200,cookies);
     if(path==='/api/workspace'&&request.method==='GET')return accountResponse(await accountWorkspace(store,session.actor,capabilities),200,cookies);
     if(path==='/api/comparisons'&&request.method==='POST')return accountResponse(await startAccountComparison(store,session.actor.id,await accountBody(request,4096),capabilities),200,cookies);
     if(path==='/api/workspace'&&request.method==='PUT'){const input=await accountBody(request);return accountResponse(await saveAccountChanges(store,session.actor.id,input.changes,capabilities),200,cookies);}

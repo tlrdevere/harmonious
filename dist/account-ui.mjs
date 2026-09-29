@@ -1,4 +1,5 @@
 import {AccountChallenge} from './account-challenge.mjs';
+import {TestAccountsUI} from './test-accounts-ui.mjs';
 import {validateWorkspace,newId} from './workspace.mjs';
 import {synchronizeIdeas} from './adoption.mjs';
 import {discussionSource} from './discussion.mjs';
@@ -28,6 +29,7 @@ export class AccountWorkspace{
     accountUI('account-email-form').onsubmit=e=>{e.preventDefault();this.sendCode();};accountUI('account-code-form').onsubmit=e=>{e.preventDefault();this.verifyCode();};
     accountUI('account-change-email').onclick=()=>{accountUI('account-code-form').hidden=true;accountUI('account-email-form').hidden=false;accountUI('account-feedback').textContent='You can request another code after a short wait.';accountUI('account-email').focus();};
     accountUI('account-signout').onclick=()=>this.signOut();
+    this.testAccounts=new TestAccountsUI(this);
     accountUI('edit-form').addEventListener('input',()=>this.scheduleDraft());accountUI('edit-form').addEventListener('change',()=>this.scheduleDraft());
     accountUI('comparison-form').addEventListener('input',()=>this.status());accountUI('comparison-form').addEventListener('change',()=>this.status());
     window.addEventListener('online',()=>{if(this.controller.workspaceDirty&&!this.blocked)this.schedule();});
@@ -73,7 +75,7 @@ export class AccountWorkspace{
   async initialize(){
     const c=this.controller,previousReady=c.ready;clearTimeout(this.timer);this.loading=true;c.ready=false;
     try{
-      const session=await this.request('/api/session');this.signup=session.signup;
+      const session=await this.request('/api/session');this.signup=session.signup;this.testAccounts.session(session);
       const publicSignup=this.signup?.mode==='public';
       accountUI('account-signup-help').textContent=publicSignup?'Anyone can create an account with their email. Personal maps start private.':'Invited participants can create an account with their email. Personal maps start private.';
       if(!session.actor&&this.signup?.turnstile)await this.challenge.mount(this.signup.turnstile);

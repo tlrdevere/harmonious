@@ -1,4 +1,5 @@
 import {AccountError} from './account-policy.mjs';
+import {TEST_ACCOUNT_DOMAIN,isTestUser,testCredentials,testEmail} from './test-accounts.mjs';
 const EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function accountConfiguration(env){
   if(!env.APP_ORIGIN||!env.SUPABASE_URL||!env.SUPABASE_PUBLISHABLE_KEY||!env.SUPABASE_SECRET_KEY)return false;
@@ -22,7 +23,7 @@ export async function accountBody(request,limit=2_000_000){
 export class AccountAuth{
   constructor(env,fetcher=(...args)=>fetch(...args)){this.env=env;this.fetcher=fetcher;}
   invited(email){return typeof email==='string'&&(this.env.BETA_INVITE_EMAILS||'').split(/[\n,]/).map(s=>s.trim().toLowerCase()).includes(email.toLowerCase());}
-  allowed(email){return typeof email==='string'&&email.length<=254&&EMAIL.test(email)&&(this.env.SIGNUP_MODE==='public'||this.invited(email));}
+  allowed(email){return typeof email==='string'&&email.length<=254&&EMAIL.test(email)&&!email.toLowerCase().endsWith('@'+TEST_ACCOUNT_DOMAIN)&&(this.env.SIGNUP_MODE==='public'||this.invited(email));}
   async verifyChallenge(token,request){
     if(typeof token!=='string'||!token.trim()||token.length>2048)throw new AccountError('Complete the security check before requesting a code.',400);
     const body=new URLSearchParams({secret:this.env.TURNSTILE_SECRET_KEY,response:token});const remoteip=request?.headers.get('cf-connecting-ip');if(remoteip)body.set('remoteip',remoteip);
@@ -40,8 +41,15 @@ export class AccountAuth{
   }
   tokens(request){const cookies=new Map((request.headers.get('cookie')||'').split(';').map(s=>{const i=s.indexOf('=');return [s.slice(0,i).trim(),s.slice(i+1)];}));return this.cookieNames().map(name=>{try{return decodeURIComponent(cookies.get(name)||'');}catch{return '';}});}
   actor(user){
-    if(!user?.id||!user.email_confirmed_at||!this.allowed(user.email))throw new AccountError(this.env.SIGNUP_MODE==='public'?'Confirm your email address to open your account.':'This beta is available to invited email addresses.',403);
-    return {id:user.id,name:(user.user_metadata?.display_name||'Mapper').slice(0,100),email:user.email};
+    const testAccount=isTestUser(user);
+    if(!user?.id||!user.email_confirmed_at||!testAccount&&!this.allowed(user.email))throw new AccountError(this.env.SIGNUP_MODE==='public'?'Confirm your email address to open your account.':'This beta is available to invited email addresses.',403);
+    return {id:user.id,name:(typeof user.user_metadata?.display_name==='string'?user.user_metadata.display_name:'Mapper').slice(0,100),email:user.email,...(testAccount?{testAccount:true}:{})};
+  }
+  async signInTest(input){
+    const {username,password}=testCredentials(input),response=await this.call('token?grant_type=password',{email:testEmail(username),password});
+    if(!response.ok)throw new AccountError(response.status===429?'Please wait before trying again.':response.status>=500?'Test sign-in is temporarily unavailable.':'The test username or password is incorrect.',response.status===429?429:response.status>=500?503:400);
+    const session=await response.json();if(!isTestUser(session.user)||session.user.email!==testEmail(username))throw new AccountError('The test username or password is incorrect.',400);
+    return {actor:this.actor(session.user),cookies:this.cookies(session)};
   }
   async identify(request){
     const [access,refresh]=this.tokens(request);let response;
