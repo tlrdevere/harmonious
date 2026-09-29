@@ -1,4 +1,5 @@
-import {DISCUSSION_LABELS} from './discussion.mjs';
+import {DISCUSSION_LABELS,discussionHealth} from './discussion.mjs';
+import {counterpartState,sameCounterpartSource} from './counterparts.mjs';
 import {interactionLabel,optionsForClassification} from './interaction-grammar.mjs';
 import {graphEdges} from './model.mjs';
 
@@ -9,6 +10,30 @@ const activity=record=>Math.max(timestamp(record.createdAt),timestamp(record.upd
 const idOrder=(a,b)=>String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0;
 const readable=value=>String(value||'Earlier contribution').replace(/[_-]+/g,' ').replace(/^./,c=>c.toUpperCase());
 const isResponse=record=>record?.kind==='reply'||record?.kind==='interaction'&&record.action==='respond'||record?.kind==='reflection'&&record.action==='outcome';
+
+// A withdrawal of the most recent assessment clears it; it must not silently
+// resurrect an older opinion. The original records remain available in history.
+export function nodeAssessment(workspace,comparisonId,target,authorId){
+  const thread=workspace.comparisonThreads?.find(t=>t.id===comparisonId),source=accessibleSource(workspace,target);
+  const empty={state:'unassessed',label:'Not assessed',record:null,needsReview:false,authorId};
+  if(!source||!thread?.participants.includes(authorId)||source.map.ownerId===authorId||![thread.aMapId,thread.bMapId].includes(target.mapId))return empty;
+  const record=(workspace.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.authorId===authorId&&r.kind==='interaction'&&r.interaction?.mode==='compare'&&['endorse','disagree','decline'].includes(r.action)&&sameCounterpartSource(r.target,target)).sort((a,b)=>timestamp(b.createdAt)-timestamp(a.createdAt)||idOrder(b,a))[0];
+  if(!record||record.status!=='active')return empty;
+  const state={endorse:'agree',disagree:'disagree',decline:'no-position'}[record.action];
+  return {state,label:interactionLabel(record),record,needsReview:discussionHealth(workspace,record).needsReview,authorId};
+}
+
+export function counterpartAssessment(workspace,comparisonId,target){
+  const pairs=counterpartState(workspace,comparisonId,target).pairs;
+  if(pairs.length!==1)return null;
+  const other=pairs[0].other,source=accessibleSource(workspace,target),opposite=accessibleSource(workspace,other);
+  if(!source||!opposite||source.map.ownerId===opposite.map.ownerId)return null;
+  const reverse=counterpartState(workspace,comparisonId,other).pairs;
+  if(reverse.length!==1||!sameCounterpartSource(reverse[0].other,target))return null;
+  const a=nodeAssessment(workspace,comparisonId,target,opposite.map.ownerId),b=nodeAssessment(workspace,comparisonId,other,source.map.ownerId);
+  if(a.needsReview||b.needsReview||!['agree','disagree'].includes(a.state)||a.state!==b.state)return null;
+  return {state:a.state,label:a.state==='agree'?'Both agree':'Both disagree',assessments:[a,b],target,other};
+}
 
 export const isConversationRoot=record=>!!record&&record.kind!=='context'&&!isResponse(record);
 

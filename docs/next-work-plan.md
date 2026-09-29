@@ -2,6 +2,10 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
+The owner's [counterpart controls and assessment changes](counterpart-controls-and-assessments.md) are implemented and undergoing release verification. New links use one free counterpart in the same frame; either participant can unlink with attributed history; creation is request-only; personal Agree/Disagree/No position badges and reciprocal Both agree/Both disagree indicators are visible. Blank clicks close transient windows through draft guards. Complete local and hosted checks, apply the additive database migration, publish, and continue the owner's walkthrough. The separate Aligned / In tension proposal and the deferral list remain unchanged.
+
+## Preceding release — Worker 51
+
 The [canvas dragging fix](canvas-panning-fix.md) is **live in Worker 51**, after all 49 local and 49 hosted checks and public verification. It fixes browser text selection/native dragging cancelling canvas pans across views, with clean gesture interruption and preserved text editing, keyboard/zoom controls and touch pinch. [Deployment status](deployment-status.md) records source `d525242adcc756069c51b1be4ecfa81bece06cbd` and publication. Continue the owner's [updated walkthrough](user-testing-checklist.md); pair-specific **Aligned / In tension** remains the next separate design discussion, and the deferral list is unchanged.
 
 ## Preceding release — Worker 50

@@ -1,4 +1,4 @@
-import {comparisonCounterparts,counterpartFrame,counterpartLinks,counterpartState,counterpartRequestState,sameCounterpartSource} from './counterparts.mjs';
+import {comparisonCounterparts,counterpartFrame,counterpartLinks,counterpartRecords,counterpartState,counterpartRequestState,sameCounterpartSource,counterpartLinkProblem,counterpartUnlinkInput} from './counterparts.mjs';
 import {makeDiscussion,discussionSource,discussionSourceSnapshot} from './discussion.mjs';
 import {comparisonNodeKey,comparisonEndpoint,COUNTERPART_W,COUNTERPART_H} from './comparison-layout.mjs';
 import {newId,validateWorkspace} from './workspace.mjs';
@@ -18,13 +18,15 @@ export class CounterpartUI{
   pairs(target){return this.state(target).pairs;}
   otherMap(target){return ['a','b'].map(s=>this.canvas.states[s].map).find(m=>m&&m.id!==target.mapId);}
   canLink(target){const source=discussionSource(this.c.workspace,target),map=this.otherMap(target),thread=this.d.thread();return !!source&&target.type==='node'&&source.item.parent!==null&&!!map&&!map.unavailable&&(!thread||thread.participants.includes(this.d.actor()))&&[source.map,map].some(m=>m.ownerId===this.d.actor());}
+  canCreate(target,requestId,workspace=this.c.workspace){const request=workspace.discussions.find(r=>r.id===requestId),thread=workspace.comparisonThreads.find(t=>t.id===request?.comparisonId),map=workspace.maps.find(m=>[thread?.aMapId,thread?.bMapId].includes(m.id)&&m.id!==target.mapId);return !!request&&request.kind==='counterpart'&&request.status==='active'&&request.authorId!==this.d.actor()&&sameCounterpartSource(request.target,target)&&map?.ownerId===this.d.actor()&&!map.unavailable&&counterpartRequestState(workspace,request)!=='Request closed'&&!counterpartRecords(workspace,thread.id).some(r=>sameCounterpartSource(r.target,target)||sameCounterpartSource(r.other,target));}
   actions(target){
-    const source=discussionSource(this.c.workspace,target),map=this.otherMap(target),pairs=this.pairs(target),buttons=[];
-    if(pairs.length)buttons.push(cpButton(`View linked counterparts (${pairs.length})`,()=>this.show(target)));
-    if(this.canLink(target))buttons.push(cpButton(pairs.length?'Link another counterpart':'Link counterpart',()=>this.form(target,false)));
-    if(this.canLink(target)&&map.ownerId===this.d.actor())buttons.push(cpButton('Create counterpart in my map',()=>this.form(target,true)));
+    const source=discussionSource(this.c.workspace,target),pairs=this.pairs(target),buttons=[];
+    if(pairs.length===1&&this.canLink(target))buttons.push(cpButton('Unlink counterpart',()=>this.unlink(target,pairs[0].other)));
+    if(pairs.length>1)buttons.push(cpButton(`Earlier counterpart links (${pairs.length})`,()=>this.show(target)));
+    if(!pairs.length&&this.canLink(target))buttons.push(cpButton('Link counterpart',()=>this.form(target,false)));
     const request=this.requests(target).at(-1);if(request)buttons.push(cpButton('View counterpart request',()=>this.d.open(request.id)));
     else if(!pairs.length&&source?.map.ownerId===this.d.actor()&&this.canLink(target))buttons.push(cpButton('Request counterpart',()=>this.request(target)));
+    if(this.c.workspace.discussions.some(r=>r.comparisonId===this.d.thread()?.id&&(r.kind==='counterpart_unlink'||['correspondence','relationship'].includes(r.kind)&&r.status==='withdrawn')&&(sameCounterpartSource(r.target,target)||sameCounterpartSource(r.other,target))))buttons.push(cpButton('Counterpart history',()=>this.history(target)));
     return buttons;
   }
   request(target){if(!this.d.canLeave())return;this.returnControl=target;this.d.target=target;this.d.compose('counterpart','counterpart');}
@@ -36,7 +38,7 @@ export class CounterpartUI{
       box.style.width=`${p.w||COUNTERPART_W}px`;box.style.height=`${p.h||COUNTERPART_H}px`;box.title=`${state.label} · ${map.name} by ${this.d.name(map.ownerId)}`;const owner=cpEl('p',`${this.d.name(map.ownerId)}’s map`,'counterpart-map');owner.title=`${map.name} by ${this.d.name(map.ownerId)}`;box.append(cpEl('strong',state.label),owner);
       for(const event of ['pointerdown','click','dblclick'])box.addEventListener(event,e=>e.stopPropagation());
       if(this.d.mode()==='compare'){
-        let label,run;if(state.pairs.length){label=state.kind==='unavailable'?'View saved details':`View linked counterparts${state.count>1?` (${state.count})`:''}`;run=()=>this.show(p.target);}
+        let label,run;if(state.pairs.length){label=state.kind==='unavailable'?'View saved details':state.count>1?'Earlier counterpart links':'Counterpart details';run=()=>this.show(p.target);}
         else if(state.request){label=state.kind==='requested'&&this.canLink(p.target)&&map.ownerId===this.d.actor()?'Respond':'View request';run=()=>this.d.open(state.request.id);}
         else if(this.canLink(p.target)){label='Link counterpart';run=()=>this.form(p.target,false);}
         if(run)box.append(cpButton(label,()=>{if(this.d.dirty&&!this.d.canLeave())return;this.returnControl=p.target;run();}));
@@ -51,6 +53,28 @@ export class CounterpartUI{
     if(!this.d.canLeave())return;
     this.c.renderComparison();this.canvas.restoreAnchor(anchor);this.d.open(link.id);
   }
+  async unlink(target,other,{confirmed=false}={}){
+    if(this.d.saving||!confirmed&&!confirm('Unlink these counterparts? Both nodes and the link history will remain saved.')||!this.d.canLeave())return;
+    if(!confirmed)this.pendingUnlink=null;
+    this.returnControl=target;const comparisonId=this.d.thread()?.id,key=stableJSON([comparisonId,...[target,other].sort((a,b)=>stableJSON(a).localeCompare(stableJSON(b)))]),anchor=this.canvas.captureAnchor(target);
+    this.d.target=target;this.d.shell('Unlink counterpart');this.d.host.append(cpEl('p',`Both nodes and their earlier records will remain. This records that ${this.d.name(this.d.actor())} unlinked the pair.`),cpButton('Retry unlink',()=>this.unlink(target,other,{confirmed:true})),cpButton('Cancel',()=>this.d.close()));
+    this.d.saving=true;this.d.host.inert=true;
+    try{
+      if(this.pendingUnlink?.key!==key)this.pendingUnlink={key,recordId:newId('discussion'),reviewed:counterpartUnlinkInput(this.c.workspace,comparisonId,target,other).unlinkedRecordIds};
+      const {recordId,reviewed}=this.pendingUnlink;
+      const prepare=workspace=>{const already=workspace.discussions.find(r=>r.id===recordId);if(already)return {workspace,record:already};const input=counterpartUnlinkInput(workspace,comparisonId,target,other);if(stableJSON(input.unlinkedRecordIds)!==stableJSON(reviewed))throw Error('This counterpart changed in another session. Reopen its details before unlinking.');const candidate=structuredClone(workspace),record=makeDiscussion(candidate,{...input,id:recordId},this.d.actor());candidate.discussions.push(record);validateWorkspace(candidate);return {workspace:candidate,record};};
+      const result=this.c.account?await this.c.account.commitCandidate(prepare):prepare(this.c.workspace);
+      if(!this.c.account){this.c.workspace=result.workspace;this.c.markDirty();}
+      this.pendingUnlink=null;this.d.dirty=false;this.d.saving=false;this.c.renderComparison();this.canvas.restoreAnchor(anchor);this.c.library.render();this.d.close();
+    }catch(error){let message=this.d.host.querySelector('[role=alert]');if(!message){message=cpEl('p');message.setAttribute('role','alert');this.d.host.append(message);}message.textContent=error.message;}
+    finally{this.d.saving=false;this.d.host.inert=false;this.c.status();this.d.positionPopover();}
+  }
+  history(target){
+    if(!this.d.canLeave())return;this.returnControl=target;this.d.activateMode('compare');this.d.target=target;this.d.shell('Counterpart history');
+    const current=new Set(counterpartRecords(this.c.workspace,this.d.thread()?.id).map(r=>r.id)),records=this.c.workspace.discussions.filter(r=>r.comparisonId===this.d.thread()?.id&&['correspondence','relationship','counterpart_unlink'].includes(r.kind)&&(sameCounterpartSource(r.target,target)||sameCounterpartSource(r.other,target))).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
+    for(const r of records){const label=r.kind==='counterpart_unlink'?`Unlinked by ${this.d.name(r.authorId)}`:`${r.kind==='correspondence'?'Counterpart link':r.action==='agreement'?'Earlier Agreement':'Earlier Disagreement'} · ${this.d.name(r.authorId)}${current.has(r.id)?'':' · Earlier link'}`,button=cpButton(label,()=>this.d.open(r.id));button.dataset.counterpartRecord=r.id;this.d.host.append(button);}
+    this.d.positionPopover();
+  }
   show(target){
     if(!this.d.canLeave())return;const source=discussionSource(this.c.workspace,target),map=this.otherMap(target);if(!source||!map)return;
     this.returnControl=target;
@@ -60,36 +84,37 @@ export class CounterpartUI{
       if(other){section.append(cpEl('h3',other.label),cpEl('p',`${this.d.name(other.map.ownerId)} · ${other.map.name}`,'discussion-byline'),cpEl('p',counterpartPath(other.map,other.item),'field-help'));const status={collapsed:'Inside a collapsed branch',filtered:'In a hidden frame','cross-frame':'In another frame',visible:'Linked counterpart'}[pair.status];section.append(cpEl('p',status||'Counterpart unavailable','discussion-state'));if(!['missing','unavailable'].includes(pair.status))section.append(cpButton('Show connected nodes',()=>this.d.showConnectedNodes({key:actualNodePairKey(pair.records[0].target,pair.records[0].other)})));}
       else section.append(cpEl('h3','Counterpart unavailable'),cpEl('p','The saved record remains available below.','field-help'));
       const details=cpEl('details');details.append(cpEl('summary','Recorded meanings and authors'));for(const record of pair.records)details.append(cpButton(`${record.kind==='correspondence'?'Counterpart link':record.action==='agreement'?'Earlier Agreement':'Earlier Disagreement'} · ${this.d.name(record.authorId)}`,()=>this.d.open(record.id)));section.append(details);this.d.host.append(section);
+      if(this.canLink(target))section.append(cpButton('Unlink counterpart',()=>this.unlink(target,pair.other)));
     }
-    this.d.actionGroup('Counterparts',this.actions(target).filter(button=>!button.textContent.startsWith('View linked counterparts')));
+    if(!pairs.length)this.d.actionGroup('Counterparts',this.actions(target));
     this.d.positionPopover();
   }
   requestActions(r){
     const projection=this.state(r.target),state=projection.count?'Counterpart linked':counterpartRequestState(this.c.workspace,r);this.d.host.append(cpEl('p',projection.count?projection.label:state,'discussion-state'));
-    if(state==='Counterpart linked'){this.d.host.append(cpButton(`View linked counterparts (${this.pairs(r.target).length})`,()=>this.show(r.target)));return;}
+    if(state==='Counterpart linked'){this.d.host.append(cpButton('Counterpart details',()=>this.show(r.target)));return;}
     const own=this.canLink(r.target)&&this.otherMap(r.target)?.ownerId===this.d.actor();
-    const links=[];if(this.canLink(r.target))links.push(cpButton('Link counterpart',()=>this.form(r.target,false)));if(own)links.push(cpButton('Create counterpart in my map',()=>this.form(r.target,true)));this.d.actionGroup('Counterparts',links);
+    const links=[];if(this.canLink(r.target))links.push(cpButton('Link counterpart',()=>this.form(r.target,false,r.id)));if(this.canCreate(r.target,r.id))links.push(cpButton('Create counterpart in my map',()=>this.form(r.target,true,r.id)));this.d.actionGroup('Counterparts',links);
     if(own){
       this.d.actionGroup('Other responses',['no_position','not_applicable'].map(action=>cpButton(action==='no_position'?'No position yet':'Not applicable',()=>this.d.compose('reply',action,null,{layer:'inquiries'}))));}
     if(this.canLink(r.target)&&r.authorId===this.d.actor()){const action=state==='Awaiting counterpart'?'close_request':'reopen_request';this.d.host.append(cpButton(action==='close_request'?'Close request':'Reopen request',()=>this.d.compose('reply',action,null,{layer:'inquiries'})));}
   }
-  form(target,create){
-    if(!this.d.canLeave()||!this.c.editor.beforeLeave())return;this.c.captureActive();const source=discussionSource(this.c.workspace,target),map=this.otherMap(target);if(!this.canLink(target)||create&&map.ownerId!==this.d.actor())return;
+  form(target,create,requestId=null){
+    if(!this.d.canLeave()||!this.c.editor.beforeLeave())return;this.c.captureActive();const source=discussionSource(this.c.workspace,target),map=this.otherMap(target);if(!this.canLink(target)||this.pairs(target).length||create&&!this.canCreate(target,requestId))return;
     this.returnControl=target;
     this.d.activateMode('compare');this.d.target=target;this.d.shell(create?'Create counterpart in my map':'Link counterpart');
     this.d.host.append(cpEl('p',`For “${source.label}” by ${this.d.name(source.map.ownerId)}. ${create?'Create in':'Choose from'} ${map.name} by ${this.d.name(map.ownerId)}. This links comparable material without deciding agreement.`));
     const form=cpEl('form'),pick=cpEl('select');pick.id='counterpart-node';pick.required=true;
-    const candidates=map.nodes.filter(n=>create||n.parent!==null),frame=counterpartFrame(source.map,target.nodeId),search=cpEl('input');search.type='search';search.id='counterpart-search';search.placeholder='Search wording or parent path';
+    const frame=counterpartFrame(source.map,target.nodeId),candidates=map.nodes.filter(n=>counterpartFrame(map,n.id)===frame&&(create||n.parent!==null&&!counterpartLinkProblem(this.c.workspace,this.d.thread()?.id,target,{type:'node',mapId:map.id,nodeId:n.id}))),search=cpEl('input');search.type='search';search.id='counterpart-search';search.placeholder='Search wording or parent path';
     if(!create){const searchLabel=cpEl('label','Find a node');searchLabel.htmlFor=search.id;form.append(searchLabel,search);}
     const pickLabel=cpEl('label',create?'Where in your map? Choose the parent.':`Node in ${map.name}`);pickLabel.htmlFor=pick.id;form.append(pickLabel,pick);
     const title=cpEl('input'),summary=cpEl('textarea');title.id='counterpart-title';title.maxLength=200;title.required=true;summary.id='counterpart-summary';summary.rows=3;summary.maxLength=10000;
     if(create)for(const [text,input]of [['Your node title',title],['Your explanation (optional)',summary]]){const l=cpEl('label',text);l.htmlFor=input.id;form.append(l,input);}
     const preview=cpEl('p','','field-help');preview.id='counterpart-preview';pick.setAttribute('aria-describedby',preview.id);form.append(preview);
     const submit=cpEl('button',create?'Create and link counterpart':'Link counterpart','primary');submit.type='submit';form.append(submit,cpButton('Cancel',()=>this.d.close()));
-    const update=()=>{const n=candidates.find(n=>n.id===pick.value);submit.disabled=!n;preview.textContent=n?`${create?'New node under':'Selected'}: ${counterpartPath(map,n)}${counterpartFrame(map,n.id)!==frame?' · Different frame: the link will cross frames.':''}${!create?[n.summary,n.details].filter(Boolean).map(text=>' — '+text).join(''):''}`:candidates.length?'Choose a node before linking.':`${map.name} has no ordinary nodes to link.`;this.d.positionPopover();};
+    const update=()=>{const n=candidates.find(n=>n.id===pick.value);submit.disabled=!n;preview.textContent=n?`${create?'New node under':'Selected'}: ${counterpartPath(map,n)}${!create?[n.summary,n.details].filter(Boolean).map(text=>' — '+text).join(''):''}`:candidates.length?'Choose a node before linking.':`${map.name} has no unlinked ordinary nodes in this frame.`;this.d.positionPopover();};
     const fill=()=>{const previous=pick.value,query=search.value.trim().toLowerCase(),matches=candidates.filter(n=>!query||`${counterpartPath(map,n)} ${n.summary} ${n.details}`.toLowerCase().includes(query));pick.replaceChildren(new Option(create?'Choose a parent…':matches.length?'Choose a node…':'No matching nodes',''));for(const n of matches)pick.append(new Option(counterpartPath(map,n),n.id));pick.value=matches.some(n=>n.id===previous)?previous:'';update();};
     search.oninput=fill;pick.onchange=update;fill();if(create&&candidates.some(n=>n.id===frame)){pick.value=frame;update();}
-    if(!candidates.length){if(map.ownerId===this.d.actor())form.append(cpButton('Create counterpart in my map',()=>this.form(target,true)));else if(!this.pairs(target).length){const request=this.requests(target).at(-1);form.append(cpButton(request?'View counterpart request':'Request counterpart',()=>request?this.d.open(request.id):this.request(target)));}}
+    if(!candidates.length){if(this.canCreate(target,requestId))form.append(cpButton('Create counterpart in my map',()=>this.form(target,true,requestId)));else {const request=this.requests(target).at(-1);if(request)form.append(cpButton('View counterpart request',()=>this.d.open(request.id)));else if(source.map.ownerId===this.d.actor())form.append(cpButton('Request counterpart',()=>this.request(target)));}}
     const reviewed=counterpartReviewSnapshot(this.c.workspace,target),recordId=newId('discussion'),nodeId=newId('node');let stagedDraft=null;
     form.onsubmit=async e=>{e.preventDefault();if(this.d.saving)return;this.d.saving=true;this.d.host.inert=true;
       try{
@@ -100,9 +125,12 @@ export class CounterpartUI{
           if(stableJSON(counterpartReviewSnapshot(workspace,target))!==stableJSON(reviewed)||stableJSON(counterpartReviewSnapshot(workspace,chosen))!==stableJSON(chosenSnapshot))throw Error('A source changed or is no longer available. Your draft is still here; close and review the source before linking.');
           const ws=structuredClone(workspace),destination=ws.maps.find(m=>m.id===map.id&&!m.unavailable),currentSource=discussionSource(ws,target),actor=this.d.actor(),currentThread=ws.comparisonThreads.find(t=>t.id===thread.id);let node=destination?.nodes.find(n=>n.id===pick.value);
           if(!currentThread?.participants.includes(actor)||!node||!currentSource||currentSource.item.parent===null||![destination,currentSource.map].some(m=>m.ownerId===actor)||create&&destination.ownerId!==actor||!create&&node.parent===null)throw Error('Choose available ordinary nodes with at least one in your own map.');
+          if(counterpartFrame(destination,node.id)!==counterpartFrame(currentSource.map,target.nodeId))throw Error('Choose a counterpart in the same frame.');
+          if(create&&!this.canCreate(target,requestId,workspace))throw Error('This counterpart request changed. Reopen the request before creating a node. Your draft is still here.');
           if(create){const parent=node;node={id:nodeId,parent:parent.id,title:title.value.trim(),summary:summary.value.trim(),details:'',confidence:null,kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:''};if(!node.title)throw Error('Enter a title.');destination.nodes.push(node);synchronizeIdeas(ws,destination);destination.revision++;destination.updatedAt=new Date().toISOString();}
           const other={type:'node',mapId:destination.id,nodeId:node.id},existing=counterpartLinks(ws,thread.id).find(r=>[r.target,r.other].some(t=>sameCounterpartSource(t,target))&&[r.target,r.other].some(t=>sameCounterpartSource(t,other)));
           if(existing)return {workspace,record:existing};
+          const problem=counterpartLinkProblem(ws,thread.id,target,other);if(problem)throw Error(problem+' Your draft is still here.');
           const record=makeDiscussion(ws,{kind:'correspondence',action:'counterpart_link',comparisonId:thread.id,target,other,body:'Comparable nodes linked. Agreement has not been judged.'},actor);record.id=recordId;ws.discussions.push(record);validateWorkspace(ws);stagedDraft=draft;return {workspace:ws,record};
         };
         const result=this.c.account?await this.c.account.commitCandidate(prepare):prepare(this.c.workspace);

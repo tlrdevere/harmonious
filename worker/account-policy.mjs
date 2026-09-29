@@ -78,6 +78,17 @@ export function projectAccountWorkspace(snapshot,actorId){
     return Object.values(value).every(child=>referenceVisible(child,participants));
   };
   const hidden=new Set(discussions.filter(r=>!referenceVisible(r,full.comparisonThreads.find(t=>t.id===r.comparisonId)?.participants||[actorId])).map(r=>r.id));
+  // Removing a private reference must not make an older personal assessment
+  // appear current. Suppress that stance's earlier records in this projection
+  // as well, while retaining every original record in account storage.
+  const stanceGroups=new Map();
+  for(const r of discussions)if(r.kind==='interaction'&&r.interaction?.mode==='compare'&&['endorse','disagree','decline'].includes(r.action)){
+    const key=stableJSON([r.comparisonId,r.authorId,r.target]);if(!stanceGroups.has(key))stanceGroups.set(key,[]);stanceGroups.get(key).push(r);
+  }
+  for(const records of stanceGroups.values()){
+    const newest=records.reduce((a,b)=>Date.parse(b.createdAt)>Date.parse(a.createdAt)||Date.parse(b.createdAt)===Date.parse(a.createdAt)&&String(b.id)>String(a.id)?b:a);
+    if(hidden.has(newest.id))for(const r of records)hidden.add(r.id);
+  }
   let changed=true;while(changed){changed=false;for(const r of discussions)if(!hidden.has(r.id)&&[r.target,r.other].some(t=>t?.entryId&&hidden.has(t.entryId))){hidden.add(r.id);changed=true;}}
   discussions=discussions.filter(r=>!hidden.has(r.id));
   const workspace={schemaVersion:6,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
@@ -132,7 +143,8 @@ export function validateAccountChanges(snapshot,actorId,input){
     const {kind,value}=change,old=snapshot.records.find(r=>r.kind===kind&&r.id===change.id)?.value;
     if(kind==='definition')validateDefinitionEdit(old,value,actorId);
     if(kind==='discussion'){
-      try{validateDiscussionEdit(candidate,old,value,actorId);}catch(error){throw new AccountError(error.message,403);}
+      const newRecordIds=input.filter(c=>c.kind==='discussion'&&!snapshot.records.some(r=>r.kind==='discussion'&&r.id===c.id)).map(c=>c.id);
+      try{validateDiscussionEdit(candidate,old,value,actorId,{newRecordIds});}catch(error){throw new AccountError(error.message,error.status||403);}
     }
     if(kind==='argument_node'||kind==='argument_edge'){
       check(value.authorId===actorId,'Only the author can save this reasoning.',403);

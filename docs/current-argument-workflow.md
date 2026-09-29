@@ -14,7 +14,7 @@ Once the pair is open, its names and owners remain in the heading. **Change maps
 | --- | --- |
 | Map / Create | Edit your own nodes, add a child with an optional reason relationship, inspect details, and connect existing nodes. |
 | Inquiry | Request reason, Request explanation, Propose alternative, or Offer reason. |
-| Compare | Record Endorse, Disagree, or No position toward another person's node or connection. Find, link, or request a counterpart. |
+| Compare | Record Agree, Disagree, or No position toward another person's node or connection. Link, unlink, or request a counterpart. |
 | Argument | Dispute reasoning, choosing the grounds relevant to a node's frame or a connection's type. |
 
 Select a source node or connection to see its available actions. The three frame headings are containers. A cited node offers additional source-related dispute grounds. Other opens free text; comments and a single node reference are optional. A dispute needs at least one ground. Internal Signals tags are never shown.
@@ -49,7 +49,11 @@ Unfinished forms are parked when you switch modes and restored when you return. 
 
 ## Meaning, confidence, and counterparts
 
-The [positioning follow-up](comparison-positioning-plan.md) replaces initial sibling-order pairing with independent ordinary nodes and full-size ghost controls. **No counterpart linked → Link counterpart** opens the opposite map's searchable chooser from either participant's node, with no preselected match. Recorded links can bring actual counterparts together; requests, hidden/cross-frame links, and unavailable counterparts retain distinct status. **View linked counterparts** shows existing pairs and their authors; **Link another counterpart** preserves multiple links. **Create counterpart in my map** changes only the current participant's map. [The counterpart workflow](counterpart-workflow.md) describes request states, withdrawal, and placement. [Deployment status](deployment-status.md) remains the authority for the published version.
+Ordinary nodes begin independently with full-size ghost controls. **No counterpart linked → Link counterpart** opens the opposite map's searchable chooser with no preselected match. New links use ordinary nodes in the same frame, with at most one distinct counterpart per node in this comparison. Either participant can **Unlink counterpart**; both nodes, personal assessments and attributed history remain. **Create counterpart in my map** is offered only when answering an explicit request. Earlier multiple/cross-frame links retain contextual details and can be unlinked individually. [The counterpart workflow](counterpart-workflow.md) describes the full behavior; [deployment status](deployment-status.md) identifies the published version.
+
+Cards show each person's **Agree**, **Disagree**, or **No position** assessment; **Not assessed** is distinct. A linked pair shows **Both agree** or **Both disagree** only when reciprocal current assessments match. Asymmetry, No position, missing assessments and changed source wording produce no mutual verdict. The newest-created assessment determines the current opinion; withdrawing it does not resurrect an older opinion. Clicking an assessment opens its details.
+
+Click blank canvas to close a transient node window. Dragging and pinch keep it open; unfinished forms retain their discard safeguard. Source wording remains readable without a separate **Read source** disclosure.
 
 Source-map organization uses solid neutral lines; saved directed connections add arrowheads, retaining one route per actual pair. Counterpart links keep their distinct style and do not assert agreement. Decorative SQ-to-TA/TA-to-GS lines are omitted from the shared canvas. **View options → Connection key** explains the conventions. Hovering, focusing, or selecting a source connection identifies its actual endpoints. The expanded radial layout makes room for straight parent paths; clear lines are not bent merely to avoid another line. Routes avoid cards, and dense maps may still contain crossings.
 

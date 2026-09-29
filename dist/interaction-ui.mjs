@@ -21,7 +21,7 @@ export class InteractionUI{
     const own=source.map.ownerId===d.actor(),ordinary=target.type==='edge'||source.item.parent!==null;
     d.host.append(interactionEl('p',d.name(source.map.ownerId),'discussion-byline'));
     const wording=[source.item.summary,source.item.details,source.item.note].filter(Boolean).join('\n');
-    if(wording){const details=interactionEl('details');details.append(interactionEl('summary','Read source'),interactionEl('p',wording,'discussion-body'));d.host.append(details);}
+    if(wording)d.host.append(interactionEl('p',wording,'discussion-body source-wording'));
     if(source.item.sourceTitle||source.item.sourceUrl){const citation=interactionEl('p',source.item.sourceTitle||'Source','field-help');if(source.item.sourceUrl){const a=interactionEl('a','Open source');a.href=source.item.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';citation.append(' · ',a);}d.host.append(citation);}
     if(ordinary&&!own){
       const actions=interactionActions(d.mode()).filter(action=>action.id!=='dispute'||interactionOptions(ws,target,'dispute').length>0);

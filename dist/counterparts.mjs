@@ -5,17 +5,36 @@ export function counterpartFrame(map,id){
   while(n?.parent){if(seen.has(n.id))return null;seen.add(n.id);n=byId.get(n.parent);}return n?.id||null;
 }
 export const sameCounterpartSource=(a,b)=>a?.type==='node'&&b?.type==='node'&&a.mapId===b.mapId&&a.nodeId===b.nodeId;
+export const sameCounterpartPair=(r,target,other)=>sameCounterpartSource(r.target,target)&&sameCounterpartSource(r.other,other)||sameCounterpartSource(r.target,other)&&sameCounterpartSource(r.other,target);
 const counterpartOrder=(a,b)=>(a.kind==='correspondence'?0:1)-(b.kind==='correspondence'?0:1)||a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id);
 // This projection reads only the records already supplied to the participant.
 // Missing source cards must not erase a permitted, deliberately saved link.
 export function counterpartRecords(ws,comparisonId){
   const thread=ws.comparisonThreads?.find(t=>t.id===comparisonId);if(!thread)return [];
   const ids=[thread.aMapId,thread.bMapId];
-  return (ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.status==='active'&&['correspondence','relationship'].includes(r.kind)&&r.target?.type==='node'&&r.other?.type==='node'&&r.target.mapId!==r.other.mapId&&ids.includes(r.target.mapId)&&ids.includes(r.other.mapId)).sort(counterpartOrder);
+  const receipts=(ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.kind==='counterpart_unlink'&&r.status==='active');
+  return (ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.status==='active'&&['correspondence','relationship'].includes(r.kind)&&r.target?.type==='node'&&r.other?.type==='node'&&r.target.mapId!==r.other.mapId&&ids.includes(r.target.mapId)&&ids.includes(r.other.mapId)&&!receipts.some(u=>u.unlinkedRecordIds?.includes(r.id)&&sameCounterpartPair(u,r.target,r.other))).sort(counterpartOrder);
 }
 export function counterpartLinks(ws,comparisonId){
   const available=t=>ws.maps.find(m=>m.id===t?.mapId&&!m.unavailable)?.nodes.some(n=>n.id===t.nodeId);
-  return (ws.discussions||[]).filter(r=>r.comparisonId===comparisonId&&r.status==='active'&&['correspondence','relationship'].includes(r.kind)&&available(r.target)&&available(r.other)).sort(counterpartOrder);
+  return counterpartRecords(ws,comparisonId).filter(r=>available(r.target)&&available(r.other));
+}
+// Only new links use these eligibility rules. Historical pairs remain readable.
+export function counterpartLinkProblem(ws,comparisonId,target,other,{excludeId}={}){
+  const thread=ws.comparisonThreads?.find(t=>t.id===comparisonId),ids=thread&&[thread.aMapId,thread.bMapId];
+  if(!ids||target?.type!=='node'||other?.type!=='node'||target.mapId===other.mapId||![target.mapId,other.mapId].every(id=>ids.includes(id)))return 'Choose one node from each map in this comparison.';
+  const sources=[target,other].map(t=>{const map=ws.maps.find(m=>m.id===t.mapId&&!m.unavailable);return {map,node:map?.nodes.find(n=>n.id===t.nodeId)};});
+  if(sources.some(s=>!s.node))return 'The source changed. Choose an available node before linking.';
+  if(sources.some(s=>s.node.parent===null))return 'Choose ordinary nodes; frame headings already correspond.';
+  if(counterpartFrame(sources[0].map,target.nodeId)!==counterpartFrame(sources[1].map,other.nodeId))return 'Choose a counterpart in the same frame.';
+  const occupied=counterpartRecords(ws,comparisonId).filter(r=>r.id!==excludeId);
+  if(occupied.some(r=>!sameCounterpartPair(r,target,other)&&[target,other].some(t=>sameCounterpartSource(r.target,t)||sameCounterpartSource(r.other,t))))return 'One of these nodes already has a counterpart. Unlink its current counterpart first.';
+  return '';
+}
+export function counterpartUnlinkInput(ws,comparisonId,target,other){
+  const unlinkedRecordIds=counterpartRecords(ws,comparisonId).filter(r=>sameCounterpartPair(r,target,other)).map(r=>r.id).sort();
+  if(!unlinkedRecordIds.length)throw Error('These nodes are no longer linked. Reopen their counterpart details.');
+  return {kind:'counterpart_unlink',action:'unlink_counterpart',comparisonId,target,other,unlinkedRecordIds};
 }
 export function counterpartPairs(ws,comparisonId,target){
   const pairs=new Map();

@@ -282,3 +282,19 @@ body.comparison-full-canvas #comparison-commandbar .comparison-full-status{order
 .connection-key-sample{display:inline-block;flex:0 0 30px;position:relative;border-top:1.6px solid #8396a1}
 .connection-key-sample.directed::after{content:'';position:absolute;right:-1px;top:-4px;border-left:7px solid #8396a1;border-top:3px solid transparent;border-bottom:3px solid transparent}
 .connection-key-sample.counterpart{border-top-style:dashed}
+
+/* Personal assessments and a derived mutual position share one face row. */
+.comparison-world .node.has-assessment .node-main{height:97px}
+.comparison-world .node.has-assessment .node-summary{-webkit-line-clamp:2;font-size:13px;margin-top:5px}
+.node-assessments{height:26px;padding:2px 10px 2px 12px;display:flex;align-items:center;gap:5px;box-sizing:border-box;min-width:0}
+.node-assessments .node-assessment,.node-assessments .pair-assessment{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;line-height:17px;padding:1px 5px;border-radius:5px;border:1px solid #c5cfd9;background:#f2f5f8;color:#4a5d70;font-weight:600;text-align:left}
+.node-assessments .node-assessment{flex:1}
+.node-assessments .pair-assessment{flex:0 1 auto}
+.node-assessments .agree{background:#e5f3e8;border-color:#87b696;color:#235b39}
+.node-assessments .disagree{background:#fae6e6;border-color:#d29898;color:#873333}
+.node-assessments .no-position{background:#e9edf5;border-color:#a7b3c7;color:#42536e}
+.node-assessments .unassessed{background:#fff;border-style:dashed;color:#697786;font-weight:400}
+.node-assessments .needs-review{background:#fff3dc;border-color:#bd913d;color:#775411}
+.discussion-relationship[data-pair-assessment="agree"]{stroke:#398557;stroke-width:2.4}
+.discussion-relationship[data-pair-assessment="disagree"]{stroke:#af4b4b;stroke-width:2.4}
+.source-wording{max-height:9em;overflow:auto}

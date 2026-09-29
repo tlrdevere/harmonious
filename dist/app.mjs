@@ -332,9 +332,12 @@ $('fit').addEventListener('click',()=>transition(result.positions,fitCamera()));
 function zoom(factor,x=viewport.clientWidth/2,y=viewport.clientHeight/2,absolute=false){settle();const z=Math.min(2,Math.max(.02,absolute?factor:camera.z*factor)),ratio=z/camera.z;camera={x:x-(x-camera.x)*ratio,y:y-(y-camera.y)*ratio,z};positions=result.positions;draw();}
 $('plus').addEventListener('click',()=>zoom(1.2));$('minus').addEventListener('click',()=>zoom(1/1.2));$('zoom').addEventListener('click',()=>zoom(1,viewport.clientWidth/2,viewport.clientHeight/2,true));
 viewport.addEventListener('wheel',event=>{if(event.target.closest('.viewport-controls,.node-face-editor'))return;event.preventDefault();const rect=viewport.getBoundingClientRect();zoom(Math.exp(-event.deltaY*.0015),event.clientX-rect.left,event.clientY-rect.top);},{passive:false});
-const pointers=new Map();let drag=null,pinch=null;
+const pointers=new Map();let drag=null,pinch=null,blankPress=null;
+const isBlankEditorTarget=target=>target instanceof Element&&viewport.contains(target)&&!target.closest('button,a,input,textarea,select,summary,[contenteditable]:not([contenteditable="false"]),[role="button"],.node,.node-face-editor,.viewport-controls,.on-map-actions,.map-connection-menu');
 viewport.addEventListener('pointerdown',event=>{
-  if(event.button>0||event.target.closest('button,a,input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="button"],.node,.node-face-editor,.viewport-controls'))return;
+  if(pointers.size)blankPress=null;
+  if(event.button>0||!isBlankEditorTarget(event.target))return;
+  if(!pointers.size)blankPress={id:event.pointerId,x:event.clientX,y:event.clientY,focus:document.activeElement};
   // Pointer capture keeps the drag on the canvas; cancelling the default also
   // prevents the browser from starting a competing text-selection/native drag.
   event.preventDefault();viewport.focus({preventScroll:true});settle();positions=result.positions;draw();
@@ -345,20 +348,24 @@ viewport.addEventListener('pointerdown',event=>{
 });
 viewport.addEventListener('pointermove',event=>{
   if(!pointers.has(event.pointerId))return;
+  if(blankPress&&Math.hypot(event.clientX-blankPress.x,event.clientY-blankPress.y)>4)blankPress=null;
   if(event.pointerType==='mouse'&&!(event.buttons&1)){endPointer(event);return;}
   pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
   if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()],rect=viewport.getBoundingClientRect();zoom(pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance),(a.x+b.x)/2-rect.left,(a.y+b.y)/2-rect.top,true);}
   else if(drag){camera.x=drag.cx+event.clientX-drag.x;camera.y=drag.cy+event.clientY-drag.y;draw();}
 });
 function endPointer(event){
+  const press=blankPress,dismiss=event.type==='pointerup'&&event.button===0&&pointers.size===1&&press?.id===event.pointerId&&Math.hypot(event.clientX-press.x,event.clientY-press.y)<=4&&isBlankEditorTarget(document.elementFromPoint(event.clientX,event.clientY));
   if(!pointers.delete(event.pointerId))return;
+  blankPress=null;
   if(viewport.hasPointerCapture(event.pointerId))viewport.releasePointerCapture(event.pointerId);
   pinch=null;drag=null;
   if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,cx:camera.x,cy:camera.y};}
   if(!pointers.size)viewport.classList.remove('panning');
+  if(dismiss){if(closeInspector())viewport.focus({preventScroll:true});else if(press.focus?.isConnected)press.focus.focus({preventScroll:true});}
 }
 function cancelCanvasPan(){
-  const ids=[...pointers.keys()];pointers.clear();drag=null;pinch=null;viewport.classList.remove('panning');
+  const ids=[...pointers.keys()];pointers.clear();drag=null;pinch=null;blankPress=null;viewport.classList.remove('panning');
   for(const id of ids)if(viewport.hasPointerCapture(id))viewport.releasePointerCapture(id);
 }
 for(const type of ['pointerup','pointercancel','lostpointercapture'])viewport.addEventListener(type,endPointer);

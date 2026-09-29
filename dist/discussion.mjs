@@ -1,4 +1,4 @@
-import {counterpartResponseActions,counterpartLinks,sameCounterpartSource} from './counterparts.mjs';
+import {counterpartResponseActions,counterpartRecords,counterpartLinks,counterpartLinkProblem,sameCounterpartPair,sameCounterpartSource} from './counterparts.mjs';
 import {validateDefinitionReferences,canInvokeDefinitions} from './definitions.mjs';
 import {graphEdges} from './model.mjs';
 import {stableJSON} from './account-model.mjs';
@@ -13,12 +13,14 @@ Object.assign(DISCUSSION_LABELS,{adoption_added:'Added to my map',adoption_exist
 Object.assign(DISCUSSION_LABELS,{disagreement_point:'Point of disagreement',outcome:'Reflection outcome'});
 for(const [action,label] of Object.values(INTERACTION_ACTIONS).flat())DISCUSSION_LABELS[action]=label;
 DISCUSSION_LABELS.respond='Response';
+DISCUSSION_LABELS.unlink_counterpart='Counterparts unlinked';
 export const isReason=r=>r?.kind==='argument'&&r.action==='reason';
 export const isChallenge=r=>r?.kind==='argument'&&!isReason(r);
-export const discussionLayer=r=>r.kind==='interaction'?({compare:'map',inquiry:'inquiries',argument:'arguments'}[r.interaction?.mode]||'inquiries'):r.kind==='relationship'||r.kind==='correspondence'||r.kind==='context'?'map':['argument','reflection'].includes(r.kind)?'arguments':r.kind==='reply'?r.layer:'inquiries';
+export const discussionLayer=r=>r.kind==='interaction'?({compare:'map',inquiry:'inquiries',argument:'arguments'}[r.interaction?.mode]||'inquiries'):['relationship','correspondence','counterpart_unlink','context'].includes(r.kind)?'map':['argument','reflection'].includes(r.kind)?'arguments':r.kind==='reply'?r.layer:'inquiries';
 const discussionKinds={correspondence:['counterpart_link'],relationship:['agreement','disagreement'],counterpart:['counterpart'],adoption:['adoption'],inquiry:['explain','example','evidence','question'],argument:['reason','support','challenge','evidence','counterexample','inference','contradiction','fallacy'],reply:['reply','resolve','reopen','accept','maintain','adoption_added','adoption_existing','adoption_not_now',...counterpartResponseActions],context:['context']};
 discussionKinds.reflection=['disagreement_point','outcome'];
 discussionKinds.interaction=[...Object.values(INTERACTION_ACTIONS).flat().map(([id])=>id),'respond'];
+discussionKinds.counterpart_unlink=['unlink_counterpart'];
 const discussionIdentity=['id','authorId','comparisonId','kind','target','other','createdAt','layer'];
 const discussionEqual=(a,b)=>stableJSON(a)===stableJSON(b);
 export function discussionSource(ws,target){
@@ -83,8 +85,15 @@ export function validateDiscussions(ws){
     for(const v of [...r.history,r])validateInteractionRecord(v);
     const thread=ws.comparisonThreads.find(t=>t.id===r.comparisonId);
     if(r.kind==='context'?r.comparisonId!==null||!['node','edge'].includes(r.target.type):!thread?.participants.includes(r.authorId))throw Error('Invalid conversation membership.');
-    if(['relationship','correspondence'].includes(r.kind)&&(r.target.type!=='node'||r.other?.type!=='node'||!discussionTargetValid(r.other)||r.target.mapId===r.other.mapId))throw Error('Choose one node from each map.');
-    if(!['relationship','correspondence'].includes(r.kind)&&r.other!=null)throw Error('Only a relationship can have a second source.');
+    if(['relationship','correspondence','counterpart_unlink'].includes(r.kind)&&(r.target.type!=='node'||r.other?.type!=='node'||!discussionTargetValid(r.other)||r.target.mapId===r.other.mapId))throw Error('Choose one node from each map.');
+    if(!['relationship','correspondence','counterpart_unlink'].includes(r.kind)&&r.other!=null)throw Error('Only a relationship can have a second source.');
+    if(r.kind==='counterpart_unlink'){
+      if(r.version!==1||r.history.length||r.status!=='active'||r.body!==''||r.layer!==null||r.createdAt!==new Date(r.createdAt).toISOString()||r.updatedAt!==r.createdAt||!Array.isArray(r.unlinkedRecordIds)||!r.unlinkedRecordIds.length||r.unlinkedRecordIds.length>10000||r.unlinkedRecordIds.some(id=>typeof id!=='string'||!id||id.length>200)||new Set(r.unlinkedRecordIds).size!==r.unlinkedRecordIds.length||['sourceSnapshots','reviewedSources','definitionRefs','premise','adoption','reflection','interaction','referenceUrl'].some(k=>r[k]!==undefined))throw Error('Invalid counterpart unlink receipt.');
+      // A private external reference can hide an original contribution from a
+      // participant. Keep the receipt so its other visible IDs stay unlinked.
+      // New writes below still require every actual, currently effective record.
+      if(r.unlinkedRecordIds.some(id=>{const link=ws.discussions.find(e=>e.id===id);return link&&(link.comparisonId!==r.comparisonId||!['correspondence','relationship'].includes(link.kind)||!sameCounterpartPair(link,r.target,r.other));}))throw Error('An unlink receipt must preserve its original counterpart identities.');
+    }else if(r.unlinkedRecordIds!==undefined)throw Error('Only a counterpart unlink receipt can identify unlinked records.');
     if(['counterpart','adoption'].includes(r.kind)&&r.target.type!=='node')throw Error('Choose one of your own nodes.');
     for(const v of [...r.history,r])if(v.definitionRefs!==undefined&&(!canInvokeDefinitions(r)||!Array.isArray(v.definitionRefs)||v.definitionRefs.length>30||new Set(v.definitionRefs.map(ref=>ref?.definitionId)).size!==v.definitionRefs.length||v.definitionRefs.some(ref=>!ref||typeof ref.definitionId!=='string'||!ref.definitionId||ref.authorId!==r.authorId||!['definition','standard'].includes(ref.type)||!Number.isSafeInteger(ref.version)||ref.version<1||typeof ref.title!=='string'||!ref.title.trim()||ref.title.length>200||typeof ref.body!=='string'||!ref.body.trim()||ref.body.length>10000)))throw Error('Invalid referenced definitions.');
     if(r.kind==='reply'&&(r.target.type!=='entry'||!['map','inquiries','arguments'].includes(r.layer)))throw Error('Invalid reply.');
@@ -113,8 +122,18 @@ export function validateDiscussions(ws){
   }
   validatePremises(ws);validateReflections(ws);return ws;
 }
-export function validateDiscussionEdit(ws,old,r,actor){
+export function validateDiscussionEdit(ws,old,r,actor,{newRecordIds=[]}={}){
   if(r.authorId!==actor)throw Error('Only the author can change this contribution.');
+  if(r.kind==='counterpart_unlink'){
+    if(old)throw Error('An unlink receipt cannot be edited or withdrawn. Create a new link to reconnect these nodes.');
+    const thread=ws.comparisonThreads.find(t=>t.id===r.comparisonId),maps=thread&&[thread.aMapId,thread.bMapId].map(id=>ws.maps.find(m=>m.id===id));
+    if(!thread?.participants.includes(actor)||!maps?.every(m=>m&&!m.unavailable&&(m.ownerId===actor||m.visibility==='shared'))||!maps.some(m=>m.ownerId===actor)||![r.target.mapId,r.other.mapId].every(id=>maps.some(m=>m.id===id)))throw Error('Both comparison maps must be available to a participating map owner.');
+    const beforeReceipt={...ws,discussions:ws.discussions.filter(e=>e.id!==r.id)},effective=counterpartRecords(beforeReceipt,r.comparisonId);
+    if(!r.unlinkedRecordIds?.length||r.unlinkedRecordIds.some(id=>!effective.some(link=>link.id===id&&sameCounterpartPair(link,r.target,r.other))))throw Error('These counterparts changed or were already unlinked. Reopen their details.');
+    const expected=effective.filter(link=>!newRecordIds.includes(link.id)&&sameCounterpartPair(link,r.target,r.other)).map(link=>link.id).sort();
+    if(!discussionEqual(expected,[...r.unlinkedRecordIds].sort()))throw Object.assign(Error('These counterparts changed. Reopen their details before unlinking.'),{status:409});
+    return;
+  }
   validateAdoptionRecord(ws,old,r,actor);
   validatePremiseEdit(ws,old,r,actor);
   if(old){
@@ -168,18 +187,23 @@ export function validateDiscussionEdit(ws,old,r,actor){
     }
   }
   if(isReason(r)&&!canExplainReasoning(ws,r.target,actor))throw Error('Explain your own position, reason, or argument response.');
+  if(['correspondence','relationship'].includes(r.kind)&&r.status==='active'&&(!old||old.status!=='active')){
+    if(ws.discussions.some(e=>e.kind==='counterpart_unlink'&&e.status==='active'&&e.unlinkedRecordIds?.includes(r.id)))throw Error('This link was unlinked. Create a new counterpart link.');
+    const problem=counterpartLinkProblem(ws,r.comparisonId,r.target,r.other,{excludeId:r.id});if(problem)throw Object.assign(Error(problem),{status:409});
+  }
   if(!old&&r.kind==='counterpart'&&counterpartLinks(ws,r.comparisonId).some(link=>sameCounterpartSource(link.target,r.target)||sameCounterpartSource(link.other,r.target)))throw Error('A counterpart is already linked to this node.');
   if(r.kind==='correspondence'&&![r.target,r.other].some(t=>discussionSource(ws,t)?.map.ownerId===actor))throw Error('Link a counterpart from your own map.');
   if(r.kind==='correspondence'&&[r.target,r.other].some(t=>discussionSource(ws,t)?.item.parent===null))throw Error('Choose ordinary nodes; frame headings already correspond.');
-  if(r.kind==='correspondence'&&ws.discussions.some(e=>e.id!==r.id&&e.kind==='correspondence'&&e.status==='active'&&e.comparisonId===r.comparisonId&&[stableJSON(e.target),stableJSON(e.other)].sort().join('|')===[stableJSON(r.target),stableJSON(r.other)].sort().join('|')))throw Error('These counterparts are already linked.');
+  if(r.kind==='correspondence'&&counterpartRecords(ws,r.comparisonId).some(e=>e.id!==r.id&&e.kind==='correspondence'&&sameCounterpartPair(e,r.target,r.other)))throw Error('These counterparts are already linked.');
   if(!['relationship','correspondence','counterpart','adoption','interaction'].includes(r.kind)&&!r.body.trim()&&r.status==='active')throw Error('Write your contribution before saving.');
-  if(r.kind==='relationship'&&ws.discussions.some(e=>e.id!==r.id&&e.kind==='relationship'&&e.status==='active'&&e.authorId===actor&&e.comparisonId===r.comparisonId&&[stableJSON(e.target),stableJSON(e.other)].sort().join('|')===[stableJSON(r.target),stableJSON(r.other)].sort().join('|')))throw Error('You already recorded this pair. Open its connection to edit it.');
+  if(r.kind==='relationship'&&counterpartRecords(ws,r.comparisonId).some(e=>e.id!==r.id&&e.kind==='relationship'&&e.authorId===actor&&sameCounterpartPair(e,r.target,r.other)))throw Error('You already recorded this pair. Open its connection to edit it.');
 }
 export function makeDiscussion(ws,input,actor,old=null){
   const now=new Date().toISOString(),{history,...prior}=old||{};
   // Referenced titles retain exact saved wording, including imported spacing.
   const body=isReason(input)&&(input.premise!==undefined||old?.premise!==undefined)?input.body??'':input.body?.trim()||'';
-  const r={id:old?.id||((isAdoptionReceipt(input)||input.kind==='interaction')&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
+  const r={id:old?.id||((isAdoptionReceipt(input)||['interaction','counterpart_unlink'].includes(input.kind))&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
+  if(input.unlinkedRecordIds!==undefined)r.unlinkedRecordIds=structuredClone(input.unlinkedRecordIds);
   if(input.kind==='interaction')r.interaction=input.status==='withdrawn'&&old&&discussionEqual(input.interaction,old.interaction)?structuredClone(old.interaction):makeInteraction(ws,{...input,...(input.interaction||old?.interaction||{})},actor);
   if(input.adoption!==undefined)r.adoption=structuredClone(input.adoption);else if(old?.adoption)r.adoption=structuredClone(old.adoption);
   if(input.premise!==undefined)r.premise=structuredClone(input.premise);else if(old?.premise)r.premise=structuredClone(old.premise);
@@ -187,10 +211,10 @@ export function makeDiscussion(ws,input,actor,old=null){
   if(input.definitionRefs!==undefined)r.definitionRefs=structuredClone(input.definitionRefs);
   else if(old?.definitionRefs)r.definitionRefs=structuredClone(old.definitionRefs);
   if(old?.sourceSnapshots)r.sourceSnapshots=old.sourceSnapshots;
-  else if(!old)r.sourceSnapshots=discussionSnapshots(ws,r);
+  else if(!old&&r.kind!=='counterpart_unlink')r.sourceSnapshots=discussionSnapshots(ws,r);
   if(old?.reviewedSources)r.reviewedSources=old.reviewedSources;
   if(input.reviewSources)r.reviewedSources=discussionSnapshots(ws,r);
   if(input.referenceUrl)r.referenceUrl=input.referenceUrl.trim();
-  if(!old&&r.sourceSnapshots.some(s=>!s))throw Error('The source changed. Reopen it before saving.');
+  if(!old&&r.sourceSnapshots?.some(s=>!s))throw Error('The source changed. Reopen it before saving.');
   const candidate={...ws,discussions:[...(ws.discussions||[]).filter(e=>e.id!==r.id),r]};validateDiscussions(candidate);validateDiscussionEdit(candidate,old,r,actor);return r;
 }

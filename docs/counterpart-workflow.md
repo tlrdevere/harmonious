@@ -1,44 +1,43 @@
 # Counterparts in Compare
 
-The [full-size counterpart and straight-connection follow-up](comparison-space-and-lines.md) **shipped in Worker 50**, after all 48 local and 48 hosted checks and public verification. It remains in Worker 51 alongside the [canvas dragging fix](canvas-panning-fix.md); [deployment status](deployment-status.md) records current publication.
+See [counterpart controls and assessments](counterpart-controls-and-assessments.md) for the current increment. [Deployment status](deployment-status.md) identifies the published release.
 
-## Delivered behavior
+## Linking and unlinking
 
-Once a counterpart is linked, **Request counterpart** is absent from the node actions and counterpart chooser. Frame headings already occupy corresponding frame positions and do not offer requests.
+Ordinary nodes start independently with a full-size ghost/status card. Equal titles, sibling order and copy provenance do not pair them. Frame headings occupy corresponding structural positions and offer no counterpart actions.
 
-Compare displays **one visible edge per node pair**. Counterpart links, agreement/disagreement judgments and earlier records are grouped behind that edge; opening it exposes their separate saved details. Conflicting judgments use **Mixed judgments**. Likewise, an example's structural parent edge and illustrative relation share one source line, with the underlying meanings accessible in Connection details. Collapsed nodes do not create duplicate visible edges.
+**Link counterpart** opens a searchable picker from either participant's node. It begins with no selection and lists only available, unlinked ordinary nodes in the same frame. Choices identify owner, map, parent path and wording. Both endpoints can have at most one distinct counterpart in this comparison. Linking edits no source map and records no agreement.
 
-Selecting an ordinary node leaves node positions, zoom, camera, folds, and filters unchanged. Ordinary nodes start independently unless a qualifying pair has been deliberately recorded. Matching titles, sibling order, copied IDs, and copy provenance do not position them as counterparts. Each unpaired visible ordinary node has a full-size ghost/status card, equal in width and height to the real node; selection does not create or move it.
+A linked node offers **Unlink counterpart** to either participating map owner. Unlinking ends the currently reviewed link records through an immutable, attributed receipt. Both nodes, earlier links, assessments and conversations remain. A later link gets a new record. The nodes return to independent ghost/status display, retaining request state where relevant. Retry after a lost acknowledgment creates no duplicate receipt.
 
-An unlinked ghost says **No counterpart linked** and offers **Link counterpart** in Compare when permitted. A saved, active, unanswered **Request counterpart** changes its status to **Counterpart requested**, with **Respond** or **View request** as appropriate. Opening or cancelling the request form sends nothing. Ghosts are comparison display elements, not empty nodes, saved requests, or assessments of the other person's position. Their geometry remains the same across shared modes; authoring controls remain in Compare.
+Ordinary menus omit **View linked counterparts**, **Link another counterpart**, and **Create counterpart in my map**. **Counterpart history** appears after unlinking. Older multiple, cross-frame, hidden and missing-source links retain contextual **Earlier counterpart links**, **Counterpart details** or **View saved details**. Hidden/missing endpoints do not silently free a slot. Each earlier pair can be unlinked individually, preserving other pairs and historical judgments.
 
-The recipient can open the spot and choose:
+## Requests
 
-- **Create counterpart in my map**: select a parent in their own map and write a title and optional explanation. Saving creates the real node and its counterpart link together.
-- **Link counterpart**: explicitly choose an existing ordinary node from the opposite map. The searchable picker identifies its map/owner and parent path, and previews its wording. A different-frame choice is explained. This adds only an attributed comparison link; neither source map is edited.
-- From the request, **No position yet** or **Not applicable**: record an explanation. The full-size ghost shows that request state, with its explanation/history in the inspector. The request author can close or reopen the request with an explanation.
+An unlinked owned node can **Request counterpart**. Opening or cancelling sends nothing. A saved unanswered request changes its ghost to **Counterpart requested**. The recipient can:
 
-**Link counterpart** works from either person's node when the current participant owns at least one endpoint and both nodes are accessible. The chooser begins with no node selected. Creation remains restricted to the participant's own map. Empty lists explain the available next step rather than offering an empty submission.
+- **Link counterpart** to a free existing node in the same frame.
+- **Create counterpart in my map**, available only when answering an explicit request. The chosen parent must be in the same frame; the owned node and link are saved together.
+- Record **No position yet** or **Not applicable**, with an explanation.
 
-**View linked counterparts** lists existing opposite nodes with owners and paths; **Link another counterpart** preserves multiple links. Counts group distinct pairs, while saved meanings and authors remain individually inspectable. **View counterpart request** opens the existing request and its current responses instead of creating a duplicate. Declining discard, switching modes, and failed validation preserve unfinished work; confirmed cancellation creates nothing.
+The requester can close/reopen the request. State and history survive unlinking. An ordinary empty picker does not offer creation; it explains the empty list and offers the relevant request action. Ghosts are display controls, never saved nodes or automatic requests.
 
-**Counterpart** is a neutral, separately saved connection. It does not record agreement or disagreement. Compare's Endorse, Disagree, and No position remain personal stances toward another person's source; they do not create pair assessments. Earlier paired judgments remain readable, with retired authoring controls absent. An author may withdraw their own link, retaining history and both nodes. After the last qualifying pair is withdrawn, each node returns to its independent ghost/status display; an existing request retains its appropriate requested or response state. Another author's remaining active record keeps the pair linked.
+## Assessments
 
-## Placement
+**Agree**, **Disagree**, and **No position** remain each person's assessment of the other source. Cards show the participant's name (or **You**), text and color. **Not assessed** is distinct. Clicking a saved assessment opens its details. The newest-created assessment governs the current opinion; withdrawing it clears the display instead of reviving an older opinion. Editing or withdrawing an older record does not override a newer one.
 
-Only qualifying saved pairs share adjacent positions. Active counterpart links take priority, followed by earlier explicitly recorded Agreement/Disagreement pairs for compatibility. Older comparison records retain their inspected connections/history without newly driving adjacency. One node appears once, even when it has several links. Parent relationships in the original maps remain untouched, including when paired nodes have different source-tree depths.
+A one-to-one pair shows **Both agree** or **Both disagree** only when reciprocal assessments match and neither source needs review. The short connection also reflects that state. Asymmetry, No position, absent/withdrawn assessments and changed wording produce no mutual verdict. Unlinking removes the pair indicator but retains personal opinions. Earlier Agreement/Disagreement records retain their meanings and are not converted into derived indicators.
 
-The radial comparison layout is built from occupied groups of real cards and full-size ghosts. It expands outward to clear straight parent connections, with actual source cards and ghosts treated as obstacles. It does not retain abandoned pair slots. Frame headings keep corresponding positions when visible; their numbers count real children, not ghosts or links. Independent frame filters contribute only visible headings. Expansion, collapse and frame filtering retain zoom and a visible anchor; **Fit** provides an overview on demand.
+## Canvas and reading
 
-An adjacent saved pair uses a short straight connection across its gap. Opening or keyboard-activating that connection exposes its recorded meanings and authors; the node's **View linked counterparts** remains available. A wide label does not force a bent bracket above the pair. Nonadjacent or exceptional obstructed connections retain appropriate inspected routes without crossing cards.
+Ghosts match real-card dimensions. The radial layout uses additional canvas space for straight clear parent connections. Linking, unlinking, expansion and filtering preserve zoom and a visible anchor; **Fit** is an explicit overview. Every real node appears once and source parents remain unchanged. Shared modes keep the same geometry, with counterpart authoring in Compare.
 
-Cross-frame counterparts stay in their original frames and are connected across them. The chooser explains this when its selection is in a different frame. Multiple counterpart connections are retained; the first available qualifying pair determines adjacent placement, with every other link accessible. Known links to another frame, a collapsed/filtered branch, or an unavailable endpoint have truthful linked/unavailable status instead of **No counterpart linked**. Hidden descendants never turn the visible ancestor into a counterpart. Only authorized history and source information are shown.
+Adjacent pairs use one short straight gap connection with inspectable meanings and authors. A wide label does not create a bent bracket. Earlier exceptional connections retain inspected routes. Collapsing a counterpart never makes its ancestor appear to be the counterpart.
 
-No manual dragging or persisted manual coordinates were added.
+The node window presents wording without **Read source**. Citations and saved source history remain accessible. Blank-canvas clicks close transient windows; dragging, pinch and interrupted gestures do not. Unsaved forms retain discard protection and focus restoration.
 
-## Verification
+## Integrity and verification
 
-- Layout coverage includes independent equal-order nodes, saved-pair priority, swapped map sides, equal ghost/real-card dimensions, occupied group ancestry, straight parent corridors, no abandoned slots, unchanged source trees, and non-overlapping cards/controls.
-- Two-account browser coverage includes stable selection, explicit ghosts and request states, direct creation under an owned parent, choosing from either map without duplication or source-map edits, no implicit agreement, no-position/reopen flows, saved links, draft protection and narrow screens. The positioning plan specifies the complete follow-up acceptance matrix.
-- Account and PostgreSQL tests cover request-author/recipient permissions, linking and withdrawal, creation plus linking in one save, privacy, reload and history. The existing discussion storage supports this without a schema migration.
-- The complete release runner covers application/account checks, active browser walkthroughs, portable export, and the production build. [Deployment status](deployment-status.md) records the actual completed run and release, rather than carrying forward an older check count.
+New rules are checked in the picker, refreshed save preparation, account validation and a deferred PostgreSQL boundary. Historical multiple/cross-frame pairs remain readable. Snapshot retries handle competing saves; unlink receipts preserve original authorship. Older tabs receive a refresh-required message when a receipt appears.
+
+Coverage includes two isolated accounts, reciprocal and stale assessments, both endpoint directions, missing sources, other comparisons, same-frame creation, retries, legacy pairs, history, camera/focus, narrow views, portable export and direct database permission/batch tests. The complete release results are recorded in [deployment status](deployment-status.md).

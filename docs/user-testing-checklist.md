@@ -1,6 +1,17 @@
 # Harmonious: what to check on your next visit
 
-## First check: canvas dragging
+## First check: counterpart controls and assessments
+
+Use [deployment status](deployment-status.md) to confirm publication, then refresh both PCs.
+
+- [ ] Choose **Link counterpart** from SQ, TA and GS. Only free ordinary nodes from the same frame appear, with no initial selection. A competing link at either end is rejected without losing your draft.
+- [ ] Unlink from the participant who did not create the link. Both nodes remain, return to ghosts and keep their assessments. **Counterpart history** identifies the linker and unlinker. Relink and reload both PCs.
+- [ ] Ordinary menus omit View linked counterparts, Link another counterpart, Create counterpart in my map and Read source. Send an explicit request, then confirm its recipient can create and link a node in their own matching frame. Hidden/earlier details remain reachable.
+- [ ] Record Agree, Disagree and No position. Check the named face badges; distinguish No position from Not assessed. Reciprocal Agree or Disagree shows **Both agree / Both disagree**. Asymmetry has no shared verdict. Changing source wording marks the affected opinion for review and removes the shared verdict.
+- [ ] Click an assessment to inspect it. Withdraw the newest assessment: an older opinion must not reappear. Withdrawing an older assessment must leave a newer one displayed. Personal opinions survive unlinking.
+- [ ] Click blank canvas to close a node window in each view. Pan instead: it stays open. Decline discarding an unfinished form: values and input focus remain. Check keyboard, touch and a narrow window.
+
+## Continuing check: canvas dragging
 
 The [canvas-panning fix](canvas-panning-fix.md) is **live in Worker 51**, after all 49 local and 49 hosted checks and public verification. **Refresh both PCs before testing.**
 
@@ -26,9 +37,9 @@ The [positioning increment](comparison-positioning-plan.md) **shipped in Worker 
 
 - [ ] Open a new comparison with similarly ordered or copied nodes, including the four-child TA example. Every unlinked ordinary node should occupy its own position with a full-size **No counterpart linked** ghost. Equal titles/order should not produce automatic pairs. Frame headings remain corresponding structural headings.
 - [ ] Open **Link counterpart** from a ghost on either side. No candidate should be selected initially. Cancel and confirm the camera and nodes stay put; reopen, explicitly choose the intended node, and save. Both real nodes should remain, now paired where eligible, with their saved connection inspectable.
-- [ ] Withdraw your own last qualifying link. The nodes should return to independent positions and truthful ghost/request status. If another author's qualifying link remains, the pair should remain linked. Never offer withdrawal of another person's record.
+- [ ] Use Unlink counterpart from either account. The nodes should return to independent positions with truthful ghost/request status. Original authored records remain intact, with an attributed unlink receipt.
 - [ ] Start and cancel a request; no request should be sent. Send one and confirm **Counterpart requested** replaces the generic ghost. As recipient, use **Respond** to link, create, or answer **No position yet / Not applicable**. Close/reopen from the permitted account; each state should remain clear after refresh.
-- [ ] Link into another frame or a collapsed/filtered branch and check the linked status and reveal control. Multiple links should remain in the list without duplicate cards. A missing/unavailable source should not be presented as **No counterpart linked** or expose hidden wording.
+- [ ] Inspect an earlier cross-frame or multiple link, and a collapsed/filtered branch. New links must be same-frame and one-to-one. Earlier links remain inspectable without duplicate cards. A missing/unavailable source should not be presented as **No counterpart linked** or expose hidden wording.
 - [ ] Repeat the SQ example with four, five, six, and eight children, unequal maps, and either map collapsed. Compare with Create at a similar zoom. Check balanced spacing, no overlapping cards/ghosts, no unused positions left by repeated linking, and each real parent connection staying traceable.
 - [ ] Switch Inquiry, Compare, and Argument; positions and ghost sizes should stay unchanged, with counterpart authoring controls in Compare. Check ordinary selection, pan/zoom, parked drafts, declined discard, keyboard focus/Escape, narrow windows, and a readable zoom level for the ghost's control.
 - [ ] Verify child counts/search contain real nodes only. Linking existing nodes should change neither source map, confidence, nor ownership. Saved pairs/history should remain intact in existing comparisons and portable files.
@@ -39,7 +50,7 @@ The [comparison clarity increment](comparison-clarity-plan.md) **shipped in Work
 
 - [ ] Open two maps with similar SQ children, including the two Low union density nodes. Select one, then the other, and alternate among other visible nodes. Existing nodes, ghost controls, zoom, camera, folds, and filters should stay in place; selection should create no additional counterpart spot.
 - [ ] From your own node, choose **Link counterpart**. Search the other map, check the owner, parent path, and wording preview, then select and link the intended node. Nothing should be selected initially. Repeat starting from the other person's node, and repeat as the other account. Cancelling should create no link; linking should change neither source map.
-- [ ] Open **View linked counterparts**, including a node linked to more than one opposite node. Each pair should appear once, with its saved meanings and authors available. **Link another counterpart** should work; retrying an existing pair should not duplicate it. Refresh after saving and confirm both accounts see the link.
+- [ ] Open contextual **Earlier counterpart links** on an older node linked to multiple opposite nodes. Each pair retains its meanings and authors; unlink one pair and verify the others remain. New links must be one-to-one. Refresh and confirm both accounts see the result.
 - [ ] Start and cancel **Request counterpart**: the existing ghost should remain unchanged and no request should be saved. Send a request: **Counterpart requested** should remain visible when selection changes. Test Link, Create counterpart in my map, No position yet, close/reopen, and withdrawal of your own link on disposable nodes. A linked node should not offer a new request, and creating must remain restricted to your own map.
 - [ ] Collapse both maps to their three frame headings. There should be no automatic SQ-to-TA or TA-to-GS lines. Genuine saved connections remain available when their endpoints are shown. Open **View options → Connection key** and compare it with the displayed source lines, arrows, and counterpart links.
 - [ ] Recreate the SQ branching example with the second map collapsed. Low union density and Socialists should have separately traceable paths back to SQ, without the misleading shared vertical segment. Hover or keyboard-focus a line: its full route and both actual endpoint cards should highlight. Selecting it should show those same endpoints and saved meanings.

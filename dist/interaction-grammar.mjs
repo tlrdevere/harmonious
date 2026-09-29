@@ -3,7 +3,7 @@ import {stableJSON} from './account-model.mjs';
 
 // CSV grammar v4, with the subsequently agreed prototype decisions. IDs and
 // hidden signals are storage vocabulary; labels/helpers are presentation only.
-export const INTERACTION_ACTIONS={compare:[['endorse','Endorse'],['disagree','Disagree'],['decline','No position']],inquiry:[['request_reason','Request reason'],['request_explanation','Request explanation'],['propose_alternative','Propose alternative'],['offer_reason','Offer reason']],argument:[['dispute','Dispute reasoning']]};
+export const INTERACTION_ACTIONS={compare:[['endorse','Agree'],['disagree','Disagree'],['decline','No position']],inquiry:[['request_reason','Request reason'],['request_explanation','Request explanation'],['propose_alternative','Propose alternative'],['offer_reason','Offer reason']],argument:[['dispute','Dispute reasoning']]};
 const option=(id,label,helper='',signal=null,group='About the claim')=>({id,label,helper,group,...(signal?{signal}:{})});
 const base=(id,label,signal,helper='')=>option(id,label,helper,signal);
 export const INTERACTION_DISPUTES={

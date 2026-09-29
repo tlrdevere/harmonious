@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import {readFile,readdir} from 'node:fs/promises';
+import {PGlite} from '@electric-sql/pglite';
+import {alice,bob,seedActor,view} from './accounts.test.mjs';
+import {AccountError} from '../worker/account-policy.mjs';
+import {saveAccountChanges} from '../worker/account-api.mjs';
+import {makeDiscussion,discussionSnapshots} from '../dist/discussion.mjs';
+import {counterpartRecords,counterpartUnlinkInput} from '../dist/counterparts.mjs';
+import {counterpartIntegrityFixture,exerciseCounterpartIntegrity} from './counterpart-integrity.test.mjs';
+
+const db=new PGlite(),migration='20260929005321_counterpart_integrity.sql';
+await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key); insert into auth.users(id) values('${alice.id}'),('${bob.id}');`);
+for(const file of (await readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')&&f!==migration).sort())await db.exec(await readFile('supabase/migrations/'+file,'utf8'));
+const store={async snapshot(){return (await db.query('select public.harmonious_snapshot() as data')).rows[0].data;},async commit(actor,generation,changes){try{return (await db.query('select public.harmonious_commit($1::uuid,$2::bigint,$3::jsonb) as data',[actor,generation,JSON.stringify(changes)])).rows[0].data;}catch(e){const error=new AccountError(e.message,e.code==='PT409'?409:e.code==='PT403'?403:400);error.snapshotChanged=e.message==='snapshot_changed';throw error;}}};
+const change=(value,expectedRevision=0)=>({kind:'discussion',id:value.id,expectedRevision,value});
+try{
+ await db.exec('set role service_role');for(const actor of [alice,bob])await seedActor(store,actor);
+ const legacy=await counterpartIntegrityFixture(store);let ws=(await view(store,alice)).workspace;
+ const base=makeDiscussion(ws,{kind:'correspondence',action:'counterpart_link',comparisonId:legacy.thread.id,target:legacy.refs.Alice[0],other:legacy.refs.Bob[0]},alice.id);
+ const oldRecords=[base,{...base,id:crypto.randomUUID(),other:legacy.refs.Bob[1]},{...base,id:crypto.randomUUID(),target:legacy.refs.Alice[1],other:legacy.refs.Bob[3]}];
+ for(const r of oldRecords)r.sourceSnapshots=discussionSnapshots(ws,r);
+ await store.commit(alice.id,(await store.snapshot()).revision,oldRecords.map(r=>change(r)));
+ const beforeMigration=await store.snapshot();await db.exec('reset role');await db.exec(await readFile('supabase/migrations/'+migration,'utf8'));await db.exec('set role service_role');
+ assert.deepEqual(await store.snapshot(),beforeMigration,'Applying the migration preserves old cross-frame/multiple records byte-for-byte');
+ const privilege=(await db.query("select bool_and(not prosecdef and not has_function_privilege('authenticated',oid,'execute') and not has_function_privilege('anon',oid,'execute')) safe from pg_proc where proname like 'harmonious_counterpart_%'")).rows[0];assert.equal(privilege.safe,true);
+ assert.equal((await db.query("select has_table_privilege('service_role','public.harmonious_records','DELETE') allowed")).rows[0].allowed,false,'Receipt deletion is not granted to the application role');
+ ws=(await view(store,bob)).workspace;assert(oldRecords.every(r=>ws.discussions.some(s=>s.id===r.id)),'Existing historical records still load');
+ const historicalReceipt=makeDiscussion(ws,counterpartUnlinkInput(ws,legacy.thread.id,legacy.refs.Alice[1],legacy.refs.Bob[3]),bob.id);
+ await saveAccountChanges(store,bob.id,[change(historicalReceipt)]);assert((await view(store,alice)).workspace.discussions.some(r=>r.id===oldRecords[2].id),'Cross-frame unlink preserves its earlier record');
+ await exerciseCounterpartIntegrity(store);
+ const fixture=await counterpartIntegrityFixture(store),[a,a2,,ag]=fixture.refs.Alice,[b,b2,,bg]=fixture.refs.Bob;
+ ws=(await view(store,alice)).workspace;
+ const valid=makeDiscussion(ws,{kind:'correspondence',action:'counterpart_link',comparisonId:fixture.thread.id,target:a,other:b},alice.id);
+ const snapshot=await store.snapshot(),direct=async(value,actor=alice.id,revision=0)=>store.commit(actor,(await store.snapshot()).revision,[change(value,revision)]);
+ const cross={...valid,id:crypto.randomUUID(),other:bg};cross.sourceSnapshots=discussionSnapshots(ws,cross);
+ await assert.rejects(()=>direct(cross),/same frame/);
+ const root={...valid,id:crypto.randomUUID(),target:{...a,nodeId:'status'}};await assert.rejects(()=>direct(root),/ordinary/);
+ const foreign={...valid,id:crypto.randomUUID(),authorId:bob.id};await assert.rejects(()=>direct(foreign),/author/);
+ assert.deepEqual(await store.snapshot(),snapshot,'Rejected direct SQL new-link writes are atomic');
+ await direct(valid);ws=(await view(store,bob)).workspace;
+ const occupied={...valid,id:crypto.randomUUID(),other:b2};occupied.sourceSnapshots=discussionSnapshots(ws,occupied);await assert.rejects(()=>direct(occupied),/already has a counterpart/);
+ const reverse={...valid,id:crypto.randomUUID(),target:b,other:a2};reverse.sourceSnapshots=discussionSnapshots(ws,reverse);await assert.rejects(()=>direct(reverse),/already has a counterpart/);
+ const receipt=makeDiscussion(ws,counterpartUnlinkInput(ws,fixture.thread.id,a,b),bob.id),unchanged=await store.snapshot();
+ for(const patch of [{unlinkedRecordIds:['missing']},{unlinkedRecordIds:[valid.id,valid.id]},{unlinkedRecordIds:[]},{createdAt:'not-a-date'},{updatedAt:'2020-01-01T00:00:00.000Z'},{history:[{}]},{other:b2},{target:{...a,nodeId:null}},{status:'withdrawn'},{sourceSnapshots:[]}])await assert.rejects(()=>direct({...receipt,id:crypto.randomUUID(),...patch},bob.id));
+ assert.deepEqual(await store.snapshot(),unchanged,'Malformed receipts leave linking records and revisions unchanged');
+ // A stale complete set must fail when a second authored meaning arrives.
+ const extra=makeDiscussion(ws,{...valid,kind:'relationship',action:'agreement'},alice.id);await direct(extra);
+ await assert.rejects(()=>saveAccountChanges(store,bob.id,[change(receipt)]),/changed/);
+ await assert.rejects(()=>direct(receipt,bob.id),/changed/);
+ ws=(await view(store,bob)).workspace;const complete=makeDiscussion(ws,counterpartUnlinkInput(ws,fixture.thread.id,a,b),bob.id);await direct(complete,bob.id);
+ const committed=await store.snapshot();await assert.rejects(()=>direct({...complete,body:'Rewrite outcome'},bob.id,1),/cannot/);
+ await assert.rejects(()=>direct({...complete,id:crypto.randomUUID()},alice.id),/receipt|changed/);
+ assert.deepEqual(await store.snapshot(),committed,'Saved receipts cannot be altered or replayed under a different identity');
+ ws=(await view(store,alice)).workspace;assert(!counterpartRecords(ws,fixture.thread.id).some(r=>[valid.id,extra.id].includes(r.id)));
+ console.log('Counterpart PostgreSQL migration compatibility, direct-write integrity, stale unlink conflict, immutable receipts, access grants, and atomic rejection passed.');
+}finally{await db.close();}

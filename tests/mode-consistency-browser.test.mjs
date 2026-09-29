@@ -5,7 +5,7 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {alice,bob,memoryStore,seedActor,edit,addNode,view} from './accounts.test.mjs';
 import {accountWorkspace,saveAccountChanges,startAccountComparison} from '../worker/account-api.mjs';
-import {makeDiscussion} from '../dist/discussion.mjs';
+import {makeDiscussion,discussionSnapshots,discussionTargetLabel} from '../dist/discussion.mjs';
 import {synchronizeIdeas} from '../dist/adoption.mjs';
 import {capturePremise} from '../dist/premise.mjs';
 
@@ -307,7 +307,13 @@ try{
   const linked=await seed(alice,{kind:'correspondence',action:'counterpart_link',target:conclusion,other:survey,body:'Comparable material, without an agreement judgment.'});
   const withdrawnJudgment=await seed(bob,{kind:'relationship',action:'disagreement',target:bSource,other:nested,body:'An earlier judgment kept in history.'});
   await edit(store,bob,ws=>{const old=ws.discussions.find(r=>r.id===withdrawnJudgment.id);ws.discussions=ws.discussions.map(r=>r.id===old.id?makeDiscussion(ws,{...old,status:'withdrawn'},bob.id,old):r);const map=ws.maps.find(m=>m.id===bMap.id),node=addNode(ws,bob,'Survey detail');node.kind='position';node.parent=ids['Survey results'];synchronizeIdeas(ws,map);});
-  await seed(alice,{kind:'relationship',action:'agreement',target:{type:'node',mapId:aMap.id,nodeId:'status'},other:{type:'node',mapId:bMap.id,nodeId:'status'},body:'A genuine frame-level connection.'});
+  // Earlier releases allowed frame-head relationships. Keep this stored-history
+  // fixture without routing it through today's ordinary-node linking rules.
+  const historicalWorkspace=(await view(store,alice)).workspace;
+  const frameAgreement={...structuredClone(agreement),id:`discussion-${crypto.randomUUID()}`,target:{type:'node',mapId:aMap.id,nodeId:'status'},other:{type:'node',mapId:bMap.id,nodeId:'status'},body:'A genuine frame-level connection.'};
+  frameAgreement.targetLabel=discussionTargetLabel(historicalWorkspace,frameAgreement.target);
+  frameAgreement.sourceSnapshots=discussionSnapshots(historicalWorkspace,frameAgreement);
+  await store.commit(alice.id,(await store.snapshot()).revision,[{kind:'discussion',id:frameAgreement.id,expectedRevision:0,value:frameAgreement}]);
   const connectionReply=await seed(bob,{kind:'reply',action:'reply',target:{type:'entry',entryId:agreement.id},layer:'map',body:'Earlier discussion attached to the actual pair.'});
   const {recordComparison}=await import('../dist/workspace.mjs');let earlierPair;
   await edit(store,alice,ws=>{earlierPair=recordComparison(ws,{aMapId:aMap.id,bMapId:bMap.id,aNodeId:nested.nodeId,bNodeId:bSource.nodeId,questionStatus:'matched',question:'Earlier pair wording',answerStatus:'aligned',notes:''},null,alice.id);ws.comparisons.push(earlierPair);});

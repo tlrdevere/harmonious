@@ -2,6 +2,10 @@
 
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
+## September 29 counterpart controls and assessments
+
+The [counterpart controls follow-up](counterpart-controls-and-assessments.md) restricts new links to free nodes in the same frame, supports attributed unlinking by either participant, and limits creation to explicit counterpart requests. Ordinary menus omit redundant view/link-another/read-source controls. **Agree** is the visible name of the existing `endorse` action. Personal assessments appear on cards; **Both agree / Both disagree** is derived only from matching, current reciprocal assessments on a one-to-one pair. No position and Not assessed remain distinct and produce no mutual verdict. Blank-canvas clicks dismiss transient windows through existing draft safeguards. Publication is recorded in [deployment status](deployment-status.md).
+
 ## September 29 canvas dragging fix
 
 The [canvas-panning fix](canvas-panning-fix.md) is **live in Worker 51**, after all 49 local and 49 hosted checks and public verification. Empty-canvas drags cancel competing browser text-selection/native-drag behavior and clean up after cancellation, capture loss or focus loss. Normal node/control actions, text selection in editors/details, keyboard navigation and touch zoom remain available. It does not change the meaning or permissions of any interaction.
@@ -56,7 +60,7 @@ Copies of the revised uploads are preserved in [the design references](design/in
 - An addresses connection uses “It won't address the problem”; enables uses “It won't achieve the goal.” There is no combined fallback menu for unknown or organizational edge types.
 - A response has one mutually exclusive outcome. Other interaction choices can be multi-select.
 - Comments and **Point to a node** are optional, including dispute rows that previously marked a reference Required. A dispute needs at least one selected ground; other initiating actions can be saved without explanatory text. A response needs one outcome.
-- “Other” opens a free-form field wherever offered, including Endorse. Writing in that field is optional. Other does not infer a disagreement classification.
+- “Other” opens a free-form field wherever offered, including Agree. Writing in that field is optional. Other does not infer a disagreement classification.
 - Each selected dispute option's Signals tag is saved internally with that option. Tags and the Notes column are not UI text. “What it becomes” remains provisional; the reviewed application behavior below defines the implementation.
 
 ## Modes and responses
@@ -64,14 +68,14 @@ Copies of the revised uploads are preserved in [the design references](design/in
 | Place | Actions | Scope |
 | --- | --- | --- |
 | Map / Create | Edit; Add child node, optionally as a reason; Inspect details; Connect existing node; direct Confidence | Author's own map |
-| Compare | Endorse, Disagree, No position | Another participant's ordinary node or connection |
+| Compare | Agree, Disagree, No position | Another participant's ordinary node or connection |
 | Inquiry | Request reason, Request explanation, Propose alternative, Offer reason | Another participant's ordinary node or connection |
 | Argument | Dispute reasoning | Another participant's ordinary node or eligible typed connection |
 | Within the originating mode | Respond | Intended recipient of an active request, proposal, offer, or dispute |
 
 Map editing retains its Maps destination. Compare, Inquiry, and Argument share a comparison canvas, source maps, and camera. Changing modes parks an unfinished form; returning restores it. Changing targets or leaving the form uses the discard safeguard.
 
-**No position** withholds a stance rather than asserting disagreement. Its choices are “I don't know,” “I need more information,” “I haven't considered this,” and Other. Counterpart links identify comparable nodes independently of anyone's stance. Endorse, Disagree, and No position do not automatically create, remove, or merge counterparts.
+**No position** withholds a stance rather than asserting disagreement. Its choices are “I don't know,” “I need more information,” “I haven't considered this,” and Other. Counterpart links identify comparable nodes independently of anyone's stance. Agree, Disagree, and No position do not automatically create, remove, or merge counterparts.
 
 | Received interaction | Mutually exclusive response outcomes |
 | --- | --- |
@@ -103,13 +107,13 @@ Records capture classification, source wording, and referenced wording. Changed 
 
 ## Recording versus applying
 
-Recording Endorse or accepting an interaction does not automatically edit a map. A separate **Review…** action previews a change to the owner's comparison map, and **Apply to my map** commits it. The source author retains control of the original map.
+Recording Agree or accepting an interaction does not automatically edit a map. A separate **Review…** action previews a change to the owner's comparison map, and **Apply to my map** commits it. The source author retains control of the original map.
 
 | Recorded choice | Optional reviewed application |
 | --- | --- |
-| Endorse a node | Create an independent node or use an existing node; optionally link counterparts |
-| Endorse “For my own reason” | Use a referenced own reason, or add an independent reason, and connect it to the endorsed node |
-| Endorse a typed semantic connection | Copy both endpoint nodes and their typed connection independently |
+| Agree a node | Create an independent node or use an existing node; optionally link counterparts |
+| Agree “For my own reason” | Use a referenced own reason, or add an independent reason, and connect it to the agreed-with node |
+| Agree a typed semantic connection | Copy both endpoint nodes and their typed connection independently |
 | Accept / Partly accept a proposal or dispute | Revise the owner's node wording or semantic connection note |
 | Accept an offered reason | Create or select an owned node; connect it as a reason to the owner's target node |
 | Answer a reason request | Optionally add the answer as a reason on the owner's map |
@@ -134,7 +138,7 @@ Organizational edges do not offer unsupported copy or wording-revision operation
 Open `review/Harmonious-interactions-preview.html`. Use **Preview as** to switch between Alex and Blair. These are disposable sample identities, not signed-in accounts. Reopening resets the samples; Download backup retains a copy of your experiments.
 
 1. As Alex, select a Blair node and switch among Compare, Inquiry, and Argument. Confirm each mode offers its own actions and that an unfinished form returns when you revisit its mode.
-2. In Compare, record a position. Confirm it stays attached to the source and leaves both maps unchanged. Endorse can separately preview a copy into your map; its default frame matches the source.
+2. In Compare, record a position. Confirm it stays attached to the source and leaves both maps unchanged. Agree can separately preview a copy into your map; its default frame matches the source.
 3. In Inquiry, send a request, proposal, or offered reason. Switch to Blair while viewing it, choose Respond, and select one outcome. Acceptance alone should leave the map unchanged; Review and Apply perform a separate owner-controlled edit.
 4. In Argument, inspect nodes in all three frames and the sample typed connections. A sample citation adds source-related grounds. Other opens a text field, and no internal Signals labels appear.
 5. Try Point to a node with no selection, one existing selection, and a newly created node. Confirm only the explicit option to create a node adds it to your map.

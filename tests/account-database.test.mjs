@@ -13,6 +13,7 @@ import {exerciseReasoningDatabaseBoundary} from './reasoning-api.test.mjs';
 import {exerciseAdoptionFulfillment,exerciseAdoptionDatabaseBoundary} from './adoption-fulfillment.test.mjs';
 import {exercisePremiseDatabaseBoundary} from './premise-database.test.mjs';
 import {exerciseReflectionDatabaseBoundary} from './reflection-database.test.mjs';
+import {exerciseCounterpartIntegrity} from './counterpart-integrity.test.mjs';
 
 const db=new PGlite();
 await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key); insert into auth.users(id) values('${alice.id}'),('${bob.id}');`);
@@ -27,6 +28,7 @@ await db.exec(await readFile('supabase/migrations/20260919042425_adoption_fulfil
 await db.exec(await readFile('supabase/migrations/20260919060236_existing_node_reasons.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260919062604_comparison_reflections.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260923002452_interaction_grammar_v4.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20260929005321_counterpart_integrity.sql','utf8'));
 assert((await db.query("select prosecdef from pg_proc where proname in ('harmonious_snapshot','harmonious_commit')")).rows.every(row=>!row.prosecdef),'Application RPCs must not elevate the caller\'s privileges');
 await db.exec('set role service_role');
 const store={
@@ -71,6 +73,6 @@ for(const role of ['anon','authenticated']){
   await assert.rejects(()=>db.query('select public.harmonious_commit($1::uuid,0,\'[]\'::jsonb)',[alice.id]),e=>e.code==='42501');
   await db.exec('reset role');
 }
-await db.exec('set role service_role');assert((await store.snapshot()).records.length>0);await db.exec('reset role');
+await db.exec('set role service_role');assert((await store.snapshot()).records.length>0);await exerciseCounterpartIntegrity(store);await db.exec('reset role');
 await db.close();console.log('PostgreSQL migration, two-account persistence, atomic rollback, revision conflicts, and database access boundaries passed.');
 import {exerciseCounterparts} from './counterparts.test.mjs';

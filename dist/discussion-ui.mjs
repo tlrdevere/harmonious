@@ -1,6 +1,7 @@
 import {InteractionUI} from './interaction-ui.mjs';
 import {InteractionSearchUI} from './interaction-search-ui.mjs';
-import {entryMode,interactionCategory,conversationThreads} from './interaction-presentation.mjs';
+import {entryMode,interactionCategory,conversationThreads,nodeAssessment,counterpartAssessment} from './interaction-presentation.mjs';
+import {counterpartRecords} from './counterparts.mjs';
 import {interactionMode,interactionLabel} from './interaction-grammar.mjs';
 import {CounterpartUI} from './counterpart-ui.mjs';
 import {AdoptionUI} from './adoption-ui.mjs';
@@ -32,6 +33,7 @@ export class DiscussionUI{
     this.canvas.options.canSetConfidence=(map,node)=>map.ownerId===this.actor()&&node.parent!==null&&node.kind==='position';
     this.canvas.options.onConfidence=(side,id)=>{if(!this.canLeave())return;this.c.selectSource(side,id);this.confidence();};
     this.canvas.options.afterBuild=()=>this.draw();this.canvas.options.afterGeometry=()=>this.position();this.canvas.options.afterCamera=()=>this.positionPopover();
+    this.canvas.options.onBlankClick=()=>this.host.hidden?true:this.close({focus:false});
     this.host=discussEl('section','','discussion-popover');this.host.hidden=true;this.host.setAttribute('aria-label','On-map conversation');this.canvas.surface.append(this.host);
     this.host.addEventListener('toggle',()=>this.positionPopover(),true);
     for(const event of ['pointerdown','wheel'])this.host.addEventListener(event,e=>e.stopPropagation());
@@ -108,8 +110,17 @@ export class DiscussionUI{
     if(['entry','inference'].includes(this.target?.type)){const source=this.c.workspace.discussions.find(r=>r.id===this.target.entryId);this.target=source&&conversationAnchor(this.c.workspace.discussions,source);}
     this.viewId=null;this.groupTarget=null;if(this.target)this.actions();else this.list();
   }
-  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.canvas.sourceHighlights.select(null);this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.confidenceReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
-  close(){const entry=this.viewId,connectionReturn=this.connectionReturn,confidenceReturn=this.confidenceReturn,counterpartReturn=this.counterparts.returnControl;if(!this.canLeave())return;this.groupTarget=null;this.target=null;this.confidenceReturn=null;this.counterparts.returnControl=null;this.draw();if(counterpartReturn&&this.counterparts.focusReturn?.(counterpartReturn))return;const counterpartSide=counterpartReturn&&['a','b'].find(side=>this.canvas.states[side].map?.id===counterpartReturn.mapId),counterpartFocus=counterpartSide&&this.canvas.cards.get(comparisonNodeKey(counterpartSide,counterpartReturn.nodeId))?.querySelector('.node-main'),marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main')),confidenceFocus=confidenceReturn&&this.canvas.cards.get(confidenceReturn)?.querySelector('.node-confidence');(counterpartFocus||confidenceFocus||connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});}
+  canLeave(){if(this.dirty&&!confirm('Discard this unsaved conversation draft?'))return false;this.canvas.sourceHighlights.select(null);this.dirty=false;this.viewId=null;this.editingContributionId=null;this.groupTarget=null;this.collapsedBranchKey=null;this.connectionReturn=null;this.confidenceReturn=null;this.assessmentReturn=null;this.host.hidden=true;this.host.replaceChildren();this.c.status();return true;}
+  close({focus=true}={}){
+    const entry=this.viewId,connectionReturn=this.connectionReturn,confidenceReturn=this.confidenceReturn,assessmentReturn=this.assessmentReturn,counterpartReturn=this.counterparts.returnControl;
+    if(!this.canLeave())return false;
+    this.groupTarget=null;this.target=null;this.counterparts.returnControl=null;this.draw();if(!focus)return true;
+    const assessmentFocus=assessmentReturn&&this.canvas.cards.get(assessmentReturn)?.querySelector('button.node-assessment');
+    if(assessmentFocus){assessmentFocus.focus({preventScroll:true});return true;}
+    if(counterpartReturn&&this.counterparts.focusReturn?.(counterpartReturn))return true;
+    const counterpartSide=counterpartReturn&&['a','b'].find(side=>this.canvas.states[side].map?.id===counterpartReturn.mapId),counterpartFocus=counterpartSide&&this.canvas.cards.get(comparisonNodeKey(counterpartSide,counterpartReturn.nodeId))?.querySelector('.node-main'),marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main')),confidenceFocus=confidenceReturn&&this.canvas.cards.get(confidenceReturn)?.querySelector('.node-confidence');
+    (counterpartFocus||confidenceFocus||connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});return true;
+  }
   shell(title){this.viewOptions.open=false;this.viewId=null;this.hostMode=this.mode();this.host.replaceChildren();this.host.hidden=false;const header=discussEl('header');header.append(discussEl('strong',title),discussButton('Close',()=>this.close()));this.host.append(header);this.positionPopover();}
   actionGroup(title,buttons){if(!buttons.length)return;const section=discussEl('section','','discussion-action-group'),actions=discussEl('div','','discussion-actions');section.append(discussEl('h3',title));actions.append(...buttons);section.append(actions);this.host.append(section);}
   selectNode(side,id){if(!this.canLeave())return;this.counterparts.returnControl=null;this.confidenceReturn=null;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
@@ -187,6 +198,12 @@ export class DiscussionUI{
     if(this.c.workspace.discussions?.find(r=>r.id===id)?.kind==='interaction'){this.interactions.open(id);return;}
     const annotation=this.c.workspace.discussions?.find(r=>r.id===id&&isReflection(r));if(annotation){this.reflections.open(annotation);return;}
     if(!this.canLeave())return;const r=this.c.workspace.discussions?.find(e=>e.id===id);if(!r)return;const recordMode=this.entryMode(r);if(mode)this.activateMode(mode);else if(recordMode==='argument'||!context&&this.mode()!=='argument')this.activateMode(recordMode);this.target={type:'entry',entryId:id};this.returnFocus=document.activeElement;this.shell(contributionLabel(r));this.viewId=id;this.groupTarget=null;
+    if(r.kind==='counterpart_unlink'){
+      this.host.append(discussEl('p',`Unlinked by ${this.name(r.authorId)} · ${new Date(r.createdAt).toLocaleString()}`,'discussion-byline'),discussEl('p','Both nodes and their assessments remain. This history records which earlier links were ended.','discussion-body'));
+      for(const recordId of r.unlinkedRecordIds||[]){const original=this.allEntries().find(e=>e.id===recordId);if(original)this.host.append(discussButton(`${original.kind==='correspondence'?'Earlier counterpart link':contributionLabel(original)} · ${this.name(original.authorId)}`,()=>this.open(original.id),'discussion-list-item'));}
+      this.draw();this.positionPopover();return;
+    }
+    if(['correspondence','relationship'].includes(r.kind)&&r.status==='active'&&!counterpartRecords(this.c.workspace,r.comparisonId).some(e=>e.id===r.id))this.host.append(discussEl('p','Earlier link · These counterparts were unlinked. The original contribution remains in history.','discussion-state'));
     if(recordMode!==this.mode())this.host.append(discussButton('Open in Compare',()=>this.open(r.id,{mode:'compare'}),'discussion-parent-link'));
     const anchor=conversationAnchor(this.c.workspace.discussions,r);
     if(anchor&&r.kind!=='context')this.host.append(discussButton('All attached conversations',()=>this.openGroup(anchor),'discussion-text-action'));
@@ -211,7 +228,7 @@ export class DiscussionUI{
         this.counterparts.requestActions(r);
         if(r.authorId!==this.actor()&&this.counterparts.canLink(r.target)&&this.counterparts.otherMap(r.target)?.ownerId===this.actor())this.actionGroup('Respond',[discussButton('Respond',()=>this.compose('reply','reply',null,{layer:discussionLayer(r)}))]);
       }
-      if(['relationship','correspondence'].includes(r.kind))this.actionGroup('Connected nodes',[discussButton('Show connected nodes',()=>this.showConnectedNodes({key:actualNodePairKey(r.target,r.other)}))]);
+      if(['relationship','correspondence'].includes(r.kind)&&counterpartRecords(this.c.workspace,r.comparisonId).some(e=>e.id===r.id))this.actionGroup('Connected nodes',[discussButton('Show connected nodes',()=>this.showConnectedNodes({key:actualNodePairKey(r.target,r.other)}))]);
       if(isReason(r))this.actionGroup('Earlier reasoning',[discussButton('Inspect reasoning connection',()=>this.reasoning.openInference(r.id))]);
     }
     this.reflections.attach(this.target);
@@ -255,7 +272,7 @@ export class DiscussionUI{
   projectConnections(){
     const previous=this.canvas.records.map(r=>({...r,legacy:true,target:{type:'node',mapId:r.aMapId,nodeId:r.aNodeId},other:{type:'node',mapId:r.bMapId,nodeId:r.bNodeId}}));
     const endpoint=target=>{const side=['a','b'].find(s=>this.canvas.states[s].map?.id===target?.mapId);return side?comparisonEndpoint(this.canvas.layout,side,target.nodeId):{status:'unavailable'};};
-    return projectComparisonConnections([...this.entries().filter(r=>['relationship','correspondence'].includes(r.kind)),...previous],endpoint);
+    return projectComparisonConnections([...counterpartRecords(this.c.workspace,this.thread()?.id),...previous],endpoint);
   }
   connectionSourceLabel(target){
     const source=discussionSource(this.c.workspace,target);if(!source)return 'Source no longer available';
@@ -265,14 +282,14 @@ export class DiscussionUI{
   }
   connectionRecords(group){
     const records=[...group.records],seen=new Set(records.map(r=>r.id));
-    for(const r of this.allEntries())if(['relationship','correspondence'].includes(r.kind)&&actualNodePairKey(r.target,r.other)===group.key&&!seen.has(r.id)){seen.add(r.id);records.push(r);}
+    for(const r of this.allEntries())if(['relationship','correspondence','counterpart_unlink'].includes(r.kind)&&actualNodePairKey(r.target,r.other)===group.key&&!seen.has(r.id)){seen.add(r.id);records.push(r);}
     return records.sort((a,b)=>(a.createdAt||'').localeCompare(b.createdAt||'')||a.id.localeCompare(b.id));
   }
   connectionDetails(group,host){
     host.append(discussEl('p',this.connectionSourceLabel(group.target),'connection-source-label'),discussEl('p',this.connectionSourceLabel(group.other),'connection-source-label'));
     for(const r of this.connectionRecords(group)){
       const count=this.allEntries().filter(e=>['entry','inference'].includes(e.target.type)&&e.target.entryId===r.id).length;
-      const label=r.legacy?`Earlier comparison · ${r.question}`:`${r.kind==='correspondence'?'Counterpart link':contributionLabel(r)} · ${this.name(r.authorId)}${r.status==='withdrawn'?' · Withdrawn':''}`;
+      const label=r.legacy?`Earlier comparison · ${r.question}`:`${r.kind==='correspondence'?'Counterpart link':r.kind==='counterpart_unlink'?'Unlinked':contributionLabel(r)} · ${this.name(r.authorId)}${r.status==='withdrawn'?' · Withdrawn':''}`;
       const button=discussButton(label,()=>r.legacy?this.c.openRecord(r.id):this.open(r.id),'discussion-list-item');button.dataset.entry=r.id;
       if(count)button.append(discussEl('small',`${count} saved ${count===1?'follow-up':'follow-ups'}`));host.append(button);
     }
@@ -327,6 +344,7 @@ export class DiscussionUI{
     this.items=[];const svg=canvas.svgElement('svg',{});svg.classList.add('discussion-drawing','discussion-lines');canvas.world.append(svg);this.svg=svg;
     const defs=canvas.svgElement('defs',{}),marker=canvas.svgElement('marker',{id:'comparison-source-arrow',viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:5,markerHeight:5,orient:'auto-start-reverse'});marker.append(canvas.svgElement('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'#758995'}));defs.append(marker);svg.append(defs);
     for(const card of canvas.cards.values())card.hidden=!this.layers.map;
+    this.drawAssessments();
     canvas.world.querySelectorAll('.comparison-lines,.comparison-map-lane,.comparison-link-label').forEach(e=>e.style.visibility=this.layers.map?'':'hidden');
     // Reuse the tree's existing path where available. A transparent hit area
     // follows that same route; it is not a second visible connection.
@@ -360,7 +378,10 @@ export class DiscussionUI{
       if(judgments.length>1&&!mixed)label=`${DISCUSSION_LABELS[r.action]} · ${judgments.length} judgments`;
       if(this.mode()==='argument'&&records.some(e=>groups.some(g=>g.target.entryId===e.id&&g.openChallenges)))label+=' · Contested';
       if(records.some(e=>!e.legacy&&discussionHealth(this.c.workspace,e).state==='changed'))label+=' · Review source';
+      const mutual=counterpartAssessment(this.c.workspace,this.thread()?.id,r.target);
+      if(mutual)label=`${mutual.label} · ${label}`;
       const path=canvas.svgElement('path',{class:`discussion-relationship ${action}`,fill:'none'});path.dataset.nodePair=connection.key;
+      if(mutual)path.dataset.pairAssessment=mutual.state;
       const anchor={type:'connection',a:r.target,b:r.other,key:connection.key},open=()=>{if(this.openConnection(connection,label,anchor))this.counterparts.returnControl=null;};
       const hit=canvas.svgElement('path',{class:'discussion-edge-hit discussion-relationship-hit',fill:'none',tabindex:'0',role:'button','aria-label':`Select ${label}`});
       hit.dataset.connectionPair=connection.key;
@@ -389,7 +410,7 @@ export class DiscussionUI{
       const shown=rail.groups.flatMap(g=>g.entries).filter(r=>this.entryMode(r)===this.mode());if(!shown.length)continue;
       const roots=activeThreads.filter(r=>shown.some(item=>item.id===r.id)),counts={questions:0,challenges:0,reasons:0,positions:0};for(const r of roots){const category=this.attachmentCategory(r);if(Object.hasOwn(counts,category))counts[category]++;}
       const bar=discussEl('span','','discussion-rail discussion-drawing');
-      for(const [kind,icon]of [['positions','◇'],['reasons','↳'],['questions','?'],['challenges','!']])if(counts[kind]){
+      for(const [kind,icon]of [['positions','◇'],['reasons','↳'],['questions','?'],['challenges','!']])if(counts[kind]&&!(kind==='positions'&&rail.card?.classList.contains('has-assessment')&&rail.target.type==='node'&&rail.card.dataset.nodeId===rail.target.nodeId)){
         const latest=shown.filter(r=>r.kind==='interaction'&&interactionMode(r)==='compare'&&r.action!=='respond').sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0];const text=kind==='positions'&&latest?`${interactionLabel(latest)} · ${this.name(latest.authorId)}`:`${icon} ${counts[kind]}`;const b=discussButton(text,()=>this.interactions.list(rail.target,shown,{category:kind}));b.setAttribute('aria-label',`${counts[kind]} ${kind} attached to ${discussionTargetLabel(this.c.workspace,rail.target)}`);b.setAttribute('aria-expanded',String(!this.host.hidden&&this.groupCategory===kind&&stableJSON(this.groupTarget)===stableJSON(rail.target)));b.className=kind;b.dataset.collapsed=String(!this.layers[kind==='questions'?'inquiries':'arguments']);b.title='Open attached '+kind;bar.append(b);
       }
       const points=shown.filter(isDisagreementPoint),pointMarker=this.reflections.marker(rail.target,points);if(pointMarker)bar.append(pointMarker);
@@ -408,6 +429,25 @@ export class DiscussionUI{
     const threadKey=this.thread()?.id||null;if(this.viewThreadKey!==threadKey){this.viewOptions.open=false;this.viewThreadKey=threadKey;}
     discussUI('comparison-view-modes').hidden=discussUI('argument-mode').hidden;
     this.position();
+  }
+  drawAssessments(){
+    const ws=this.c.workspace,thread=this.thread();
+    for(const [key,card] of this.canvas.cards){
+      card.querySelector('.node-assessments')?.remove();card.classList.remove('has-assessment');
+      const side=card.dataset.side,map=this.canvas.states[side]?.map,node=map?.nodes.find(n=>n.id===card.dataset.nodeId);
+      if(!thread||!node||node.parent===null)continue;
+      const opposite=ws.maps.find(m=>[thread.aMapId,thread.bMapId].includes(m.id)&&m.id!==map.id&&!m.unavailable);
+      if(!opposite||opposite.ownerId===map.ownerId)continue;
+      const target={type:'node',mapId:map.id,nodeId:node.id},assessment=nodeAssessment(ws,thread.id,target,opposite.ownerId),pair=counterpartAssessment(ws,thread.id,target),own=assessment.authorId===this.actor();
+      const row=discussEl('div','','node-assessments'),name=own?'You':this.name(assessment.authorId),symbol={agree:'✓',disagree:'×','no-position':'—',unassessed:'○'}[assessment.state];
+      const title=`${name}: ${assessment.label}${assessment.needsReview?' · Source changed; review needed':''}`;
+      const view=()=>{if(assessment.record){this.open(assessment.record.id);if(this.viewId!==assessment.record.id||this.host.hidden)return;}else if(own){if(!this.canLeave())return;this.activateMode('compare');this.selectNode(side,node.id);}else return;this.counterparts.returnControl=null;this.assessmentReturn=key;this.host.querySelector('header button')?.focus({preventScroll:true});};
+      const badge=assessment.record||own?discussButton(`${symbol} ${title}`,view):discussEl('span',`${symbol} ${title}`);
+      badge.className=`node-assessment ${assessment.state}${assessment.needsReview?' needs-review':''}`;badge.dataset.assessment=assessment.state;badge.title=title;badge.setAttribute('aria-label',`${title} of ${node.title}`);row.append(badge);
+      if(pair){const shared=discussEl('span',pair.label,`pair-assessment ${pair.state}`);shared.dataset.pairAssessment=pair.state;shared.title=`${this.name(map.ownerId)} and ${this.name(opposite.ownerId)} ${pair.state==='agree'?'each agree with':'each disagree with'} the other's linked node.`;shared.setAttribute('aria-label',shared.title);row.append(shared);}
+      for(const event of ['pointerdown','dblclick'])row.addEventListener(event,e=>e.stopPropagation());
+      card.classList.add('has-assessment');card.querySelector('.node-bottom').before(row);
+    }
   }
   badge(text,target,action,aria,style=''){const b=discussButton(text,action,`discussion-badge discussion-drawing ${style}`);b.setAttribute('aria-label',aria);b.title=aria;if(target.type==='entry')b.dataset.entry=target.entryId;this.canvas.world.append(b);this.items.push({type:'badge',target,b});}
   position(){

@@ -31,10 +31,13 @@ export class ComparisonCanvas{
     }
     if(options.single){this.surface.classList.add('single-map-canvas');this.surface.setAttribute('aria-label','Radial map. Select a node for its wording and co-signs. Drag to pan and scroll to zoom.');controls.children[3].textContent='Fit map';controls.children[3].setAttribute('aria-label','Fit map');this.focusButton.textContent='Focus node';this.focusButton.setAttribute('aria-label','Focus selected node');}
     if(options.single)this.sourceConnections=new SourceConnectionsUI(this);
-    const pointers=new Map();let drag=null,pinch=null;
+    const pointers=new Map();let drag=null,pinch=null,blankPress=null;
+    const isBlankTarget=target=>target instanceof Element&&this.surface.contains(target)&&!target.closest('button,a,input,textarea,select,summary,[contenteditable]:not([contenteditable="false"]),[role="button"],.node,.counterpart-placeholder,.reasoning-card,.reasoning-inference-wrap,.comparison-map-controls,.comparison-layer-controls,.comparison-link-hit,.discussion-edge-hit,.discussion-popover,.map-connection-menu,.reasoning-tools,.interaction-search');
     this.surface.addEventListener('wheel',e=>{if(e.target.closest('button'))return;e.preventDefault();const r=this.surface.getBoundingClientRect();this.zoom(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
     this.surface.addEventListener('pointerdown',e=>{
-      if(e.button>0||e.target.closest('button,a,input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="button"],.node,.counterpart-placeholder,.reasoning-card,.reasoning-inference-wrap,.comparison-map-controls,.comparison-layer-controls,.comparison-link-hit,.discussion-edge-hit'))return;
+      if(pointers.size)blankPress=null;
+      if(e.button>0||!isBlankTarget(e.target))return;
+      if(!pointers.size)blankPress={id:e.pointerId,x:e.clientX,y:e.clientY,focus:document.activeElement};
       // Capturing the pointer alone still allows native text selection/dragging.
       e.preventDefault();this.surface.focus({preventScroll:true});this.stopAnimation();this.surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});this.surface.classList.add('panning');
       if(pointers.size===1)drag={x:e.clientX,y:e.clientY,cx:this.camera.x,cy:this.camera.y};
@@ -42,20 +45,27 @@ export class ComparisonCanvas{
     });
     this.surface.addEventListener('pointermove',e=>{
       if(!pointers.has(e.pointerId))return;
+      if(blankPress&&Math.hypot(e.clientX-blankPress.x,e.clientY-blankPress.y)>4)blankPress=null;
       if(e.pointerType==='mouse'&&!(e.buttons&1)){end(e);return;}
       pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(pinch&&pointers.size===2){const [a,b]=[...pointers.values()],r=this.surface.getBoundingClientRect(),z=Math.max(.02,Math.min(2,pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance)));this.camera={z,x:(a.x+b.x)/2-r.left-pinch.wx*z,y:(a.y+b.y)/2-r.top-pinch.wy*z};}
       else if(drag){this.camera.x=drag.cx+e.clientX-drag.x;this.camera.y=drag.cy+e.clientY-drag.y;}this.drawCamera();
     });
     const end=e=>{
+      const press=blankPress,dismiss=e.type==='pointerup'&&e.button===0&&pointers.size===1&&press?.id===e.pointerId&&Math.hypot(e.clientX-press.x,e.clientY-press.y)<=4&&isBlankTarget(document.elementFromPoint(e.clientX,e.clientY));
       if(!pointers.delete(e.pointerId))return;
+      blankPress=null;
       if(this.surface.hasPointerCapture(e.pointerId))this.surface.releasePointerCapture(e.pointerId);
       pinch=null;drag=null;
       if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,cx:this.camera.x,cy:this.camera.y};}
       if(!pointers.size)this.surface.classList.remove('panning');
+      if(dismiss){
+        let closed;if(this.options.onBlankClick)closed=this.options.onBlankClick();else if(this.sourceConnections?.menu.key)this.sourceConnections.menu.actions.close(this.sourceConnections.menu.key);
+        if(closed===false){if(press.focus?.isConnected)press.focus.focus({preventScroll:true});}else this.surface.focus({preventScroll:true});
+      }
     };
     const cancelPan=()=>{
-      const ids=[...pointers.keys()];pointers.clear();drag=null;pinch=null;this.surface.classList.remove('panning');
+      const ids=[...pointers.keys()];pointers.clear();drag=null;pinch=null;blankPress=null;this.surface.classList.remove('panning');
       for(const id of ids)if(this.surface.hasPointerCapture(id))this.surface.releasePointerCapture(id);
     };
     for(const event of ['pointerup','pointercancel','lostpointercapture'])this.surface.addEventListener(event,end);
