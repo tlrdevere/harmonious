@@ -2,7 +2,9 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
-The owner approved execution of the **joined agreement card plus simplified overview**, recorded in the [implementation plan](agreement-overview-plan.md). Implementation is complete and undergoing release verification. It makes mutual agreement, disagreement and asymmetric assessments recognizable at a distance while preserving both original nodes and stable positions. [Deployment status](deployment-status.md) identifies the published release.
+The **joined agreement card plus simplified overview** is **live in Worker 53**, after all 53 local and 53 hosted checks and public verification. The [implementation plan](agreement-overview-plan.md) records the behavior: mutual agreement, disagreement and asymmetric assessments are recognizable at a distance while both original nodes and stable positions are preserved. Next, refresh both PCs and use the **Joined agreement cards and overview** section of [the owner checklist](user-testing-checklist.md). [Deployment status](deployment-status.md) records source and publication. Existing deferrals remain unchanged.
+
+## Preceding release — Worker 52
 
 The owner's [counterpart controls and assessment changes](counterpart-controls-and-assessments.md) are **live in Worker 52**, after all 53 local and 53 hosted release checks, the additive database migration and public verification. New links use one free counterpart in the same frame; either participant can unlink with attributed history; creation is request-only; personal Agree/Disagree/No position badges and reciprocal Both agree/Both disagree indicators are visible. Blank clicks close transient windows through draft guards. Next, refresh both PCs and continue the owner's [counterpart walkthrough](user-testing-checklist.md). The separate Aligned / In tension proposal and the deferral list remain unchanged.
 

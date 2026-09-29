@@ -2,7 +2,7 @@
 
 ## First check: joined agreement cards and overview
 
-See [deployment status](deployment-status.md) for publication, then refresh both PCs.
+This update is **live in Worker 53**, after all 53 local and 53 hosted checks and public verification. See [deployment status](deployment-status.md), then refresh both PCs.
 
 - [ ] Link two ordinary nodes and have each participant Agree with the other's node. Check that one joined card encloses both originals, including different wording and confidence values. Each half still opens its own node.
 - [ ] Use the shared status band to inspect the pair, named assessments and connection history. Close with the keyboard and confirm focus returns to that band.

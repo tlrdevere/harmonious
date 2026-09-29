@@ -1,6 +1,6 @@
 # Joined agreement cards and comparison overview
 
-Design direction accepted September 29, 2026. The joined-card and overview implementation is complete and undergoing release verification; [deployment status](deployment-status.md) identifies the published application. This follows the owner's request to make agreement, disagreement and asymmetry obvious when zoomed out, and acceptance of the illustrated options.
+Design direction accepted September 29, 2026. The joined-card and overview implementation is **live in Worker 53**, after all 53 local and 53 hosted checks and public verification; [deployment status](deployment-status.md) records the release evidence. This follows the owner's request to make agreement, disagreement and asymmetry obvious when zoomed out, and acceptance of the illustrated options.
 
 ## Selected direction
 
