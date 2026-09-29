@@ -53,6 +53,7 @@ export class InteractionUI{
     const reviewed=discussionSourceSnapshot(ws,target),recordId=old?.id||'discussion-'+crypto.randomUUID(),nodeId='node-'+crypto.randomUUID();
     let stagedEdit=null,stagedDraft=null;
     form.append(interactionEl('p',`About: ${discussionTargetLabel(ws,target)}`,'discussion-target-note'));
+    if(action==='dispute'&&target.type==='node'&&reviewed?.wording.summary)form.append(interactionEl('p',reviewed.wording.summary,'discussion-body disputed-node-description'));
     const previousChoices=old?optionsForClassification(old.interaction.classification,action,old.interaction.version):[],earlierChoices=[...selected].filter(id=>!choices.some(option=>option.id===id)).map(id=>previousChoices.find(option=>option.id===id)||{id,label:id.replaceAll('_',' ')});
     if(converting){form.append(interactionEl('p','This argument used the earlier dispute choices. Choose one or more current categories to save an edit. Its previous wording and choices stay in history.','review-warning'),interactionEl('p','Earlier choices: '+old.interaction.options.map(id=>previousChoices.find(o=>o.id===id)?.label||id).join(' · '),'field-help'));}
     const groups=new Map();if(earlierChoices.length){form.append(interactionEl('p','The source changed since this interaction was saved. Clear the earlier choices below before saving an updated interaction. The previous version keeps its original choices.','review-warning'));groups.set('Earlier choices',earlierChoices);}

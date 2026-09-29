@@ -6,6 +6,7 @@ This update is **live in Worker 54**, after all 53 local and 53 hosted checks, t
 
 - [ ] In Argument, select the other person's node in SQ, TA and GS, including a cited node. **Dispute reasoning** offers exactly Factual basis, Reasoning, Consequences and Feasibility, with no preselection, Other or submenus.
 - [ ] Send with no category: the form should ask for at least one and keep the draft. Send with one or several categories, with and without an explanation/reference.
+- [ ] Open Dispute reasoning on a node with a long description. Its full description should appear below the title and above the four choices, with line breaks preserved. Try editing a dispute and a narrow window; scroll to the categories and Send dispute as needed.
 - [ ] Repeat on a typed connection. Its actual endpoints remain the target; organizational branches and frame containers offer no dispute.
 - [ ] Reload the other account, open the dispute, and Respond. Return to the first account and read the response. Both maps, comparison assessments and counterpart links remain unchanged; no resolution is required or inferred.
 - [ ] Check selected categories in the detail, Conversations preview and Find. Use keyboard controls, a narrow window and a portable comparison file.
