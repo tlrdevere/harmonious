@@ -20,7 +20,8 @@ class Element{
   reset(){this.value='';} focus(){}
 }
 const element=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
-globalThis.document={getElementById:element,createElement:()=>new Element(),createElementNS:()=>new Element(),querySelector:element};
+globalThis.window=new EventTarget();
+globalThis.document=Object.assign(new EventTarget(),{getElementById:element,createElement:()=>new Element(),createElementNS:()=>new Element(),querySelector:element});
 globalThis.ResizeObserver=class{observe(){}};
 globalThis.matchMedia=()=>({matches:true});
 globalThis.location={pathname:'/',search:'',hash:''};

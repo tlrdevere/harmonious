@@ -333,10 +333,37 @@ function zoom(factor,x=viewport.clientWidth/2,y=viewport.clientHeight/2,absolute
 $('plus').addEventListener('click',()=>zoom(1.2));$('minus').addEventListener('click',()=>zoom(1/1.2));$('zoom').addEventListener('click',()=>zoom(1,viewport.clientWidth/2,viewport.clientHeight/2,true));
 viewport.addEventListener('wheel',event=>{if(event.target.closest('.viewport-controls,.node-face-editor'))return;event.preventDefault();const rect=viewport.getBoundingClientRect();zoom(Math.exp(-event.deltaY*.0015),event.clientX-rect.left,event.clientY-rect.top);},{passive:false});
 const pointers=new Map();let drag=null,pinch=null;
-viewport.addEventListener('pointerdown',event=>{if(event.target.closest('button,.node,.node-face-editor')||event.button>0)return;settle();positions=result.positions;draw();viewport.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pointers.size===1)drag={x:event.clientX,y:event.clientY,cx:camera.x,cy:camera.y};if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),z:camera.z};drag=null;}viewport.classList.add('panning');});
-viewport.addEventListener('pointermove',event=>{if(!pointers.has(event.pointerId))return;pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()],rect=viewport.getBoundingClientRect();zoom(pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance),(a.x+b.x)/2-rect.left,(a.y+b.y)/2-rect.top,true);}else if(drag){camera.x=drag.cx+event.clientX-drag.x;camera.y=drag.cy+event.clientY-drag.y;draw();}});
-function endPointer(event){pointers.delete(event.pointerId);pinch=null;drag=null;if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,cx:camera.x,cy:camera.y};}if(!pointers.size)viewport.classList.remove('panning');}
-viewport.addEventListener('pointerup',endPointer);viewport.addEventListener('pointercancel',endPointer);
+viewport.addEventListener('pointerdown',event=>{
+  if(event.button>0||event.target.closest('button,a,input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="button"],.node,.node-face-editor,.viewport-controls'))return;
+  // Pointer capture keeps the drag on the canvas; cancelling the default also
+  // prevents the browser from starting a competing text-selection/native drag.
+  event.preventDefault();viewport.focus({preventScroll:true});settle();positions=result.positions;draw();
+  viewport.setPointerCapture(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(pointers.size===1)drag={x:event.clientX,y:event.clientY,cx:camera.x,cy:camera.y};
+  if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),z:camera.z};drag=null;}
+  viewport.classList.add('panning');
+});
+viewport.addEventListener('pointermove',event=>{
+  if(!pointers.has(event.pointerId))return;
+  if(event.pointerType==='mouse'&&!(event.buttons&1)){endPointer(event);return;}
+  pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+  if(pointers.size===2&&pinch){const [a,b]=[...pointers.values()],rect=viewport.getBoundingClientRect();zoom(pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance),(a.x+b.x)/2-rect.left,(a.y+b.y)/2-rect.top,true);}
+  else if(drag){camera.x=drag.cx+event.clientX-drag.x;camera.y=drag.cy+event.clientY-drag.y;draw();}
+});
+function endPointer(event){
+  if(!pointers.delete(event.pointerId))return;
+  if(viewport.hasPointerCapture(event.pointerId))viewport.releasePointerCapture(event.pointerId);
+  pinch=null;drag=null;
+  if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,cx:camera.x,cy:camera.y};}
+  if(!pointers.size)viewport.classList.remove('panning');
+}
+function cancelCanvasPan(){
+  const ids=[...pointers.keys()];pointers.clear();drag=null;pinch=null;viewport.classList.remove('panning');
+  for(const id of ids)if(viewport.hasPointerCapture(id))viewport.releasePointerCapture(id);
+}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])viewport.addEventListener(type,endPointer);
+window.addEventListener('blur',cancelCanvasPan);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelCanvasPan();});
 viewport.addEventListener('keydown',event=>{if(event.target!==viewport)return;const steps={ArrowLeft:[60,0],ArrowRight:[-60,0],ArrowUp:[0,60],ArrowDown:[0,-60]};if(steps[event.key]){event.preventDefault();settle();positions=result.positions;camera.x+=steps[event.key][0];camera.y+=steps[event.key][1];draw();}else if(event.key==='+'||event.key==='=')zoom(1.2);else if(event.key==='-')zoom(1/1.2);else if(event.key.toLowerCase()==='f')transition(result.positions,fitCamera());});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeInspector();});
 let oldWidth=viewport.clientWidth,oldHeight=viewport.clientHeight;

@@ -34,17 +34,33 @@ export class ComparisonCanvas{
     const pointers=new Map();let drag=null,pinch=null;
     this.surface.addEventListener('wheel',e=>{if(e.target.closest('button'))return;e.preventDefault();const r=this.surface.getBoundingClientRect();this.zoom(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
     this.surface.addEventListener('pointerdown',e=>{
-      if(e.button>0||e.target.closest('button,.node,.counterpart-placeholder,.comparison-link-hit,.discussion-edge-hit'))return;this.stopAnimation();this.surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});this.surface.classList.add('panning');
+      if(e.button>0||e.target.closest('button,a,input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="button"],.node,.counterpart-placeholder,.reasoning-card,.reasoning-inference-wrap,.comparison-map-controls,.comparison-layer-controls,.comparison-link-hit,.discussion-edge-hit'))return;
+      // Capturing the pointer alone still allows native text selection/dragging.
+      e.preventDefault();this.surface.focus({preventScroll:true});this.stopAnimation();this.surface.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});this.surface.classList.add('panning');
       if(pointers.size===1)drag={x:e.clientX,y:e.clientY,cx:this.camera.x,cy:this.camera.y};
       if(pointers.size===2){const [a,b]=[...pointers.values()],r=this.surface.getBoundingClientRect(),x=(a.x+b.x)/2-r.left,y=(a.y+b.y)/2-r.top;pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),z:this.camera.z,wx:(x-this.camera.x)/this.camera.z,wy:(y-this.camera.y)/this.camera.z};drag=null;}
     });
     this.surface.addEventListener('pointermove',e=>{
-      if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(!pointers.has(e.pointerId))return;
+      if(e.pointerType==='mouse'&&!(e.buttons&1)){end(e);return;}
+      pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(pinch&&pointers.size===2){const [a,b]=[...pointers.values()],r=this.surface.getBoundingClientRect(),z=Math.max(.02,Math.min(2,pinch.z*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance)));this.camera={z,x:(a.x+b.x)/2-r.left-pinch.wx*z,y:(a.y+b.y)/2-r.top-pinch.wy*z};}
       else if(drag){this.camera.x=drag.cx+e.clientX-drag.x;this.camera.y=drag.cy+e.clientY-drag.y;}this.drawCamera();
     });
-    const end=e=>{pointers.delete(e.pointerId);pinch=null;drag=null;if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,cx:this.camera.x,cy:this.camera.y};}if(!pointers.size)this.surface.classList.remove('panning');};
+    const end=e=>{
+      if(!pointers.delete(e.pointerId))return;
+      if(this.surface.hasPointerCapture(e.pointerId))this.surface.releasePointerCapture(e.pointerId);
+      pinch=null;drag=null;
+      if(pointers.size===1){const p=[...pointers.values()][0];drag={x:p.x,y:p.y,cx:this.camera.x,cy:this.camera.y};}
+      if(!pointers.size)this.surface.classList.remove('panning');
+    };
+    const cancelPan=()=>{
+      const ids=[...pointers.keys()];pointers.clear();drag=null;pinch=null;this.surface.classList.remove('panning');
+      for(const id of ids)if(this.surface.hasPointerCapture(id))this.surface.releasePointerCapture(id);
+    };
     for(const event of ['pointerup','pointercancel','lostpointercapture'])this.surface.addEventListener(event,end);
+    window.addEventListener('blur',cancelPan);
+    document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelPan();});
     this.surface.addEventListener('keydown',e=>{if(e.target!==this.surface)return;const delta={ArrowLeft:[60,0],ArrowRight:[-60,0],ArrowUp:[0,60],ArrowDown:[0,-60]}[e.key];if(delta){e.preventDefault();this.stopAnimation();this.camera.x+=delta[0];this.camera.y+=delta[1];this.drawCamera();}else if(e.key==='+'||e.key==='='){e.preventDefault();this.zoom(1.2);}else if(e.key==='-'){e.preventDefault();this.zoom(1/1.2);}else if(e.key.toLowerCase()==='f'){e.preventDefault();this.fit();}});
     let width=0,height=0;
     new ResizeObserver(()=>{const w=this.surface.clientWidth,h=this.surface.clientHeight;if(!w||!h)return;if(this.layout){if(!width)this.fit();else{this.stopAnimation();this.camera.x+=(w-width)/2;this.camera.y+=(h-height)/2;this.drawCamera();}}width=w;height=h;}).observe(this.surface);

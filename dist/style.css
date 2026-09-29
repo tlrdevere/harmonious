@@ -16,6 +16,8 @@
 .comparison-map-tools label{margin:0}.comparison-map-tools select{font-size:14px;padding:7px 9px;background:#fbfcff;max-width:none;flex:1;width:0;min-width:100px}.comparison-map-tools select[id^="compare-frame"]{flex:0 1 154px;min-width:115px}
 .comparison-expand-controls{display:flex;flex-wrap:wrap;gap:5px;margin-left:auto}.comparison-expand-controls button{font-size:14px;padding:7px 9px}
 #compare-canvas{flex:1;min-height:240px;position:relative}.comparison-canvas{height:100%;min-height:240px;outline-offset:-4px}.comparison-canvas:focus-visible{outline:3px solid #598cdf}.comparison-canvas.panning{cursor:grabbing}
+/* Selection remains available in cards/editors outside an active canvas drag. */
+#viewport.panning,#viewport.panning *,.comparison-canvas.panning,.comparison-canvas.panning *{-webkit-user-select:none;user-select:none}
 .comparison-world{inset:auto;top:0;left:0;width:1px;height:1px;will-change:transform}
 .comparison-map-lane{position:absolute;border:1px solid #cbd9e7;border-radius:18px;background:#ffffffb3;pointer-events:none}
 .comparison-map-label{display:flex;gap:12px;align-items:center;position:absolute;top:20px;left:30px;right:30px;font-size:18px;color:#38536b;line-height:1.3}.comparison-map-label strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}.comparison-map-label .map-letter{width:30px;height:30px;font-size:16px}
