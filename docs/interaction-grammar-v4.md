@@ -2,6 +2,10 @@
 
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
+## September 29 continuing Argument replies
+
+The continuing-replies follow-up **shipped in Worker 57**, after all 53 local and hosted checks, the additive database migration and public verification. Both participants may add a required message and optional node reference directly to the original active Argument dispute, with no fixed exchange count or forced turn-taking. New replies use grammar metadata version **6**, action `respond`, option `reply`, and the `argument-replies-v1` capability. The first recipient response retains its existing outcome choices. Version-4/5 records and own edit/withdraw histories remain intact. Replies stay chronological in the dispute log and do not resolve the dispute or change maps or assessments. Obsolete tabs receive the draft-preserving refresh prompt; any rollback must retain version-6 reading and validation once replies exist. See [deployment status](deployment-status.md).
+
 ## September 29 four-category Argument follow-up
 
 The [four-category update](argument-four-categories-plan.md) **shipped in Worker 54**, after all 53 local and 53 hosted checks, the additive database migration and public verification. New disputes use grammar metadata version **5**, with exactly **Factual basis**, **Reasoning**, **Consequences** and **Feasibility**. The four choices are multi-select, at least one is required, and optional comment/reference controls remain. This supersedes the frame-specific Base/Add-on/Other dispute menus below for new authoring. Version 4 remains the historical catalog; the other modes and existing response outcomes retain their grammar and behavior.

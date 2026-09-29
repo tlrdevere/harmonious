@@ -4,6 +4,21 @@ Updated September 29, 2026 (UTC).
 
 ## Current release
 
+Continuing replies within Argument disputes deployed September 29, 2026 at **16:13:08 UTC** (12:13 p.m. in New York). Release source: `6b601254d03e8d529933f6b8143014cb5867b909` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **57**: `57fed5ed-69e1-4ce1-a908-7d565d0775b9`, serving **100%** of traffic. Deployment: `ac616e3e-b169-4cdd-b977-e6b2e8720bee`.
+- Both dispute participants can use **Reply** to continue the same exchange, with required message text and an optional node reference. Each message belongs directly to the original dispute and appears chronologically in its expanded log. There is no fixed exchange limit or forced turn-taking. The first recipient response retains its existing outcome choices; earlier responses remain intact. Authors can edit or withdraw their own messages with history preserved. No resolution, map change or comparison assessment is implied.
+- New replies use grammar metadata version **6** and the `argument-replies-v1` client capability; historical versions 4 and 5 remain readable. Obsolete tabs receive the existing draft-preserving refresh prompt. Draft, retry and acknowledgement safeguards apply to replies. Timestamp ordering accounts for the latest observed message when participant clocks differ.
+- **53/53 local release checks passed**. Report: `build/verification/2026-09-29T15-59-44-774Z-95092/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows. Coverage includes 14 alternating replies and a same-person follow-up in memory and isolated PostgreSQL, two-account browser exchanges, chronological logs, refresh/reload, own edit/withdrawal, blank/invalid targets, optional references, draft parking and lost-acknowledgement retries. The browser capture passed visual review.
+- **53/53 hosted release checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36594962111), with all checks complete at **16:07:53 UTC**. Logs confirm Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/replies-release-hosted.json` and `build/replies-hosted-verification-evidence.json`.
+- Additive migration `supabase/migrations/20260929155132_argument_replies.sql` was applied as remote migration **20260929160859**, named `argument_replies`. Production query checks confirm the Reply catalog, invoker security, empty search paths and service-only function execution. The **111 records**, generation **151** and content fingerprint were unchanged. Security advisors have no new findings; the existing service-only-table informational notices and [disabled leaked-password protection notice](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) remain unchanged. Evidence: `build/replies-database-verification.json`.
+- Public verification confirms all **54 client files** and the homepage match the tested checkout, with configured sign-in, account denial, private-configuration denial and security headers passing. Evidence recorded at **16:13:52 UTC**: `build/public-replies-verification.json`. Worker SHA-256: `bffaabecd0fcc877c0aebe411512006eb3774974d8794152e97bb621f93c48fa`.
+- All eight encrypted bindings and runtime settings were inherited and verified unchanged. No production account test writes were performed. Evidence: `build/replies-release-evidence.json`. Subsequent release-note commits change documentation only.
+
+**Refresh both accounts, open a dispute and continue with Reply.** Worker 56 cannot read version-6 replies: once they exist, any rollback must retain the version-6 reader, client capability handling and database validation. Existing workspace storage safeguards and deferrals remain in place.
+
+## Preceding expandable dispute-log release
+
 Expandable node dispute logs deployed September 29, 2026 at **15:38:37 UTC** (11:38 a.m. in New York). Release source: `ef9a1522f4ed7d26284491d363f68433c75befa4` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **56**: `ba5982bf-30c3-47fc-9ab8-e36d78cdf371`, serving **100%** of traffic. Deployment: `c38dd09a-67be-4f4b-99e6-324d2a44f08a`.
