@@ -4,7 +4,7 @@ The original v4 grammar was implemented on `redesign/node-interactions` and depl
 
 ## September 28 full-size counterparts and straight connections
 
-The [space and line follow-up](comparison-space-and-lines.md) is being implemented and verified. It supersedes the compact ghosts introduced in Worker 49: ghosts match real card dimensions, and the occupied canvas expands to clear straight parent connections. Expansion, collapse and frame filtering preserve zoom. Adjacent counterparts use a short straight line whose meanings and authors remain inspectable; a wide label no longer causes a bent bracket. Pair eligibility, request outcomes, authorship and mode permissions remain unchanged.
+The [space and line follow-up](comparison-space-and-lines.md) is **live in Worker 50**, after all 48 local and 48 hosted checks and public verification. It supersedes the compact ghosts introduced in Worker 49: ghosts match real card dimensions, and the occupied canvas expands to clear straight parent connections. Expansion, collapse and frame filtering preserve zoom. Adjacent counterparts use a short straight line whose meanings and authors remain inspectable; a wide label no longer causes a bent bracket. Exceptional obstructed extra connections retain safe detours. Pair eligibility, request outcomes, authorship and mode permissions remain unchanged.
 
 ## September 28 comparison positioning follow-up
 

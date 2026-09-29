@@ -4,6 +4,23 @@ Updated September 28, 2026 (UTC).
 
 ## Current release
 
+Full-size counterpart ghosts and expanded comparison space deployed September 28, 2026 at **23:57:23 UTC** (7:57 p.m. in New York). Application and verification source: `7495a711fe92c875fb3e3580405a3ed1b0259fec` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **50**: `8527c720-0abe-4a83-aa97-ee7116ac5bba`, serving **100%** of traffic. Deployment: `da0d083c-adf6-45cb-b122-9f04cb25dc87`.
+- The [space and line follow-up](comparison-space-and-lines.md) is implemented. Ghosts match real cards at **252 × 166** with a **16-unit** pair gap. Status, opposite owner, request history and permitted actions remain available across shared modes.
+- The radial comparison layout expands to make room for straight parent connections, using actual real-card and ghost bounds. Clear lines stay straight even when they cross another line. Adjacent recorded counterparts use a short straight gap connection with inspectable meanings, authors and attached discussion. Exceptional obstructed extra connections retain safe detours; arbitrary cross-frame links are not guaranteed straight.
+- Expansion, collapse and frame filtering retain zoom and a visible anchor. The canvas can extend beyond the screen; pan at a readable zoom or deliberately use **Fit** for an overview. Source-map/Create layout, source records, pair eligibility and existing permissions are preserved.
+- **48/48 local release checks passed**, including eight browser suites, account/database checks, standalone export, production build and complete asset checks. Report: `build/verification/2026-09-28T23-48-48-101Z-91384/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows. Final portable-browser checks and desktop/narrow captures passed review.
+- **48/48 hosted release checks passed** on the exact pushed source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36500236951), completed at **23:55:17 UTC**. Its job log confirms all 48 checks using Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/space-release-hosted.json` and `build/space-hosted-verification-evidence.json`.
+- The first hosted attempt exposed a test that counted unrelated valid links in a reused comparison. A deterministic mixed-pair fixture now scopes missing-endpoint assertions correctly and checks that unrelated links and permitted history survive. The application was unchanged by this test correction; the final complete local and hosted runs both passed.
+- Public verification at **23:58:27 UTC** confirms all **54 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers passing. Report: `build/public-space-verification.json`. Worker SHA-256: `be57d7b3a7dc1dbc17ecb1bb65f13cc02849425477d143e5f9ae6172ce192f9b`.
+- All eight encrypted bindings, compatibility date `2026-09-08`, empty compatibility flags and standard usage model were inherited and verified unchanged. No database migration, production account test write, authentication change or dependency update was required. Automatic push/PR checks and automatic deployment remain disabled. Release evidence: `build/space-release-evidence.json`.
+- Regression coverage includes the screenshot 12/13 cases, unequal maps, a 98-node forest, a 100-level chain, 40-child fan-out, both owners, linking/withdrawal, request states, keyboard return, camera retention, shared modes, cold reload and standalone export. Subsequent release-note commits change documentation only.
+
+**Reload both PCs before testing.** Start with **Full-size ghosts and space for straight connections** in [the checklist](user-testing-checklist.md). Existing comparisons adopt the display without rewriting source maps or saved links. Worker 49 is the preceding compatible release. Pair-specific **Aligned / In tension** remains the next separate design discussion; the [deferral list](next-work-plan.md#deferred-work) is unchanged.
+
+## Preceding independent comparison nodes release
+
 Independent comparison nodes, compact counterpart controls, and balanced spacing deployed September 28, 2026 at **23:05:11 UTC** (7:05 p.m. in New York). Application source: `b419d39ab217cda49fdda4f37c9d0c97ed18c95b` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **49**: `c794158a-267b-487f-93f7-e0700357ae20`, serving **100%** of traffic. Deployment: `fbcfe3dc-fb1c-4f8a-9ebd-754bc4406d19`.

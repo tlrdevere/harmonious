@@ -1,8 +1,8 @@
 # Harmonious: what to check on your next visit
 
-## Upcoming: full-size ghosts and space for straight connections
+## First check: full-size ghosts and space for straight connections
 
-The [space and line follow-up](comparison-space-and-lines.md) is being verified. Confirm publication in [deployment status](deployment-status.md), then refresh both PCs.
+The [space and line follow-up](comparison-space-and-lines.md) is **live in Worker 50**, after all 48 local and 48 hosted checks and public verification. [Deployment status](deployment-status.md) records publication. **Refresh both PCs before testing.**
 
 - [ ] Compare a ghost and its neighbouring real card: both have the same width and height. Check the status, other owner's name, button, keyboard focus and touch access at a readable zoom in Compare, Inquiry and Argument.
 - [ ] Repeat `harmonious 13.png`: expand both five-child SQ maps with only Low union density linked. All ten parent connections should be straight and avoid every unrelated real card and ghost. Each real node should appear once; the pair has a short straight gap connection with inspectable meanings and authors.
@@ -11,9 +11,9 @@ The [space and line follow-up](comparison-space-and-lines.md) is being verified.
 - [ ] Link and withdraw while zoomed in. Confirm both real nodes, source parents, saved histories, focus and the initiating node's screen position survive. Open the short pair line with the keyboard, inspect authors/meanings, and close back to that connection.
 - [ ] Switch shared modes and reload after saving. Check unchanged geometry, Compare-only counterpart actions, parked drafts, narrow windows, owner permissions, and existing map/copy/confidence workflows.
 
-## First check: independent nodes, ghosts, and comparison spacing
+## Continuing checks: independent nodes, ghosts, and comparison spacing
 
-The [positioning increment](comparison-positioning-plan.md) is **live in Worker 49**, after all 48 local and 48 hosted checks and public verification. **Reload both PCs before testing.** [Deployment status](deployment-status.md) records publication and the exact application source.
+The [positioning increment](comparison-positioning-plan.md) **shipped in Worker 49**. These checks incorporate Worker 50's full-size ghosts and expanded spacing. [Deployment status](deployment-status.md) records publication and the exact application source.
 
 - [ ] Open a new comparison with similarly ordered or copied nodes, including the four-child TA example. Every unlinked ordinary node should occupy its own position with a full-size **No counterpart linked** ghost. Equal titles/order should not produce automatic pairs. Frame headings remain corresponding structural headings.
 - [ ] Open **Link counterpart** from a ghost on either side. No candidate should be selected initially. Cancel and confirm the camera and nodes stay put; reopen, explicitly choose the intended node, and save. Both real nodes should remain, now paired where eligible, with their saved connection inspectable.

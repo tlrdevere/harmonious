@@ -1,6 +1,6 @@
 # Counterparts in Compare
 
-The [full-size counterpart and straight-connection follow-up](comparison-space-and-lines.md) updates this workflow and is being verified. Worker 49 is the preceding published baseline; [deployment status](deployment-status.md) records publication.
+The [full-size counterpart and straight-connection follow-up](comparison-space-and-lines.md) is **live in Worker 50**, after all 48 local and 48 hosted checks and public verification. Worker 49 is the preceding published baseline; [deployment status](deployment-status.md) records publication.
 
 ## Delivered behavior
 
