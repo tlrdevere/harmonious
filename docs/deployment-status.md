@@ -2,6 +2,10 @@
 
 Updated September 29, 2026 (UTC).
 
+## Verified work awaiting organizer identity
+
+[Test accounts without email](test-accounts.md), source `2732cadcfca151befbc4c14726a514d0234311da`, are committed and pushed with **57/57 local and 57/57 hosted checks passed**. They have **not been deployed**: the owner must identify their existing Harmonious account before its verified user UUID is assigned to `TEST_ACCOUNT_ADMIN_ID`. Worker 58 below remains live. No production accounts, database schema or authorization settings have changed. After assignment, publish the verified build and check the live account flows. See [hosted verification](https://github.com/tlrdevere/harmonious/actions/runs/36605059365) and `build/test-accounts-release-evidence.json`.
+
 ## Current release
 
 Node-focused Argument dialogue deployed September 29, 2026 at **17:06:42 UTC** (1:06 p.m. in New York). Release source: `b58c121405f9fdd8a40d54706516a58b0d5fd089` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.

@@ -1,6 +1,6 @@
 # Organizer-created test accounts
 
-Implemented locally September 29, 2026. Awaiting complete release verification and identification of the organizer's existing Harmonious account before enabling production administration. Worker 58 remains the published baseline; see [deployment status](deployment-status.md).
+Implemented and pushed September 29, 2026 as `2732cadcfca151befbc4c14726a514d0234311da`. **57/57 local and 57/57 hosted release checks passed.** Publication awaits identification of the organizer's existing Harmonious account. Worker 58 remains live; see [deployment status](deployment-status.md).
 
 ## Use
 
@@ -23,5 +23,7 @@ The organizer can use **Reset password** beside a listed test account to generat
 ## Verification
 
 Focused tests cover organizer-only access; forged metadata and reserved-email rejection; duplicate and weak-password rejection; sign-in, reload and password replacement; private starting workspaces; account isolation; credential clearing; existing email sign-in; rate-limit responses; cross-origin rejection; and desktop/narrow layouts. Complete release checks and live verification are required before publication.
+
+Local report: `build/verification/2026-09-29T17-25-29-969Z-103684/summary.json`. The exact source passed [hosted release checks](https://github.com/tlrdevere/harmonious/actions/runs/36605059365); evidence: `build/test-accounts-release-evidence.json`. Desktop and narrow-screen captures passed visual review. Security advisors have no new findings; the existing service-only RLS notices and [leaked-password protection notice](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) remain unchanged. No production accounts or authorization settings have been changed by this work yet.
 
 Provider references: [Admin user creation](https://supabase.com/docs/reference/javascript/auth-admin-createuser), [password sign-in](https://supabase.com/docs/reference/javascript/auth-signinwithpassword), [Auth rate limits](https://supabase.com/docs/guides/auth/rate-limits).

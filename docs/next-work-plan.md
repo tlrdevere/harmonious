@@ -2,7 +2,7 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
-[Organizer-created test accounts](test-accounts.md) are implemented locally and being verified. They add username/password access without tester email verification, plus organizer-only creation and password replacement. Production administration awaits the owner's identification of their existing Harmonious account. Existing email verification and all deferrals remain unchanged.
+[Organizer-created test accounts](test-accounts.md) are committed and pushed, with **57/57 local and 57/57 hosted checks passed**. They add username/password access without tester email verification, plus organizer-only creation and password replacement. Publication awaits the owner's identification of their existing Harmonious account, followed by assigning its verified user ID to the server-side organizer binding and live verification. Existing email verification and all deferrals remain unchanged.
 
 The [node-focused Argument dialogue canvas](argument-dialogue-canvas-plan.md) is **live in Worker 58**, after all **55 local and 55 hosted checks**, the additive database migration and public verification. It adds an Open argument canvas action, a claim/dispute/reply tree with explicit reply targets, and a return to the preserved comparison view. The log and canvas share the same records. Earlier replies retain their known dispute membership without invented response chains. Next, refresh both accounts and follow the dialogue section of [the owner checklist](user-testing-checklist.md). Straight connections, expandable canvas space, the four categories, existing permissions and all deferrals remain; resolution is outside scope.
 
