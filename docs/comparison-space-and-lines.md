@@ -1,6 +1,6 @@
 # Full-size counterparts and room for straight connections
 
-The owner's feedback after Worker 49, including `harmonious 12.png` and `harmonious 13.png`, changes the layout priority. **Status: live in Worker 50 after all 48 local and 48 hosted release checks and public verification.** The latest request supersedes Worker 49's compact ghost dimensions and area-minimization preference. Publication is recorded in [deployment status](deployment-status.md).
+The owner's feedback after Worker 49, including `harmonious 12.png` and `harmonious 13.png`, changes the layout priority. **Status: shipped in Worker 50 after all 48 local and 48 hosted release checks and public verification; retained in Worker 51's [canvas dragging fix](canvas-panning-fix.md).** The request supersedes Worker 49's compact ghost dimensions and area-minimization preference. Publication is recorded in [deployment status](deployment-status.md).
 
 ## Requested behavior
 

@@ -1,6 +1,6 @@
 # Working in a shared Comparison
 
-Updated September 28, 2026. [Full-size counterparts and room for straight connections](comparison-space-and-lines.md) are **live in Worker 50**, after all 48 local and 48 hosted checks and public verification. This follows [independent comparison positioning](comparison-positioning-plan.md) in Worker 49, [comparison clarity](comparison-clarity-plan.md) in Worker 48, and [node-face editing, confidence scales and map copying](node-face-editing.md) in Worker 47. [Deployment status](deployment-status.md) records publication and the exact source. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera; [the grammar](interaction-grammar-v4.md) defines the actions.
+Updated September 29, 2026 (UTC). The [canvas dragging fix](canvas-panning-fix.md) is **live in Worker 51**, after all 49 local and 49 hosted checks and public verification. Blank-canvas drags no longer start browser text selection/native dragging; normal text editing and copying remain available. [Full-size counterparts and room for straight connections](comparison-space-and-lines.md) shipped in Worker 50, following independent positioning, comparison clarity and node-face editing in Workers 49–47. [Deployment status](deployment-status.md) records publication and the exact source. Compare, Inquiry, and Argument use the same saved comparison, source maps, and camera; [the grammar](interaction-grammar-v4.md) defines the actions.
 
 ## Start or reopen a comparison
 

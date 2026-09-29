@@ -2,7 +2,7 @@
 
 The owner reports that left-button drags on empty canvas frequently select text from other elements and stop moving the map. This affects the shared comparison canvas and the independent Map/Create canvas.
 
-Status: reproduced and implemented; all 49 local release checks pass. Hosted verification and publication are next. Worker 50 remains the published baseline. [Deployment status](deployment-status.md) records publication.
+Status: **live in Worker 51**, after all 49 local and 49 hosted release checks and public verification. Worker 50 is the preceding published baseline. [Deployment status](deployment-status.md) records publication.
 
 ## Cause and correction
 
@@ -25,5 +25,7 @@ Both canvases must release and reset their tracked gesture on pointer cancellati
 The fix changes interaction handling only. It does not change node positioning, counterpart semantics, saved data, dependencies or the deferral list.
 
 The new `tests/canvas-pan-browser.test.mjs` uses genuine mouse gestures, including an already-selected canvas hint, exact camera displacement, unchanged browser selection, native selection/drag event checks, outside release, interrupted capture and node-face text editing. The release runner discovers it automatically, bringing the full suite to 49 checks.
+
+Published application source: `d525242adcc756069c51b1be4ecfa81bece06cbd`. All **49/49 hosted checks** passed in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36503287256); exact public-file and account-access verification passed after deployment. Evidence: `build/drag-release-evidence.json`.
 
 All **49/49 local release checks passed**, including nine browser suites, database/account checks, portable export, production build and complete asset checks. Report: `build/verification/2026-09-29T00-24-39-633Z-97312/summary.json`; Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows. The new browser suite also verifies touch pinch and dragging in the exported standalone file. The older Argument controller test's minimal DOM adapter now exposes window/document event targets for the new cleanup listeners.

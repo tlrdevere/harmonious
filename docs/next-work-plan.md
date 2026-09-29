@@ -1,8 +1,12 @@
 # Harmonious next-work plan
 
-## Current priorities — September 28, 2026
+## Current priorities — September 29, 2026 (UTC)
 
-The owner subsequently requested **full-size ghost counterparts and more canvas space for straight connections**, after reviewing `harmonious 12.png` and `harmonious 13.png`. The [space and connection follow-up](comparison-space-and-lines.md) is **live in Worker 50**, after all 48 local and 48 hosted checks and public verification. It supersedes Worker 49's compactness preference: full-size ghosts, expanded radial spacing, straight clear parent connections, short adjacent-pair lines and retained zoom on expansion/collapse/filtering. Exceptional obstructed extra connections retain safe routes. [Deployment status](deployment-status.md) records source `7495a711fe92c875fb3e3580405a3ed1b0259fec` and publication. Continue the owner's [updated walkthrough](user-testing-checklist.md); pair-specific **Aligned / In tension** remains the next separate design discussion. Source/pair semantics and existing deferrals remain unchanged.
+The [canvas dragging fix](canvas-panning-fix.md) is **live in Worker 51**, after all 49 local and 49 hosted checks and public verification. It fixes browser text selection/native dragging cancelling canvas pans across views, with clean gesture interruption and preserved text editing, keyboard/zoom controls and touch pinch. [Deployment status](deployment-status.md) records source `d525242adcc756069c51b1be4ecfa81bece06cbd` and publication. Continue the owner's [updated walkthrough](user-testing-checklist.md); pair-specific **Aligned / In tension** remains the next separate design discussion, and the deferral list is unchanged.
+
+## Preceding release — Worker 50
+
+The owner subsequently requested **full-size ghost counterparts and more canvas space for straight connections**, after reviewing `harmonious 12.png` and `harmonious 13.png`. The [space and connection follow-up](comparison-space-and-lines.md) **shipped in Worker 50**, after all 48 local and 48 hosted checks and public verification. It supersedes Worker 49's compactness preference: full-size ghosts, expanded radial spacing, straight clear parent connections, short adjacent-pair lines and retained zoom on expansion/collapse/filtering. Exceptional obstructed extra connections retain safe routes. [Deployment status](deployment-status.md) records source `7495a711fe92c875fb3e3580405a3ed1b0259fec` and publication. Source/pair semantics and existing deferrals remain unchanged.
 
 ## Preceding release — Worker 49
 

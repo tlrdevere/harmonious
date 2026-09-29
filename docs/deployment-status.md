@@ -1,8 +1,23 @@
 # Deployment status
 
-Updated September 28, 2026 (UTC).
+Updated September 29, 2026 (UTC).
 
 ## Current release
+
+Canvas dragging and text-selection fix deployed September 29, 2026 at **00:34:02 UTC** (September 28 at 8:34 p.m. in New York). Application source: `d525242adcc756069c51b1be4ecfa81bece06cbd` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **51**: `d29cd1f9-3431-4e7d-aa6c-93e3dd8f1610`, serving **100%** of traffic. Deployment: `0232b2fd-e0aa-4876-9bb1-10481dc42adb`.
+- The [canvas-panning fix](canvas-panning-fix.md) prevents accepted blank-canvas drags from starting browser text selection or native text dragging. The reproduced selected-hint case previously moved only 18 pixels of a 450-pixel drag before the browser cancelled panning. It now follows the full gesture in Map/Create, source browsing, Inquiry, Compare and Argument.
+- Drag state resets on release, cancellation, capture loss, window blur, a hidden document and a mouse move without the primary button held. The canvas retains keyboard focus. Text fields, details, node/counterpart/reasoning cards and controls keep their own interactions; selection suppression lasts only for an active canvas pan.
+- **49/49 local release checks passed**, including nine browser suites, database/account checks, standalone export, production build and complete asset checks. Report: `build/verification/2026-09-29T00-24-39-633Z-97312/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows.
+- **49/49 hosted release checks passed** on the exact pushed source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36503287256), completed at **00:32:03 UTC**. Its log confirms the native-mouse regression and all 49 checks with Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/drag-release-hosted.json` and `build/drag-hosted-verification-evidence.json`.
+- New browser coverage includes existing text ranges, genuine drags over selected hints, full camera displacement outside the surface, release/repeated drags, interrupted capture, textarea selection and saved edits, keyboard navigation, zoom controls, touch pinch and portable-file panning. Independent review found no capture-lifecycle or focus blockers.
+- Public verification at **00:34:54 UTC** confirms all **54 client files** and the homepage match the tested checkout, with configured sign-in, anonymous account denial, private-configuration denial and security headers passing. Report: `build/public-drag-verification.json`. Worker SHA-256: `1cdba76bb16bcb5561fd838f0efe084e3825257cb361c8d2750a62825b6193bc`.
+- All eight encrypted bindings, compatibility date `2026-09-08`, empty compatibility flags and standard usage model were inherited and verified unchanged. No data migration, production account test write, authentication change or dependency update was required. Automatic push/PR checks and deployment remain disabled. Release evidence: `build/drag-release-evidence.json`. Subsequent release-note commits change documentation only.
+
+**Reload both PCs before testing.** Start with **Canvas dragging** in [the checklist](user-testing-checklist.md). Worker 50 is the preceding compatible release. The full-size ghosts and expanded layout remain in place; the [deferral list](next-work-plan.md#deferred-work) is unchanged.
+
+## Preceding full-size counterparts and expanded spacing release
 
 Full-size counterpart ghosts and expanded comparison space deployed September 28, 2026 at **23:57:23 UTC** (7:57 p.m. in New York). Application and verification source: `7495a711fe92c875fb3e3580405a3ed1b0259fec` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 

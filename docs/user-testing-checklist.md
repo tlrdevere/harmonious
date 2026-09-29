@@ -1,8 +1,17 @@
 # Harmonious: what to check on your next visit
 
-## First check: full-size ghosts and space for straight connections
+## First check: canvas dragging
 
-The [space and line follow-up](comparison-space-and-lines.md) is **live in Worker 50**, after all 48 local and 48 hosted checks and public verification. [Deployment status](deployment-status.md) records publication. **Refresh both PCs before testing.**
+The [canvas-panning fix](canvas-panning-fix.md) is **live in Worker 51**, after all 49 local and 49 hosted checks and public verification. **Refresh both PCs before testing.**
+
+- [ ] Drag empty canvas with the left mouse button in Map/Create, source browsing, Inquiry, Compare and Argument. The map should follow the full motion without highlighting text or stopping at a text boundary.
+- [ ] Repeat after highlighting text, including a canvas instruction. Drag across the screen and outside the canvas, release, and drag again. The gesture should not stick or change the existing text selection.
+- [ ] Switch windows during a held drag, return and release, then start a fresh drag. Confirm the map is not left following the mouse without its button held.
+- [ ] Select and replace text in a node-face editor, copy text from details, and use node/control buttons. These interactions should retain their normal behavior. Check arrow-key panning, zoom buttons and touch pinch too.
+
+## Continuing checks: full-size ghosts and space for straight connections
+
+The [space and line follow-up](comparison-space-and-lines.md) **shipped in Worker 50**, after all 48 local and 48 hosted checks and public verification. [Deployment status](deployment-status.md) records publication.
 
 - [ ] Compare a ghost and its neighbouring real card: both have the same width and height. Check the status, other owner's name, button, keyboard focus and touch access at a readable zoom in Compare, Inquiry and Argument.
 - [ ] Repeat `harmonious 13.png`: expand both five-child SQ maps with only Low union density linked. All ten parent connections should be straight and avoid every unrelated real card and ghost. Each real node should appear once; the pair has a short straight gap connection with inspectable meanings and authors.
