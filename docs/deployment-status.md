@@ -4,6 +4,19 @@ Updated September 29, 2026 (UTC).
 
 ## Current release
 
+Full descriptions in the Dispute form deployed September 29, 2026 at **15:11:27 UTC** (11:11 a.m. in New York). Release source: `56a9f97275fb052cecea879208c459bfb352bb4d` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **55**: `d053703c-1c24-4bcf-bee4-53398ae8d589`, serving **100%** of traffic. Deployment: `e53ef77b-f122-4f8b-b40d-8d53cd0104b7`.
+- Opening or editing a node dispute shows the full node description below its title and above the four categories. Line breaks are preserved; longer descriptions scroll with the form. This uses the existing source snapshot and plain-text rendering.
+- **53/53 local release checks passed**, including desktop and narrow-screen browser checks and visual review. Report: `build/verification/2026-09-29T15-00-25-931Z-50464/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows.
+- **53/53 hosted release checks passed** on the exact pushed source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36587484585), with all checks complete at **15:09:20 UTC**. Logs confirm Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/description-release-hosted.json` and `build/description-hosted-verification-evidence.json`.
+- Public verification confirms all **54 client files** and the homepage match the tested checkout; configured sign-in, anonymous account denial, private-configuration denial and security headers passed. Evidence recorded at **15:12:14 UTC**: `build/public-description-verification.json`. Worker SHA-256: `5fb58de3d02b9cb2175fbced8cd55cf045786af2ed78ea9d182c3b3a40156970`.
+- All eight encrypted bindings, compatibility date `2026-09-08`, empty compatibility flags and standard usage model were inherited and verified unchanged. No database migration, production account test writes, authentication changes or dependency updates were required. Overall evidence: `build/description-release-evidence.json`. Subsequent release-note commits change documentation only.
+
+**Refresh Harmonious before testing.** Check the full description in the [Argument checklist](user-testing-checklist.md). Worker 54 is a compatible rollback; older rollbacks must retain the version-5 reader and validation described below. Existing deferrals remain in place.
+
+## Preceding four-category Argument release
+
 Four-category Argument deployed September 29, 2026 at **14:43:29 UTC** (10:43 a.m. in New York). Release source: `c62161b5c46856c5d9d1039a41289cc4349b3b6b` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **54**: `8f00a6d4-d9b8-4dba-9985-63781209893e`, serving **100%** of traffic. Deployment: `46ca779d-3fd4-43a0-85c7-1c13e83ef862`.

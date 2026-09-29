@@ -2,6 +2,10 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
+The Dispute form now includes the node's full description below its title, including when editing a dispute. This follow-up is **live in Worker 55**, after all 53 local and hosted checks and public verification. Refresh Harmonious and check long descriptions and narrow screens using [the owner checklist](user-testing-checklist.md). [Deployment status](deployment-status.md) records publication.
+
+## Preceding release — Worker 54
+
 The [four-category Argument update](argument-four-categories-plan.md) is **live in Worker 54**, after all 53 local and 53 hosted checks, the additive database migration and public verification. It offers exactly **Factual basis, Reasoning, Consequences and Feasibility**, with optional explanation/reference, existing responses and preservation of earlier arguments. Next, refresh both PCs and follow **Four-category Argument** in [the owner checklist](user-testing-checklist.md). Argument resolution and the earlier proposed action-label/display redesign remain outside this increment. The technology stack and existing deferrals are unchanged. [Deployment status](deployment-status.md) records publication.
 
 ## Preceding release — Worker 53
