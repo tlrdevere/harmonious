@@ -4,6 +4,19 @@ Updated September 29, 2026 (UTC).
 
 ## Current release
 
+Display-name editing deployed September 29, 2026 at **18:03:22 UTC** (2:03 p.m. in New York). Release source: `6434e1e8425f6ed0fc9c401fc44a1de273925c52` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **60**: `acdb8237-ab71-4bac-a4c4-7cedb56cb5ea`, serving **100%** of traffic. Deployment: `623e0756-5514-4de6-a4af-76ce6aaf09e2`.
+- Account menu → **Change display name** updates the current participant's name on maps and contributions. Email and test accounts retain their existing login details and identity. The organizer's test-account list uses current profile names. See [display names](display-names.md).
+- **57/57 local release checks passed**: `build/verification/2026-09-29T17-53-40-992Z-37192/summary.json`, using Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge. Coverage includes owner-only profile changes, invalid/stale writes, lost-acknowledgement replay, unchanged content, other-participant visibility, reload, test-account names, failed-save retry, cancellation and narrow layout. Two older unit fixtures were updated to provide the new account-name render hook. The narrow-screen capture passed visual review.
+- **57/57 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36608705802), with verification complete at **18:01:50 UTC**. Runtime: Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/display-name-hosted-verification-evidence.json`.
+- Public verification confirms all **57 client files** and the homepage match the tested checkout; configured sign-in, account denial, private-file denial and security headers passed. Worker SHA-256: `75b062e084efffc2308938dd8d2e359792e37583a7ba406556b8f7b849111b93`. Evidence: `build/display-name-release-evidence.json`.
+- Existing runtime settings, eight encrypted bindings and the verified organizer binding were inherited unchanged. No schema migration, authentication-provider change or production account writes were needed. Auth metadata remains the bootstrap fallback; the application profile supplies the current name.
+
+**Refresh Harmonious, open your account menu, and select Change display name.** Worker 59 is a compatible rollback and retains saved names, but lacks this setting. Subsequent release-note commits change documentation only.
+
+## Preceding test-account release
+
 Organizer-created test accounts deployed September 29, 2026 at **17:38:20 UTC** (1:38 p.m. in New York). Release source: `2732cadcfca151befbc4c14726a514d0234311da` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **59**: `5274d6d1-a571-4f42-aba9-c6d50534d876`, serving **100%** of traffic. Deployment: `aef08359-3943-42e4-bbae-3c640643db46`.
