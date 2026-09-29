@@ -1,6 +1,6 @@
 # Counterpart controls and visible assessments
 
-Approved September 29, 2026 (UTC). Implementation and verification are in progress; [deployment status](deployment-status.md) identifies the live release.
+Approved and published September 29, 2026 (UTC) in **Worker 52**, after all 53 local and 53 hosted release checks passed. [Deployment status](deployment-status.md) records the exact source, migration and live verification.
 
 ## Behavior
 
@@ -25,4 +25,6 @@ Full-size ghosts, straight clear parent connections, source geometry, zoom reten
 
 ## Verification
 
-Run the complete release checks, including two-account browser workflows, model/account validation, direct PostgreSQL boundary cases, portable export and production build. Inspect card layout at desktop and narrow widths. Publish the exact tested commit only after hosted checks pass, apply and verify the additive migration, then confirm the public application matches the tested client files.
+All 53 local and 53 hosted checks passed on application commit `a70186087b180e77cd9c9de3028924ca490650a8`, including ten browser suites, two-account workflows, model/account validation, direct PostgreSQL boundary cases, portable export and production build. Desktop and narrow card layouts passed visual inspection. The additive migration was applied and verified with existing records unchanged. Public verification matched all 54 client files and the homepage to the tested checkout.
+
+Reload both PCs and continue the [counterpart controls and assessments walkthrough](user-testing-checklist.md). Older tabs preserve drafts when asked to refresh. Once unlink receipts exist, a rollback must retain receipt-aware reading and database constraints; Worker 51 alone is not a compatible rollback.

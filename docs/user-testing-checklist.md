@@ -2,7 +2,7 @@
 
 ## First check: counterpart controls and assessments
 
-Use [deployment status](deployment-status.md) to confirm publication, then refresh both PCs.
+This update is **live in Worker 52**, after all 53 local and 53 hosted checks, the additive database migration and public verification. See [deployment status](deployment-status.md), then refresh both PCs.
 
 - [ ] Choose **Link counterpart** from SQ, TA and GS. Only free ordinary nodes from the same frame appear, with no initial selection. A competing link at either end is rejected without losing your draft.
 - [ ] Unlink from the participant who did not create the link. Both nodes remain, return to ghosts and keep their assessments. **Counterpart history** identifies the linker and unlinker. Relink and reload both PCs.
@@ -13,7 +13,7 @@ Use [deployment status](deployment-status.md) to confirm publication, then refre
 
 ## Continuing check: canvas dragging
 
-The [canvas-panning fix](canvas-panning-fix.md) is **live in Worker 51**, after all 49 local and 49 hosted checks and public verification. **Refresh both PCs before testing.**
+The [canvas-panning fix](canvas-panning-fix.md) **shipped in Worker 51**, after all 49 local and 49 hosted checks and public verification. **Refresh both PCs before testing.**
 
 - [ ] Drag empty canvas with the left mouse button in Map/Create, source browsing, Inquiry, Compare and Argument. The map should follow the full motion without highlighting text or stopping at a text boundary.
 - [ ] Repeat after highlighting text, including a canvas instruction. Drag across the screen and outside the canvas, release, and drag again. The gesture should not stick or change the existing text selection.
@@ -28,7 +28,7 @@ The [space and line follow-up](comparison-space-and-lines.md) **shipped in Worke
 - [ ] Repeat `harmonious 13.png`: expand both five-child SQ maps with only Low union density linked. All ten parent connections should be straight and avoid every unrelated real card and ghost. Each real node should appear once; the pair has a short straight gap connection with inspectable meanings and authors.
 - [ ] Collapse the opposite SQ branch, matching `harmonious 12.png`. Its existing link should retain **Counterpart in collapsed branch** status, with straight visible parent lines and full-size ghosts. Test four, six and eight children plus nested branches.
 - [ ] Set a readable zoom, then expand/collapse through both a node toggle and View options. The canvas may grow beyond the screen; the chosen scale and visible anchor should stay put. Pan to the new space. Use **Fit** only when an overview is wanted; test changing frame filters too.
-- [ ] Link and withdraw while zoomed in. Confirm both real nodes, source parents, saved histories, focus and the initiating node's screen position survive. Open the short pair line with the keyboard, inspect authors/meanings, and close back to that connection.
+- [ ] Link and use **Unlink counterpart** from either participant while zoomed in. Confirm both real nodes, source parents, saved histories, focus and the initiating node's screen position survive. Open the short pair line with the keyboard, inspect authors/meanings, and close back to that connection.
 - [ ] Switch shared modes and reload after saving. Check unchanged geometry, Compare-only counterpart actions, parked drafts, narrow windows, owner permissions, and existing map/copy/confidence workflows.
 
 ## Continuing checks: independent nodes, ghosts, and comparison spacing
@@ -51,7 +51,7 @@ The [comparison clarity increment](comparison-clarity-plan.md) **shipped in Work
 - [ ] Open two maps with similar SQ children, including the two Low union density nodes. Select one, then the other, and alternate among other visible nodes. Existing nodes, ghost controls, zoom, camera, folds, and filters should stay in place; selection should create no additional counterpart spot.
 - [ ] From your own node, choose **Link counterpart**. Search the other map, check the owner, parent path, and wording preview, then select and link the intended node. Nothing should be selected initially. Repeat starting from the other person's node, and repeat as the other account. Cancelling should create no link; linking should change neither source map.
 - [ ] Open contextual **Earlier counterpart links** on an older node linked to multiple opposite nodes. Each pair retains its meanings and authors; unlink one pair and verify the others remain. New links must be one-to-one. Refresh and confirm both accounts see the result.
-- [ ] Start and cancel **Request counterpart**: the existing ghost should remain unchanged and no request should be saved. Send a request: **Counterpart requested** should remain visible when selection changes. Test Link, Create counterpart in my map, No position yet, close/reopen, and withdrawal of your own link on disposable nodes. A linked node should not offer a new request, and creating must remain restricted to your own map.
+- [ ] Start and cancel **Request counterpart**: the existing ghost should remain unchanged and no request should be saved. Send a request: **Counterpart requested** should remain visible when selection changes. Test Link, Create counterpart in my map, No position yet, close/reopen, and **Unlink counterpart** from either participant on disposable nodes. A linked node should not offer a new request, and creating must remain restricted to your own map.
 - [ ] Collapse both maps to their three frame headings. There should be no automatic SQ-to-TA or TA-to-GS lines. Genuine saved connections remain available when their endpoints are shown. Open **View options → Connection key** and compare it with the displayed source lines, arrows, and counterpart links.
 - [ ] Recreate the SQ branching example with the second map collapsed. Low union density and Socialists should have separately traceable paths back to SQ, without the misleading shared vertical segment. Hover or keyboard-focus a line: its full route and both actual endpoint cards should highlight. Selecting it should show those same endpoints and saved meanings.
 - [ ] Check a child-to-parent reason, an ordinary parent branch, and a pair with more than one saved meaning. Each pair should have one visible route; arrows must follow the saved semantic direction. Repeat in Map/Create and source browsing as well as the shared modes.
