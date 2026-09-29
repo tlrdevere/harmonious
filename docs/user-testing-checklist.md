@@ -1,5 +1,17 @@
 # Harmonious: what to check on your next visit
 
+## Next check: node-focused Argument dialogue
+
+Implementation is awaiting verified publication; check [deployment status](deployment-status.md) before testing and refresh both accounts.
+
+- [ ] In Argument, select an ordinary node and choose **Open argument canvas**, including one with no disputes. Read its full description, author and frame. Confirm the other participant can enter the same node.
+- [ ] Add a dispute, respond from the other account, then reply to that response. Branch from an earlier contribution. Connections should show the actual addressed contribution; a multi-category dispute stays one card.
+- [ ] Open **Chronological log** and Find. The same messages should appear, and selecting a result should reveal the right branch, including through collapsed ancestors. Earlier replies should not acquire invented links to one another.
+- [ ] Continue after Refresh and reload. Edit/withdraw your own contribution; descendants and earlier versions should remain readable. Replies do not resolve disputes or change source maps or assessments.
+- [ ] Try long text, several sibling replies and a long chain. Use pan, zoom, Fit dialogue and branch collapse/expansion. Ordinary connections should be straight, with more canvas space rather than overlapping cards.
+- [ ] Return using **Back to comparison**, then re-enter. Check comparison position/zoom and dialogue folds. Try browser Back/Forward, a copied dialogue URL, keyboard controls and a narrow screen.
+- [ ] Leave an unfinished reply, attempt to navigate away and decline discarding it. The draft should remain. If the addressed message changes before submission, an explanation should preserve the draft rather than send it against different wording.
+
 ## First check: four-category Argument
 
 Continuing replies in the node dispute log are **live in Worker 57**, after all 53 local and 53 hosted checks, the additive database migration and public verification. Both participants can keep replying under the original dispute. This includes the four categories from Worker 54, full descriptions from Worker 55 and direct logs from Worker 56. See [deployment status](deployment-status.md), then refresh both PCs.

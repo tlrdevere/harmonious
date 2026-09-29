@@ -71,7 +71,8 @@ try{
     await load(page);await mode(page,'argument');await node(page,'Daytime meetings for local members');await page.locator(`[data-dispute="${dispute.id}"]>summary`).click();await click(page,'Reply');await page.locator('#interaction-comment').fill(body);await click(page,'Send reply');await saved(page);
   }
   await load(a);await mode(a,'argument');await node(a,'Daytime meetings for local members');await entry.locator('summary').first().click();
-  assert.deepEqual(await entry.locator('.argument-log-reply .discussion-body').allTextContents(),['My updated response to your dispute.','Alice follows up on the response.','Bob replies again.','Alice continues.','Bob continues.'],'The full exchange stays in chronological order under the original dispute');
+  assert.deepEqual(await entry.locator('.argument-log-reply > .discussion-body').allTextContents(),['My updated response to your dispute.','Alice follows up on the response.','Bob replies again.','Alice continues.','Bob continues.'],'The full exchange stays in chronological order under the original dispute');
+  assert.equal(await entry.locator('.argument-log-reply .interaction-history .discussion-body').first().textContent(),'My response to your dispute.','Earlier response wording stays in its separate revision history');
   await a.screenshot({path:'build/design-review/argument-replies-desktop.png',fullPage:true});
   await click(a,'Reply');await a.locator('#interaction-comment').fill('Unsent continuation');await mode(a,'inquiry');await mode(a,'argument');assert.equal(await a.locator('#interaction-comment').inputValue(),'Unsent continuation');a.once('dialog',d=>d.accept());await close(a);
   await close(a);await mode(a,'compare');await node(a,'Daytime meetings for local members');assert.equal(await a.locator('.argument-log').count(),0,'The dispute log is specific to Argument mode');

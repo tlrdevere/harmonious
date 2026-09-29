@@ -10,6 +10,8 @@ export const ADOPTION_CAPABILITY='comparison-adoption-v1';
 export const PREMISE_CAPABILITY='comparison-premise-v1';
 export const REFLECTION_CAPABILITY='comparison-reflection-v1';
 export const INTERACTION_CAPABILITY='interaction-grammar-v4';
+export const DIALOGUE_CAPABILITY='argument-dialogue-v1';
+export function requiresDialogueCapability(discussions){return discussions.some(record=>[record,...(Array.isArray(record?.history)?record.history:[])].some(r=>r?.interaction?.version===7));}
 export const REPLIES_CAPABILITY='argument-replies-v1';
 export function requiresRepliesCapability(discussions){return discussions.some(record=>[record,...(Array.isArray(record?.history)?record.history:[])].some(r=>r?.interaction?.version===6));}
 export const ARGUMENT_CAPABILITY='argument-categories-v1';
@@ -21,18 +23,18 @@ export function requiresPremiseCapability(discussions){return discussions.some(r
 export function requiresReflectionCapability(discussions){return discussions.some(record=>[record,...(Array.isArray(record?.history)?record.history:[])].some(r=>r?.kind==='reflection'||r?.reflection!==undefined));}
 export function requiresInteractionCapability(discussions){return discussions.some(record=>[record,...(Array.isArray(record?.history)?record.history:[])].some(r=>r?.kind==='interaction'||r?.interaction!==undefined));}
 export function requiresCounterpartCapability(discussions){return discussions.some(r=>r?.kind==='counterpart_unlink'||r?.unlinkedRecordIds!==undefined);}
-function requireCompatibleWorkspace(workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable},changes=[]){
+function requireCompatibleWorkspace(workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable,dialogueCapable},changes=[]){
   const incoming={discussions:Array.isArray(changes)?changes.filter(c=>c?.kind==='discussion'&&c.value).map(c=>c.value):[],definitions:Array.isArray(changes)?changes.filter(c=>c?.kind==='definition'&&c.value).map(c=>c.value):[]};
-  const missing=!counterpartCapable&&(requiresCounterpartCapability(workspace.discussions)||requiresCounterpartCapability(incoming.discussions))?COUNTERPART_CAPABILITY:!interactionCapable&&(requiresInteractionCapability(workspace.discussions)||requiresInteractionCapability(incoming.discussions))?INTERACTION_CAPABILITY:!argumentCapable&&(requiresArgumentCapability(workspace.discussions)||requiresArgumentCapability(incoming.discussions)||incoming.discussions.some(r=>r?.kind==='interaction'&&r.action==='dispute'))?ARGUMENT_CAPABILITY:!repliesCapable&&(requiresRepliesCapability(workspace.discussions)||requiresRepliesCapability(incoming.discussions))?REPLIES_CAPABILITY:!reflectionCapable&&(requiresReflectionCapability(workspace.discussions)||requiresReflectionCapability(incoming.discussions))?REFLECTION_CAPABILITY:!premiseCapable&&(requiresPremiseCapability(workspace.discussions)||requiresPremiseCapability(incoming.discussions))?PREMISE_CAPABILITY:!adoptionCapable&&(requiresAdoptionCapability(workspace)||requiresAdoptionCapability(incoming))?ADOPTION_CAPABILITY:!reasoningCapable&&(requiresReasoningCapability(workspace.discussions)||requiresReasoningCapability(incoming.discussions))?REASONING_CAPABILITY:null;
+  const missing=!dialogueCapable&&(requiresDialogueCapability(workspace.discussions)||requiresDialogueCapability(incoming.discussions))?DIALOGUE_CAPABILITY:!counterpartCapable&&(requiresCounterpartCapability(workspace.discussions)||requiresCounterpartCapability(incoming.discussions))?COUNTERPART_CAPABILITY:!interactionCapable&&(requiresInteractionCapability(workspace.discussions)||requiresInteractionCapability(incoming.discussions))?INTERACTION_CAPABILITY:!argumentCapable&&(requiresArgumentCapability(workspace.discussions)||requiresArgumentCapability(incoming.discussions)||incoming.discussions.some(r=>r?.kind==='interaction'&&r.action==='dispute'))?ARGUMENT_CAPABILITY:!repliesCapable&&(requiresRepliesCapability(workspace.discussions)||requiresRepliesCapability(incoming.discussions))?REPLIES_CAPABILITY:!reflectionCapable&&(requiresReflectionCapability(workspace.discussions)||requiresReflectionCapability(incoming.discussions))?REFLECTION_CAPABILITY:!premiseCapable&&(requiresPremiseCapability(workspace.discussions)||requiresPremiseCapability(incoming.discussions))?PREMISE_CAPABILITY:!adoptionCapable&&(requiresAdoptionCapability(workspace)||requiresAdoptionCapability(incoming))?ADOPTION_CAPABILITY:!reasoningCapable&&(requiresReasoningCapability(workspace.discussions)||requiresReasoningCapability(incoming.discussions))?REASONING_CAPABILITY:null;
   if(missing){
     const error=new AccountError('This comparison uses a newer version of Harmonious. Keep this page open to download your unsaved work, then reopen Harmonious in a new tab. Your drafts have not been discarded.',409);error.code='CLIENT_UPDATE_REQUIRED';error.requiredCapability=missing;throw error;
   }
 }
-export async function accountWorkspace(store,actor,{reasoningCapable=true,adoptionCapable=true,premiseCapable=true,reflectionCapable=true,interactionCapable=true,counterpartCapable=true,argumentCapable=true,repliesCapable=true}={}){
+export async function accountWorkspace(store,actor,{reasoningCapable=true,adoptionCapable=true,premiseCapable=true,reflectionCapable=true,interactionCapable=true,counterpartCapable=true,argumentCapable=true,repliesCapable=true,dialogueCapable=true}={}){
   for(let attempt=0;attempt<4;attempt++){
     const snapshot=await store.snapshot();
     if(snapshot.records.some(r=>r.kind==='profile'&&r.id===actor.id)){
-      const result=projectAccountWorkspace(snapshot,actor.id);requireCompatibleWorkspace(result.workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable});
+      const result=projectAccountWorkspace(snapshot,actor.id);requireCompatibleWorkspace(result.workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable,dialogueCapable});
       // An unaffected older client still receives the envelope it understands.
       if(!adoptionCapable)result.workspace.schemaVersion=reasoningCapable?3:2;
       else if(!premiseCapable)result.workspace.schemaVersion=4;
@@ -44,10 +46,10 @@ export async function accountWorkspace(store,actor,{reasoningCapable=true,adopti
   }
   throw new AccountError('Your account is being opened in another session. Please try again.',409);
 }
-export async function saveAccountChanges(store,actorId,changes,{reasoningCapable=true,adoptionCapable=true,premiseCapable=true,reflectionCapable=true,interactionCapable=true,counterpartCapable=true,argumentCapable=true,repliesCapable=true}={}){
+export async function saveAccountChanges(store,actorId,changes,{reasoningCapable=true,adoptionCapable=true,premiseCapable=true,reflectionCapable=true,interactionCapable=true,counterpartCapable=true,argumentCapable=true,repliesCapable=true,dialogueCapable=true}={}){
   if(Array.isArray(changes))for(const change of changes)if(change?.kind==='discussion'&&isAdoptionReceipt(change.value)&&change.id!==await adoptionFulfillmentId(change.value.target?.entryId,actorId))throw new AccountError('Invalid adoption fulfillment identity.');
   for(let attempt=0;attempt<4;attempt++){
-    const snapshot=await store.snapshot();requireCompatibleWorkspace(projectAccountWorkspace(snapshot,actorId).workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable},changes);
+    const snapshot=await store.snapshot();requireCompatibleWorkspace(projectAccountWorkspace(snapshot,actorId).workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable,dialogueCapable},changes);
     // A lost response may be retried with the exact staged batch. Acknowledging
     // it is safe only while every submitted value still equals its saved row.
     if(Array.isArray(changes)&&changes.length>0&&changes.length<=500&&new Set(changes.map(c=>accountKey(c?.kind,c?.id))).size===changes.length&&changes.every(c=>Number.isSafeInteger(c?.expectedRevision)&&c.expectedRevision>=0&&snapshot.records.some(r=>r.kind===c.kind&&r.id===c.id&&r.ownerId===actorId&&stableJSON(r.value)===stableJSON(c.value))))return {revision:snapshot.revision,revisions:Object.fromEntries(changes.map(c=>[accountKey(c.kind,c.id),snapshot.records.find(r=>r.kind===c.kind&&r.id===c.id).revision])),replayed:true};
@@ -56,11 +58,11 @@ export async function saveAccountChanges(store,actorId,changes,{reasoningCapable
   }
   throw new AccountError('Several changes arrived at once. Please try saving again.',409);
 }
-export async function startAccountComparison(store,actorId,input,{reasoningCapable=true,adoptionCapable=true,premiseCapable=true,reflectionCapable=true,interactionCapable=true,counterpartCapable=true,argumentCapable=true,repliesCapable=true}={}){
+export async function startAccountComparison(store,actorId,input,{reasoningCapable=true,adoptionCapable=true,premiseCapable=true,reflectionCapable=true,interactionCapable=true,counterpartCapable=true,argumentCapable=true,repliesCapable=true,dialogueCapable=true}={}){
   if(typeof input?.aMapId!=='string'||typeof input?.bMapId!=='string')throw new AccountError('Choose two maps.');
   for(let attempt=0;attempt<4;attempt++){
     const snapshot=await store.snapshot(),view=projectAccountWorkspace(snapshot,actorId),sources=[input.aMapId,input.bMapId].map(id=>view.workspace.maps.find(map=>map.id===id&&!map.unavailable));
-    requireCompatibleWorkspace(view.workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable});
+    requireCompatibleWorkspace(view.workspace,{reasoningCapable,adoptionCapable,premiseCapable,reflectionCapable,interactionCapable,counterpartCapable,argumentCapable,repliesCapable,dialogueCapable});
     if(!sources.every(Boolean)||sources[0].id===sources[1].id||!sources.some(map=>map.ownerId===actorId))throw new AccountError('Choose one of your maps and another visible map.',403);
     const existing=snapshot.records.find(record=>record.kind==='comparison_thread'&&comparisonPairKey(record.value)===comparisonPairKey(input));
     if(existing)return {comparisonThread:existing.value,revision:existing.revision};
@@ -71,7 +73,7 @@ export async function startAccountComparison(store,actorId,input,{reasoningCapab
   throw new AccountError('This comparison is being opened in another session. Try again.',409);
 }
 export async function handleAccountAPI(request,env,dependencies={}){
-  const path=new URL(request.url).pathname,declared=(request.headers.get('X-Harmonious-Capabilities')||'').split(/[\s,]+/),capabilities={reasoningCapable:declared.includes(REASONING_CAPABILITY),adoptionCapable:declared.includes(ADOPTION_CAPABILITY),premiseCapable:declared.includes(PREMISE_CAPABILITY),reflectionCapable:declared.includes(REFLECTION_CAPABILITY),interactionCapable:declared.includes(INTERACTION_CAPABILITY),counterpartCapable:declared.includes(COUNTERPART_CAPABILITY),argumentCapable:declared.includes(ARGUMENT_CAPABILITY),repliesCapable:declared.includes(REPLIES_CAPABILITY)};let cookies=[];
+  const path=new URL(request.url).pathname,declared=(request.headers.get('X-Harmonious-Capabilities')||'').split(/[\s,]+/),capabilities={reasoningCapable:declared.includes(REASONING_CAPABILITY),adoptionCapable:declared.includes(ADOPTION_CAPABILITY),premiseCapable:declared.includes(PREMISE_CAPABILITY),reflectionCapable:declared.includes(REFLECTION_CAPABILITY),interactionCapable:declared.includes(INTERACTION_CAPABILITY),counterpartCapable:declared.includes(COUNTERPART_CAPABILITY),argumentCapable:declared.includes(ARGUMENT_CAPABILITY),repliesCapable:declared.includes(REPLIES_CAPABILITY),dialogueCapable:declared.includes(DIALOGUE_CAPABILITY)};let cookies=[];
   if(!accountConfiguration(env))return accountResponse({error:'Sign-in is being set up. Please return soon.',configured:false},503);
   const auth=dependencies.auth||new AccountAuth(env),store=dependencies.store||new SupabaseStore(env);
   try{

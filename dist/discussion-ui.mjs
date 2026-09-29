@@ -1,3 +1,4 @@
+import {ArgumentDialogueUI} from './argument-dialogue-ui.mjs';
 import {InteractionUI} from './interaction-ui.mjs';
 import {InteractionSearchUI} from './interaction-search-ui.mjs';
 import {entryMode,interactionCategory,conversationThreads,nodeAssessment,counterpartAssessment,counterpartDisplay} from './interaction-presentation.mjs';
@@ -74,7 +75,7 @@ export class DiscussionUI{
     discussUI('compare-view-mode').textContent='Map & conversation';discussUI('argument-mode').textContent='Earlier reasoning';
     for(const b of controls.querySelectorAll(':scope > [data-layer]'))if(b.dataset.layer!=='inquiries'){options.append(b);if(b.dataset.layer==='arguments')b.hidden=true;}
     this.reasoning=new ReasoningUI(this);
-    this.search=new InteractionSearchUI(this);
+    this.search=new InteractionSearchUI(this);this.dialogue=new ArgumentDialogueUI(this);
   }
   setMode(mode){
     const views=discussUI('comparison-view-modes'),heading=discussUI('comparison-context').querySelector('.context-heading');
@@ -130,6 +131,7 @@ export class DiscussionUI{
   attachmentCategory(record){const category=interactionCategory(record);return category==='counterparts'?'questions':category;}
   revealInteraction(id,{responseContext=false}={}){
     const r=this.allEntries().find(record=>record.id===id);if(!r)return false;
+    if(this.dialogue?.active){const anchor=conversationAnchor(this.c.workspace.discussions,r);if(stableJSON(anchor)===stableJSON(this.dialogue.target)&&r.interaction?.mode==='argument'){if(!this.canLeave())return false;this.interactions.open(id);this.dialogue.reveal(id);return true;}if(!this.dialogue.close())return false;}
     const returnFocus=document.activeElement?.closest('.interaction-search')?this.search.button:document.activeElement;if(!this.canLeave())return false;
     this.activateMode(this.entryMode(r));this.reasoning.anchor=null;this.reasoning.focusId=null;this.reasoning.returnId=null;
     const anchor=conversationAnchor(this.c.workspace.discussions,r),canvas=this.canvas;
@@ -482,6 +484,7 @@ export class DiscussionUI{
     this.counterparts.position();this.reasoning.position();this.positionPopover();this.agreementView.position();
   }
   positionPopover(){
+    if(this.dialogue?.active){this.dialogue.positionPopover();return;}
     if(this.host.hidden)return;const {surface,camera}=this.canvas,p=this.point(this.target),width=Math.min(350,surface.clientWidth-24);
     this.host.style.width=width+'px';this.host.style.maxHeight=Math.max(150,surface.clientHeight-32)+'px';
     let x=12,y=64;

@@ -22,7 +22,7 @@ const server=createServer(async(req,res)=>{try{
   if(url.pathname==='/api/comparisons'){json(res,200,await startAccountComparison(store,alice.id,input));return;}
   if(url.pathname==='/api/workspace'&&req.method==='PUT'){
    const result=await saveAccountChanges(store,alice.id,input.changes);putCount++;
-   if(loseReplyAcknowledgement&&input.changes.some(c=>c.value?.interaction?.version===6)){loseReplyAcknowledgement=false;json(res,503,{error:'The reply acknowledgement was lost. Retry this save.'});return;}
+   if(loseReplyAcknowledgement&&input.changes.some(c=>c.value?.interaction?.version===7)){loseReplyAcknowledgement=false;json(res,503,{error:'The reply acknowledgement was lost. Retry this save.'});return;}
    if(loseNextAcknowledgement&&input.changes.some(c=>c.id===interaction.id)){loseNextAcknowledgement=false;json(res,503,{error:'The saved edit acknowledgement was lost. Retry this save.'});return;}
    json(res,200,result);return;
   }
@@ -50,8 +50,8 @@ try{
  await page.reload();await page.locator('#reasoning-argument-mode').click();await page.getByRole('button',{name:'Conversations',exact:true}).click();await pop.locator(`[data-entry="${dispute.id}"]`).click();await click('Reply');
  await page.locator('#interaction-comment').fill('A reply saved only once');loseReplyAcknowledgement=true;await click('Send reply');await pop.getByRole('alert').filter({hasText:'reply acknowledgement was lost'}).waitFor();
  const replyWrites=putCount;await click('Send reply');await saved();assert.equal(putCount,replyWrites,'Retry acknowledges the saved reply without another write');
- const replies=(await view(store,alice)).workspace.discussions.filter(r=>r.interaction?.version===6);assert.equal(replies.length,1);assert.equal(replies[0].body,'A reply saved only once');assert.deepEqual(errors,[]);
+ const replies=(await view(store,alice)).workspace.discussions.filter(r=>r.interaction?.version===7);assert.equal(replies.length,1);assert.equal(replies[0].body,'A reply saved only once');assert.deepEqual(errors,[]);
  await click('Reply');await page.locator('#interaction-comment').fill('Another saved reply');loseReplyAcknowledgement=true;await click('Send reply');await pop.getByRole('alert').filter({hasText:'reply acknowledgement was lost'}).waitFor();
- await page.locator('#interaction-comment').fill('Additional unsent wording');await click('Send reply');await pop.getByRole('alert').filter({hasText:'draft has further changes'}).waitFor();assert.equal(await page.locator('#interaction-comment').inputValue(),'Additional unsent wording');assert.equal((await view(store,alice)).workspace.discussions.filter(r=>r.interaction?.version===6).length,2,'Further typing never duplicates an acknowledged reply');
+ await page.locator('#interaction-comment').fill('Additional unsent wording');await click('Send reply');await pop.getByRole('alert').filter({hasText:'draft has further changes'}).waitFor();assert.equal(await page.locator('#interaction-comment').inputValue(),'Additional unsent wording');assert.equal((await view(store,alice)).workspace.discussions.filter(r=>r.interaction?.version===7).length,2,'Further typing never duplicates an acknowledged reply');
  console.log('Edited interaction retries acknowledge lost saves, preserve concurrent drafts, and never discard further typing or duplicate revisions.');
 }catch(error){await mkdir('build/design-review',{recursive:true});for(const page of browser.contexts().flatMap(c=>c.pages())){await page.screenshot({path:'build/design-review/interaction-retry-failure.png',fullPage:true});console.error((await page.locator('body').innerText()).slice(-4000));}throw error;}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

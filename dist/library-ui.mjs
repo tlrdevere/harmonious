@@ -98,6 +98,7 @@ export class LibraryUI{
   }
   openSource(id,nodeId=null){if(!this.c.showMode('discover'))return false;this.c.participation.openMap(id,nodeId);this.route({source:id,...(nodeId?{node:nodeId}:{})});return true;}
   createComparison(mapId=null,nodeId=null,otherMapId=null){
+    if(this.c.discussion?.dialogue?.active&&!this.c.discussion.dialogue.close())return;
     if(!this.c.showMode('compare')||!this.c.canLeaveComparison()||!this.c.argument.canLeave())return;
     this.c.argument.reset();this.c.clearComparison();this.c.activeComparisonPair=null;
     this.c.sides={a:{mapId,nodeId},b:{mapId:otherMapId,nodeId:null}};this.c.populateMaps();this.c.renderComparison(true);this.c.setComparisonRoute();

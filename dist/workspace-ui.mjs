@@ -63,6 +63,7 @@ export class WorkspaceController{
   showMode(mode){
     if(mode==='individual'&&!this.activeMap()){this.library.section='maps';mode='library';}
     if(mode===this.mode)return true;
+    if(this.discussion?.dialogue?.active&&!this.discussion.dialogue.close({route:false}))return false;
     if(this.discussion?.dirty&&!this.discussion.canLeave())return false;
     if(this.discussion)this.discussion.host.hidden=true;
     const paired=['compare','argument'].includes(this.mode)&&['compare','argument'].includes(mode);
@@ -89,7 +90,7 @@ export class WorkspaceController{
     }
     this.canvas.setMaps(Object.fromEntries(['a','b'].map(side=>[side,{...this.sides[side],map:this.workspace.maps.find(m=>m.id===this.sides[side].mapId),frame:ui(`compare-frame-${side}`).value}])),this.recordsForActivePair().map(record=>({...record,needsReview:comparisonHealth(this.workspace,record).needsReview,consensus:comparisonConsensus(this.workspace,record)})),this.editingRecord,{fit});
     this.renderRecords();this.refreshStages();const selected=this.editingRecord&&this.workspace.comparisons.find(c=>c.id===this.editingRecord);this.renderConsensus(selected);
-    this.library?.context();
+    this.library?.context();this.discussion?.dialogue?.refresh();
   }
   recordsForActivePair(){return this.activeComparisonPair?this.workspace.comparisons.filter(record=>comparisonPairKey(record)===this.activeComparisonPair):this.workspace.comparisons;}
   mapName(id){return this.workspace.maps.find(map=>map.id===id)?.name||'Unavailable map';}
@@ -132,6 +133,7 @@ export class WorkspaceController{
   }
   openComparisonRoute(){
     if(!this.ready)return;
+    const dialogue=this.discussion?.dialogue;if(dialogue?.active&&!dialogue.close({route:false})){history.replaceState(null,'',dialogue.url(dialogue.selected));return;}
     if(this.library?.openRoute())return;
     const route=new URLSearchParams(location.hash.slice(1)),id=route.get('comparison');if(!id)return;
     const thread=this.workspace.comparisonThreads?.find(item=>item.id===id),legacy=this.workspace.comparisons.find(item=>item.id===id);
@@ -139,6 +141,8 @@ export class WorkspaceController{
     if(!this.showMode('compare'))return;
     const proposal=this.workspace.comparisons.find(item=>item.id===route.get('proposal')&&item.comparisonId===id)||(!thread?legacy:null);
     if(proposal)this.openRecord(proposal.id);else this.openComparisonPair(comparisonPairKey(thread));
+    if(route.get('view')==='dialogue'){this.discussion.dialogue.open({type:'node',mapId:route.get('map'),nodeId:route.get('node')},{entry:route.get('entry'),route:false});}
+    else if(!proposal&&route.get('view')==='argument')this.discussion.reasoning.setFocus('argument');
     if(proposal&&route.get('view')==='argument')this.argument.open({proposalId:proposal.id,revision:Number(route.get('revision'))});
   }
   async ensureComparison(){

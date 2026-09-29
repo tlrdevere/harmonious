@@ -1,3 +1,4 @@
+import {validateDialogueTargets} from './argument-dialogue.mjs';
 import {counterpartResponseActions,counterpartRecords,counterpartLinks,counterpartLinkProblem,sameCounterpartPair,sameCounterpartSource} from './counterparts.mjs';
 import {validateDefinitionReferences,canInvokeDefinitions} from './definitions.mjs';
 import {graphEdges} from './model.mjs';
@@ -120,7 +121,7 @@ export function validateDiscussions(ws){
     }
     for(const id of path)checked.add(id);
   }
-  validatePremises(ws);validateReflections(ws);return ws;
+  validatePremises(ws);validateReflections(ws);validateDialogueTargets(ws);return ws;
 }
 export function validateDiscussionEdit(ws,old,r,actor,{newRecordIds=[]}={}){
   if(r.authorId!==actor)throw Error('Only the author can change this contribution.');
@@ -205,7 +206,7 @@ export function makeDiscussion(ws,input,actor,old=null){
   const r={id:old?.id||((isAdoptionReceipt(input)||['interaction','counterpart_unlink'].includes(input.kind))&&input.id)||`discussion-${crypto.randomUUID()}`,authorId:actor,comparisonId:input.kind==='context'?null:input.comparisonId,kind:input.kind,action:input.action,target:input.target,other:input.other||null,body,targetLabel:old?.targetLabel||discussionTargetLabel(ws,input.target),layer:input.layer||null,status:input.status||'active',createdAt:old?.createdAt||now,updatedAt:now,version:(old?.version||0)+1,history:old?[...history,prior]:[]};
   if(input.unlinkedRecordIds!==undefined)r.unlinkedRecordIds=structuredClone(input.unlinkedRecordIds);
   if(input.kind==='interaction')r.interaction=input.status==='withdrawn'&&old&&discussionEqual(input.interaction,old.interaction)?structuredClone(old.interaction):makeInteraction(ws,{...input,...(input.interaction||old?.interaction||{})},actor);
-  if(r.interaction?.version===6){
+  if([6,7].includes(r.interaction?.version)){
     // Keep observed conversation order when participant clocks differ.
     const earlier=old?[old]:ws.discussions.filter(e=>e.comparisonId===r.comparisonId&&(e.id===r.target.entryId||e.kind==='interaction'&&e.action==='respond'&&e.target.entryId===r.target.entryId));
     const latest=earlier.reduce((time,e)=>Math.max(time,Date.parse(old?e.updatedAt:e.createdAt)||0),0);
