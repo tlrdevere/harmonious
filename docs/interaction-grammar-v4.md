@@ -2,6 +2,12 @@
 
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
+## September 29 four-category Argument follow-up
+
+The [four-category plan](argument-four-categories-plan.md) is implemented and undergoing release verification. New disputes use grammar metadata version **5**, with exactly **Factual basis**, **Reasoning**, **Consequences** and **Feasibility**. The four choices are multi-select, at least one is required, and optional comment/reference controls remain. This supersedes the frame-specific Base/Add-on/Other dispute menus below for new authoring. Version 4 remains the historical catalog; the other modes and existing response outcomes retain their grammar and behavior.
+
+New disputes do not infer Signals. Earlier records/revisions retain their exact labels, tags and text. Editing an earlier dispute requires explicit new category selection; previous grounds and wording remain available in Earlier versions. Version-aware client, Worker and database validation preserve compatibility, and obsolete tabs receive the existing draft-preserving refresh prompt. No argument-resolution or automatic assessment/map changes are introduced. See deployment status for publication.
+
 ## September 29 counterpart controls and assessments
 
 The [joined-card and overview follow-up](agreement-overview-plan.md) **shipped in Worker 53**, after all 53 local and 53 hosted checks and public verification. It adds derived display states without introducing a new stance or shared source record. Mutual agreement visually joins two originals; different explicit positions, no position, absent assessments and review-required sources remain distinct. A zoomed-out presentation preserves source coordinates and source-edge identity across shared modes. Deployment status records publication.

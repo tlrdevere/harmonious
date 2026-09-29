@@ -1,6 +1,18 @@
 # Harmonious: what to check on your next visit
 
-## First check: joined agreement cards and overview
+## First check: four-category Argument
+
+See [deployment status](deployment-status.md) for publication, then refresh both PCs.
+
+- [ ] In Argument, select the other person's node in SQ, TA and GS, including a cited node. **Dispute reasoning** offers exactly Factual basis, Reasoning, Consequences and Feasibility, with no preselection, Other or submenus.
+- [ ] Send with no category: the form should ask for at least one and keep the draft. Send with one or several categories, with and without an explanation/reference.
+- [ ] Repeat on a typed connection. Its actual endpoints remain the target; organizational branches and frame containers offer no dispute.
+- [ ] Reload the other account, open the dispute, and Respond. Return to the first account and read the response. Both maps, comparison assessments and counterpart links remain unchanged; no resolution is required or inferred.
+- [ ] Check selected categories in the detail, Conversations preview and Find. Use keyboard controls, a narrow window and a portable comparison file.
+- [ ] Open an earlier dispute: its original grounds remain readable. Edit it: exactly four new categories appear with none selected, and earlier Other wording remains in the comment. Cancel without changing the saved record. Save an explicit category selection and inspect Earlier versions.
+- [ ] Leave an unfinished form, switch modes and return. Check draft retention and blank-click dismissal. An obsolete tab that cannot handle the new records should request a refresh while preserving unsaved work.
+
+## Continuing check: joined agreement cards and overview
 
 This update is **live in Worker 53**, after all 53 local and 53 hosted checks and public verification. See [deployment status](deployment-status.md), then refresh both PCs.
 
@@ -107,7 +119,7 @@ These controls shipped in **Worker 46** after all 46 local and 46 hosted checks 
 These checks from Worker 45 remain useful after reloading the current release recorded in [deployment status](deployment-status.md).
 
 - [ ] Open **View source map** and expand nodes with reason/cause connections, including one across frames. Connections should retain their direction and saved meanings, with one route per actual pair and read-only detail. Close/Escape and narrow-window inspection should remain usable.
-- [ ] On disposable source nodes, edit a saved dispute after the other participant changes its frame or removes its citation. Incompatible saved grounds should appear under **Earlier choices**, with an explanation requiring you to clear them before saving current choices. Earlier revisions should retain the original grounds.
+- [ ] On disposable source nodes, edit a saved dispute after the other participant changes its frame or removes its citation. New four-category disputes retain their selected categories; older disputes require explicit current-category selection. Review the changed source before saving; earlier revisions retain their original grounds.
 - [ ] Delete a disposable branch using **More actions → Delete branch**. Cancel should retain it; confirming deletion should close its old menu and return keyboard focus to the surviving parent.
 - [ ] When importing a backup as private copies, another author's confidence should be unassessed on your new copy. Your own backup scores, including zero, should remain yours.
 - [ ] Older topic, question and explainer nodes should have no confidence editor in any view. After the menu cleanup, ordinary nodes expose their persistent confidence slot instead of a menu action.
@@ -153,9 +165,9 @@ See [deployment status](deployment-status.md) for publication. Reload both PCs b
 Reload both PCs after the current release, then open a shared comparison. Use fresh maps if you want a clean start.
 
 - [ ] **Map/Create:** add ordinary children and choose the reason-to-parent relationship when appropriate. A reason should connect toward its conclusion, with one visible edge per pair. Try reason, cause, addresses and enables through **Inspect details → Connections → Connect existing node**.
-- [ ] **Compare:** select the other person's node and record Endorse, Disagree, or No position. It should appear as an attributed attachment without automatically editing either map or requiring a co-sign.
+- [ ] **Compare:** select the other person's node and record Agree, Disagree, or No position. It should appear as an attributed attachment without automatically editing either map or requiring a co-sign.
 - [ ] **Inquiry:** try Request reason, Request explanation, Propose alternative, and Offer reason. The other account should receive Respond in Inquiry; the sender should not have that response control.
-- [ ] **Argument:** choose Dispute reasoning on each frame and a typed connection. Check that the available grounds match the source, citation grounds appear only for cited nodes, Other opens a text field, and internal Signals are absent.
+- [ ] **Argument:** choose Dispute reasoning on each frame and a typed connection. Check the same four categories in each: Factual basis, Reasoning, Consequences and Feasibility. New disputes have no citation add-on or Other checkbox.
 - [ ] Submit a dispute with only one selected ground. Try optional comments and one optional node reference. Choosing an existing reference should not copy it; explicitly creating a reference node should add it to your own map.
 - [ ] Respond with one outcome. Accept alone should leave maps unchanged. Use a separate Review/Apply action to make an owned copy, add a reason, or revise your own wording. Copied nodes should default to their original frame.
 - [ ] Collapse a branch and reopen its attached interactions. Switch modes while drafting and return to the draft. Check that the controls remain usable in a narrower window.

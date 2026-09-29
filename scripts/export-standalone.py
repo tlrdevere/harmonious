@@ -16,7 +16,7 @@ for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mj
         names='capturePremise,premiseScope,premiseHealth,validatePremises,validatePremiseEdit,premiseChoices'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='interaction-grammar.mjs':
-        names='INTERACTION_ACTIONS,INTERACTION_DISPUTES,INTERACTION_CHOICES,interactionActions,interactionLabel,interactionMode,interactionSource,interactionClassification,optionsForClassification,interactionOptions,interactionRecipient,canRespondInteraction,interactionReferenceChoices,interactionReference,interactionHealth,makeInteraction,validateInteractionRecord,validateInteractionEdit'
+        names='ARGUMENT_CATEGORIES,INTERACTION_ACTIONS,INTERACTION_DISPUTES,INTERACTION_CHOICES,interactionActions,interactionLabel,interactionMode,interactionSource,interactionClassification,optionsForClassification,interactionOptions,interactionRecipient,canRespondInteraction,interactionReferenceChoices,interactionReference,interactionHealth,makeInteraction,validateInteractionRecord,validateInteractionEdit'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='interaction-presentation.mjs':
         names='entryMode,interactionCategory,isConversationRoot,interactionPresentation,conversationThreads,searchInteractions,nodeAssessment,counterpartAssessment,counterpartDisplay'

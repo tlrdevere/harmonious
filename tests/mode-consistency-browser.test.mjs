@@ -1,3 +1,4 @@
+import {makeInteraction} from '../dist/interaction-grammar.mjs';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {mkdir,readFile} from 'node:fs/promises';
@@ -37,6 +38,8 @@ const bSource={type:'node',mapId:bMap.id,nodeId:ids['Daytime meeting']};
 const {comparisonThread:thread}=await startAccountComparison(store,alice.id,{aMapId:aMap.id,bMapId:bMap.id});
 const seed=async(actor,input)=>{
   let record;
+  // Seed genuine historical grounds directly, before exercising current UI writes.
+  if(input.kind==='interaction'&&input.action==='dispute'){const ws=(await view(store,actor)).workspace,snapshot=await store.snapshot();record=makeDiscussion(ws,{comparisonId:thread.id,...input,interaction:{...input.interaction,options:['reasoning'],otherText:''}},actor.id);record.interaction=makeInteraction(ws,{comparisonId:thread.id,...input,...input.interaction},actor.id,4);await store.commit(actor.id,snapshot.revision,[{kind:'discussion',id:record.id,expectedRevision:0,value:record}]);return record;}
   await edit(store,actor,ws=>{record=makeDiscussion(ws,{comparisonId:thread.id,...input},actor.id);ws.discussions.push(record);});
   return record;
 };
@@ -371,25 +374,23 @@ try{
   // invisible selected options. Reconcile them explicitly and preserve history.
   await edit(store,bob,ws=>{const map=ws.maps.find(m=>m.id===bMap.id),source=map.nodes.find(n=>n.id===bSource.nodeId);source.parent='goal';source.sourceTitle='';source.sourceUrl='';map.relations.find(edge=>edge.id==='survey-reason').type='cause';synchronizeIdeas(ws,map);});
   await load(a);await open(a,dispute.id,'argument');await click(a,'Edit');
-  const earlierChoices=pop(a).getByRole('group',{name:'Earlier choices',exact:true});
-  assert(await earlierChoices.getByRole('checkbox',{name:"It's false",exact:true}).isChecked());
-  assert(await earlierChoices.getByRole('checkbox',{name:'The data is outdated',exact:true}).isChecked());
-  assert.match(await pop(a).innerText(),/The source changed since this interaction was saved/);
-  await pop(a).locator('input[value="other"]').uncheck();await pop(a).locator('input[value="unachievable"]').check();
-  await a.locator('#interaction-comment').fill('Updated after reviewing the changed source.');await click(a,'Save changes');
-  assert.equal(await pop(a).getByRole('alert').innerText(),'Clear the earlier choices that are no longer offered for this source before saving.');
-  assert.equal((await view(store,alice)).workspace.discussions.find(r=>r.id===dispute.id).version,dispute.version,'Earlier choices are not silently discarded or saved');
-  await earlierChoices.getByRole('checkbox',{name:"It's false",exact:true}).uncheck();await earlierChoices.getByRole('checkbox',{name:'The data is outdated',exact:true}).uncheck();
-  await click(a,'Save changes');await button(a,'Edit').waitFor();
+  assert.match(await pop(a).innerText(),/earlier dispute choices/);
+  assert.match(await pop(a).innerText(),/It's false/);assert.match(await pop(a).innerText(),/The data is outdated/);
+  assert.equal(await pop(a).locator('input[name="interaction-option"]').count(),4);
+  assert.equal(await pop(a).locator('input[name="interaction-option"]:checked').count(),0,'Legacy choices do not silently map to broad categories');
+  assert.equal(await a.locator('#interaction-comment').inputValue(),dispute.interaction.otherText,'Earlier Other wording remains visible in the draft');
+  await click(a,'Save changes');assert.match(await pop(a).getByRole('alert').innerText(),/at least one/);
+  assert.deepEqual((await view(store,alice)).workspace.discussions.find(r=>r.id===dispute.id),dispute,'An unsuccessful conversion preserves the original');
+  a.once('dialog',d=>d.accept());await close(a);await open(a,dispute.id,'argument');await click(a,'Edit');
+  await pop(a).locator('input[value="feasibility"]').check();await a.locator('#interaction-comment').fill('Updated after reviewing the changed source.');await click(a,'Save changes');await button(a,'Edit').waitFor();
   const revisedDispute=(await view(store,alice)).workspace.discussions.find(r=>r.id===dispute.id);
-  assert.deepEqual(revisedDispute.interaction.options,['unachievable']);assert.equal(revisedDispute.interaction.classification.frame,'goal');assert.equal(revisedDispute.interaction.classification.hasSource,false);
-  assert.deepEqual(revisedDispute.history.at(-1).interaction,dispute.interaction,'The earlier revision retains its original grounds and classification');
-  await open(a,edgeDispute.id,'argument');await click(a,'Edit');
-  assert(await earlierChoices.locator('input[value="circular"]').isChecked());await pop(a).locator('input[value="correlation"]').check();
-  await click(a,'Save changes');assert.match(await pop(a).getByRole('alert').innerText(),/Clear the earlier choices/);
-  await earlierChoices.locator('input[value="circular"]').uncheck();await click(a,'Save changes');await button(a,'Edit').waitFor();
+  assert.deepEqual(revisedDispute.interaction.options,['feasibility']);assert.equal(revisedDispute.interaction.version,5);assert.equal(revisedDispute.interaction.classification.frame,'goal');
+  assert.deepEqual(revisedDispute.history.at(-1).interaction,dispute.interaction);
+  await pop(a).getByText('Earlier versions',{exact:true}).click();assert.match(await pop(a).locator('.interaction-history').innerText(),/It's false/);assert.match(await pop(a).locator('.interaction-history').innerText(),/The attendance estimate omits remote participants/);
+  await open(a,edgeDispute.id,'argument');await click(a,'Edit');assert.match(await pop(a).innerText(),/The reason assumes the conclusion/);
+  await pop(a).locator('input[value="reasoning"]').check();await click(a,'Save changes');await button(a,'Edit').waitFor();
   const revisedEdge=(await view(store,alice)).workspace.discussions.find(r=>r.id===edgeDispute.id);
-  assert.deepEqual(revisedEdge.interaction.options,['correlation']);assert.equal(revisedEdge.interaction.classification.edgeType,'cause');assert.deepEqual(revisedEdge.history.at(-1).interaction,edgeDispute.interaction);
+  assert.deepEqual(revisedEdge.interaction.options,['reasoning']);assert.equal(revisedEdge.interaction.classification.edgeType,'cause');assert.deepEqual(revisedEdge.history.at(-1).interaction,edgeDispute.interaction);
   await edit(store,bob,ws=>{const map=ws.maps.find(m=>m.id===bMap.id);map.relations=map.relations.filter(edge=>edge.id!=='survey-reason');});
   await load(a);await open(a,edgeDispute.id,'argument');await click(a,'Edit');
   assert.match(await pop(a).innerText(),/This source no longer offers dispute choices/);assert.equal(await button(a,'Save changes').count(),0,'A removed connection does not offer an impossible edit');

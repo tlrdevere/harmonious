@@ -47,12 +47,14 @@ export class InteractionUI{
     const target=old?.target||d.target,ws=this.c.workspace,parent=target.type==='entry'?ws.discussions.find(r=>r.id===target.entryId):null;
     const mode=old?interactionMode(old):action==='respond'?interactionMode(parent):d.mode();
     d.activateMode(mode);d.target=target;d.shell(old?'Edit '+interactionLabel(old):interactionLabel(action));
-    const form=interactionEl('form','','interaction-form'),choices=interactionOptions(ws,target,action,parent),selected=new Set(old?.interaction.options||[]);
+    const converting=action==='dispute'&&old?.interaction.version===4;
+    const form=interactionEl('form','','interaction-form'),choices=interactionOptions(ws,target,action),selected=new Set(converting?[]:old?.interaction.options||[]);
     if(old&&action==='dispute'&&!choices.length){d.host.append(interactionEl('p','This source no longer offers dispute choices. You can keep the saved interaction or withdraw it from its details.','review-warning'),interactionButton('Back to interaction',()=>this.open(old.id)));d.positionPopover();return;}
     const reviewed=discussionSourceSnapshot(ws,target),recordId=old?.id||'discussion-'+crypto.randomUUID(),nodeId='node-'+crypto.randomUUID();
     let stagedEdit=null,stagedDraft=null;
     form.append(interactionEl('p',`About: ${discussionTargetLabel(ws,target)}`,'discussion-target-note'));
-    const previousChoices=old?optionsForClassification(old.interaction.classification,action):[],earlierChoices=[...selected].filter(id=>!choices.some(option=>option.id===id)).map(id=>previousChoices.find(option=>option.id===id)||{id,label:id.replaceAll('_',' ')});
+    const previousChoices=old?optionsForClassification(old.interaction.classification,action,old.interaction.version):[],earlierChoices=[...selected].filter(id=>!choices.some(option=>option.id===id)).map(id=>previousChoices.find(option=>option.id===id)||{id,label:id.replaceAll('_',' ')});
+    if(converting){form.append(interactionEl('p','This argument used the earlier dispute choices. Choose one or more current categories to save an edit. Its previous wording and choices stay in history.','review-warning'),interactionEl('p','Earlier choices: '+old.interaction.options.map(id=>previousChoices.find(o=>o.id===id)?.label||id).join(' · '),'field-help'));}
     const groups=new Map();if(earlierChoices.length){form.append(interactionEl('p','The source changed since this interaction was saved. Clear the earlier choices below before saving an updated interaction. The previous version keeps its original choices.','review-warning'));groups.set('Earlier choices',earlierChoices);}
     for(const option of choices){const group=option.group||'Options';if(!groups.has(group))groups.set(group,[]);groups.get(group).push(option);}
     const other=interactionEl('textarea');other.rows=3;other.maxLength=10000;other.value=old?.interaction.otherText||'';const otherWrap=interactionEl('div');interactionField(otherWrap,'Other',other,'interaction-other');
@@ -62,7 +64,7 @@ export class InteractionUI{
       form.append(fieldset);
     }
     form.append(otherWrap);syncOther();
-    const comment=interactionEl('textarea');comment.rows=3;comment.maxLength=10000;comment.value=old?.body||'';interactionField(form,action==='propose_alternative'?'Proposed wording or comment (optional)':'Comment (optional)',comment,'interaction-comment');
+    const comment=interactionEl('textarea');comment.rows=3;comment.maxLength=10000;comment.value=converting?[old.body,old.interaction.otherText].filter(Boolean).join('\n\n'):old?.body||'';interactionField(form,action==='propose_alternative'?'Proposed wording or comment (optional)':'Comment (optional)',comment,'interaction-comment');
     const refs=interactionReferenceChoices(ws,d.thread()?.id),reference=interactionEl('select');reference.append(new Option('No node reference',''));
     for(const r of refs)reference.append(new Option(`${r.mapName} · ${r.label}`,JSON.stringify(r.target)));
     reference.append(new Option('Create a node in my map…','new'));
@@ -113,7 +115,7 @@ export class InteractionUI{
     d.activateMode(interactionMode(r));d.target={type:'entry',entryId:id};d.shell(interactionPresentation(this.c.workspace,r).label);d.viewId=id;
     d.host.append(interactionEl('p',`${d.name(r.authorId)} · ${r.targetLabel}`,'discussion-byline'));
     const parent=r.target.type==='entry'?this.c.workspace.discussions.find(p=>p.id===r.target.entryId):null;
-    const choices=optionsForClassification(r.interaction.classification,r.action),labels=new Map(choices.map(o=>[o.id,o.label]));
+    const choices=optionsForClassification(r.interaction.classification,r.action,r.interaction.version),labels=new Map(choices.map(o=>[o.id,o.label]));
     for(const option of r.interaction.options)d.host.append(interactionEl('p',labels.get(option)||option.replaceAll('_',' '),'interaction-selected'));
     if(r.interaction.otherText)d.host.append(interactionEl('p',r.interaction.otherText,'discussion-body'));if(r.body)d.host.append(interactionEl('p',r.body,'discussion-body'));
     if(r.interaction.reference){const ref=r.interaction.reference,accessible=interactionReferenceChoices(this.c.workspace,r.comparisonId).some(choice=>stableJSON(choice.target)===stableJSON(ref.target));const box=interactionEl('section','','interaction-reference-preview');box.append(interactionEl('strong','Referenced node'));if(accessible)box.append(interactionEl('p',ref.snapshot.label),interactionButton('Show referenced node',()=>{if(d.canLeave())this.c.library.openSource(ref.target.mapId,ref.target.nodeId);}));else box.append(interactionEl('p','Reference no longer available','field-help'));d.host.append(box);}
@@ -122,6 +124,7 @@ export class InteractionUI{
     if(r.status==='withdrawn')d.host.append(interactionEl('p','Withdrawn','discussion-state'));
     const replies=d.allEntries().filter(reply=>reply.kind==='interaction'&&reply.action==='respond'&&reply.target.entryId===id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id));
     if(replies.length){d.host.append(interactionEl('h3','Responses'));for(const reply of replies){const row=this.row(reply);if(reply.id===selectedResponse){row.setAttribute('aria-current','true');row.dataset.selectedResponse=reply.id;}d.host.append(row);}}
+    if(r.action==='dispute'&&r.history.length){const history=interactionEl('details','','interaction-history');history.append(interactionEl('summary','Earlier versions'));for(const revision of r.history){const section=interactionEl('section'),presentation=interactionPresentation(this.c.workspace,revision);section.append(interactionEl('strong',`Version ${revision.version}`));for(const label of presentation.choices)section.append(interactionEl('p',label,'interaction-selected'));for(const text of [revision.interaction.otherText,revision.body].filter(Boolean))section.append(interactionEl('p',text,'discussion-body'));history.append(section);}d.host.append(history);}
     if(parent)d.host.append(interactionButton('Back to '+interactionPresentation(this.c.workspace,parent).label,()=>d.revealInteraction(parent.id),'discussion-text-action'));
     this.application.actions(r);
     if(r.status==='active'&&r.authorId===d.actor())d.actionGroup('Manage',[interactionButton('Edit',()=>this.compose(r.action,r)),interactionButton('Withdraw',()=>{if(confirm('Withdraw this interaction?'))d.save({...r,status:'withdrawn'},r);})]);

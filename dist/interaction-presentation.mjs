@@ -124,7 +124,7 @@ function present(workspace,record,context,authorName){
   const metadata=record.interaction;
   // Saved classification keeps an earlier ground intelligible when its source
   // moves frame, loses a citation, or is subsequently revised.
-  const options=record.kind==='interaction'?optionsForClassification(metadata?.classification,record.action):[];
+  const options=record.kind==='interaction'?optionsForClassification(metadata?.classification,record.action,metadata?.version):[];
   const choices=(metadata?.options||[]).map(id=>options.find(option=>option.id===id)?.label||readable(id));
   const actionLabel=interactionLabel(record),label=record.kind==='interaction'?(response?(choices[0]||'Response'):actionLabel==='Interaction'?readable(record.action):actionLabel):DISCUSSION_LABELS[record.action]||readable(record.action);
   const anchorRecord=parentTarget(anchor)?context.byId.get(anchor.entryId):null;
