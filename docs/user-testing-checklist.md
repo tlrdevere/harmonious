@@ -1,8 +1,8 @@
 # Harmonious: what to check on your next visit
 
-## Pending release: test accounts without email
+## Next check: test accounts without email
 
-Check [deployment status](deployment-status.md) before testing this feature.
+**Live in Worker 59**, after all 57 local and hosted checks and public verification. Refresh your organizer account first; see [deployment status](deployment-status.md).
 
 - [ ] As the organizer, open the account menu → **Test accounts**. Create a unique username/display name and copy the generated login details.
 - [ ] In another browser, choose **Use a test account**. Sign in with those details without supplying an email or entering a verification code. Reload and confirm the same account and maps return.

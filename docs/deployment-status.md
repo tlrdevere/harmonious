@@ -2,11 +2,21 @@
 
 Updated September 29, 2026 (UTC).
 
-## Verified work awaiting organizer identity
-
-[Test accounts without email](test-accounts.md), source `2732cadcfca151befbc4c14726a514d0234311da`, are committed and pushed with **57/57 local and 57/57 hosted checks passed**. They have **not been deployed**: the owner must identify their existing Harmonious account before its verified user UUID is assigned to `TEST_ACCOUNT_ADMIN_ID`. Worker 58 below remains live. No production accounts, database schema or authorization settings have changed. After assignment, publish the verified build and check the live account flows. See [hosted verification](https://github.com/tlrdevere/harmonious/actions/runs/36605059365) and `build/test-accounts-release-evidence.json`.
-
 ## Current release
+
+Organizer-created test accounts deployed September 29, 2026 at **17:38:20 UTC** (1:38 p.m. in New York). Release source: `2732cadcfca151befbc4c14726a514d0234311da` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **59**: `5274d6d1-a571-4f42-aba9-c6d50534d876`, serving **100%** of traffic. Deployment: `aef08359-3943-42e4-bbae-3c640643db46`.
+- The organizer's account menu offers **Test accounts**: create a display name/username, copy a generated password, and replace forgotten passwords for test accounts. Testers select **Use a test account** and enter username/password without email or verification codes. Each account retains ordinary participant permissions and its own private starting map. Email-code accounts retain verification. See [test-account instructions](test-accounts.md).
+- The owner identified their sign-in email; a read-only Auth query matched exactly one confirmed, non-test account. Its user ID was assigned to `TEST_ACCOUNT_ADMIN_ID` and verified in the uploaded version before deployment. Only this server-side ID grants creation/list/reset access; user-editable metadata cannot grant it. All eight existing encrypted bindings and runtime settings were inherited unchanged.
+- **57/57 local release checks passed**: `build/verification/2026-09-29T17-25-29-969Z-103684/summary.json`, using Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge. Tests include owner boundaries, reserved identity/metadata checks, create/sign-in/reset, duplicate and invalid credentials, secure cookies, reload, private workspaces, email-sign-in regressions, credential clearing and narrow screens. Desktop and narrow captures passed visual review.
+- **57/57 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36605059365), complete at **17:31:35 UTC**. Runtime: Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/test-accounts-hosted-verification-evidence.json`.
+- Public verification confirms all **57 client files** and the homepage match the tested checkout, with sign-in configuration, account denial, private-file denial and security headers passing. Additional live checks confirm anonymous visitors cannot list/create via the authenticated administration routes, reset is denied while signed out, cross-origin test login is rejected, and missing credentials are validated. Evidence: `build/test-accounts-live-access.json` and `build/test-accounts-release-evidence.json`, verified at **17:39 UTC**. Worker SHA-256: `987812f046da7d5bb99868d887c22de3027472ad3bd174f74c53719b6cdc93aa`.
+- No application database migration or production test-account writes were performed. Creation/login/reset flows were tested through real application routes with an isolated Auth fixture; live production verification did not create credentials. Security advisors retain only the existing service-only-table notices and [disabled leaked-password protection notice](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
+
+**Refresh Harmonious, open your account menu, and select Test accounts.** Give each tester separate login details. Worker 58 preserves existing maps/discussions as a rollback, but lacks test-account access; restore Worker 59 to re-enable those logins. Release-note commits after the source revision change documentation only.
+
+## Preceding node-dialogue release
 
 Node-focused Argument dialogue deployed September 29, 2026 at **17:06:42 UTC** (1:06 p.m. in New York). Release source: `b58c121405f9fdd8a40d54706516a58b0d5fd089` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
