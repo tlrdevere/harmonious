@@ -26,7 +26,7 @@ const history=textOf(elements.get('comparison-snapshot-content'));
 assert(history.includes('First person’s reasoning')&&history.includes('Second person’s reasoning'),'Review must expose both people’s reasoning');
 const updatedWorkspace=structuredClone(workspace);
 updatedWorkspace.comparisons=[recordComparison(updatedWorkspace,{...input,notes:'Updated on another device'},shared,b.ownerId)];
-const account={controller,actor:{id:b.ownerId}};
+const account={controller,actor:{id:b.ownerId},renderAccountName:AccountWorkspace.prototype.renderAccountName};
 AccountWorkspace.prototype.accept.call(account,{workspace:updatedWorkspace,revisions:{},ownedKeys:[],actor:account.actor});
 assert.equal(elements.get('comparison-notes').value,'Updated on another device','A clean open form must refresh with the saved judgment');
 assert.equal(controller.editingRecord,shared.id,'Refreshing preserves the selected proposal');

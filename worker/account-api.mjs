@@ -73,6 +73,11 @@ export async function startAccountComparison(store,actorId,input,{reasoningCapab
   }
   throw new AccountError('This comparison is being opened in another session. Try again.',409);
 }
+async function currentTestAccountNames(store,result){
+  const profiles=new Map((await store.snapshot()).records.filter(r=>r.kind==='profile').map(r=>[r.id,r.value.name]));
+  const current=account=>({...account,name:profiles.get(account.id)||account.name});
+  return {...result,...(result.accounts?{accounts:result.accounts.map(current)}:{}),...(result.account?{account:current(result.account)}:{})};
+}
 export async function handleAccountAPI(request,env,dependencies={}){
   const path=new URL(request.url).pathname,declared=(request.headers.get('X-Harmonious-Capabilities')||'').split(/[\s,]+/),capabilities={reasoningCapable:declared.includes(REASONING_CAPABILITY),adoptionCapable:declared.includes(ADOPTION_CAPABILITY),premiseCapable:declared.includes(PREMISE_CAPABILITY),reflectionCapable:declared.includes(REFLECTION_CAPABILITY),interactionCapable:declared.includes(INTERACTION_CAPABILITY),counterpartCapable:declared.includes(COUNTERPART_CAPABILITY),argumentCapable:declared.includes(ARGUMENT_CAPABILITY),repliesCapable:declared.includes(REPLIES_CAPABILITY),dialogueCapable:declared.includes(DIALOGUE_CAPABILITY)};let cookies=[];
   if(!accountConfiguration(env))return accountResponse({error:'Sign-in is being set up. Please return soon.',configured:false},503);
@@ -88,9 +93,9 @@ export async function handleAccountAPI(request,env,dependencies={}){
     const session=await auth.identify(request);cookies=session.cookies;
     if(path==='/api/session'&&request.method==='GET')return accountResponse({actor:session.actor?{id:session.actor.id,name:session.actor.name}:null,canManageTestAccounts:canManageTestAccounts(env,session.actor),configured:true,signup:accountSignupConfiguration(env)},200,cookies);
     if(!session.actor)throw new AccountError('Sign in to open your maps.',401);
-    if(path==='/api/admin/test-accounts'&&request.method==='GET')return accountResponse(await new TestAccounts(auth).list(session.actor,Number(new URL(request.url).searchParams.get('page')||1)),200,cookies);
+    if(path==='/api/admin/test-accounts'&&request.method==='GET')return accountResponse(await currentTestAccountNames(store,await new TestAccounts(auth).list(session.actor,Number(new URL(request.url).searchParams.get('page')||1))),200,cookies);
     if(path==='/api/admin/test-accounts'&&request.method==='POST')return accountResponse(await new TestAccounts(auth).create(session.actor,await accountBody(request,4096)),201,cookies);
-    if(path==='/api/admin/test-accounts/reset'&&request.method==='POST')return accountResponse(await new TestAccounts(auth).reset(session.actor,await accountBody(request,4096)),200,cookies);
+    if(path==='/api/admin/test-accounts/reset'&&request.method==='POST')return accountResponse(await currentTestAccountNames(store,await new TestAccounts(auth).reset(session.actor,await accountBody(request,4096))),200,cookies);
     if(path==='/api/workspace'&&request.method==='GET')return accountResponse(await accountWorkspace(store,session.actor,capabilities),200,cookies);
     if(path==='/api/comparisons'&&request.method==='POST')return accountResponse(await startAccountComparison(store,session.actor.id,await accountBody(request,4096),capabilities),200,cookies);
     if(path==='/api/workspace'&&request.method==='PUT'){const input=await accountBody(request);return accountResponse(await saveAccountChanges(store,session.actor.id,input.changes,capabilities),200,cookies);}

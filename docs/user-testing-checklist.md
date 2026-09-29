@@ -1,5 +1,15 @@
 # Harmonious: what to check on your next visit
 
+## Next check: change your display name
+
+See [display names](display-names.md) and [deployment status](deployment-status.md) for the current release.
+
+- [ ] Open account menu → **Change display name**, save a new name and reload. Confirm the new name appears on existing maps, comparisons and Argument dialogue.
+- [ ] Refresh a second participant's account and confirm it sees the updated author name. Existing maps, links and messages should remain intact.
+- [ ] Try Cancel and a blank name. Cancel should keep the old name; a blank name should show an explanation.
+- [ ] Rename a test account and check the organizer's Test accounts list. Its username/password should still work, with the new display name shown after login.
+- [ ] Leave a node or conversation draft open while changing the name; confirm the draft remains available. Check the name dialog on a narrow screen.
+
 ## Next check: test accounts without email
 
 **Live in Worker 59**, after all 57 local and hosted checks and public verification. Refresh your organizer account first; see [deployment status](deployment-status.md).

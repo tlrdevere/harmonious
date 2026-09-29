@@ -29,4 +29,14 @@ response=await handleAccountAPI(request('/api/comparisons',pair),env,{store,auth
 response=await handleAccountAPI(request('/api/comparisons',{aMapId:pair.bMapId,bMapId:pair.aMapId}),env,{store,auth:{identify:async()=>({actor:bob,cookies:[]})}});assert.equal(response.status,200);assert.equal((await response.json()).comparisonThread.id,parent.id);
 response=await handleAccountAPI(request('/api/comparisons',pair,'https://evil.example'),env,{store,auth:fakeAuth});assert.equal(response.status,403);
 response=await handleAccountAPI(request('/api/comparisons',pair),env,{store,auth:{identify:async()=>({actor:null,cookies:[]})}});assert.equal(response.status,401);
-console.log('Managed email-code auth, secure session cookies, refresh, account API, cross-origin rejection, and save retry passed.');
+const beforeRename=await store.snapshot(),profile=beforeRename.records.find(r=>r.kind==='profile'&&r.id===alice.id),rename={kind:'profile',id:alice.id,expectedRevision:profile.revision,value:{id:alice.id,name:'Alice Updated'}};
+await saveAccountChanges(store,alice.id,[rename]);
+assert.equal((await accountWorkspace(store,alice)).actor.name,'Alice Updated','The saved profile overrides the original sign-in name');
+assert.equal((await accountWorkspace(store,bob)).workspace.participants.find(p=>p.id===alice.id).name,'Alice Updated','Other participants see the current name');
+assert.deepEqual((await store.snapshot()).records.filter(r=>r.kind!=='profile'),beforeRename.records.filter(r=>r.kind!=='profile'),'Renaming does not rewrite maps, links or conversations');
+assert.equal((await saveAccountChanges(store,alice.id,[rename])).replayed,true);
+await assert.rejects(()=>saveAccountChanges(store,bob.id,[{...rename,value:{id:alice.id,name:'Not allowed'}}]),e=>e.status===403);
+await assert.rejects(()=>saveAccountChanges(store,alice.id,[{...rename,value:{id:alice.id,name:'Stale edit'}}]),e=>e.status===409);
+const revision=(await accountWorkspace(store,alice)).revisions[accountKey('profile',alice.id)];
+for(const name of ['', ' '.repeat(3),'a'.repeat(101)])await assert.rejects(()=>saveAccountChanges(store,alice.id,[{...rename,expectedRevision:revision,value:{id:alice.id,name}}]),e=>e.status===400);
+console.log('Managed email-code auth, secure session cookies, refresh, account API, cross-origin rejection, save retry and persistent owner-only display names passed.');

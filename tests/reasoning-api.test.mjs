@@ -90,7 +90,7 @@ async function exerciseReasoningAPI(){
   const originalDocument=globalThis.document;let cleared=false,resets=0;
   globalThis.document={body:{classList:{remove(){}}}};
   const privacyController={workspace:bobBefore,activeMap:()=>null,mode:'library',populateMaps(){},participation:{refresh(){}},discussion:{target:{type:'inference',entryId:child.id},host:{hidden:false,replaceChildren(){cleared=true;}},reasoning:{reset(){resets++;}}}};
-  try{assert.equal(AccountWorkspace.prototype.accept.call({actor:bob,controller:privacyController},hidden),true);assert(privacyController.discussion.host.hidden);assert(cleared);assert.equal(resets,1);assert.equal(privacyController.discussion.target,null);}finally{globalThis.document=originalDocument;}
+  try{assert.equal(AccountWorkspace.prototype.accept.call({actor:bob,controller:privacyController,renderAccountName(){}},hidden),true);assert(privacyController.discussion.host.hidden);assert(cleared);assert.equal(resets,1);assert.equal(privacyController.discussion.target,null);}finally{globalThis.document=originalDocument;}
   console.log('Reasoning capability negotiation, stale-client rejection, draft preservation, private projection and schema3 round trips passed.');
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await exerciseReasoningAPI();

@@ -64,7 +64,7 @@ export class ArgumentDialogueUI{
   if(this.scope!==this.key()||this.d.mode()!=='argument'){if(!this.d.dirty)this.close({route:false});return;}
   const source=interactionSource(this.c.workspace,this.target);
   if(!source){this.canvas.world.replaceChildren();this.heading.textContent='Source unavailable';if(!this.d.dirty){this.d.canLeave();this.detach();}this.c.message('This source is no longer available. Any unfinished reply has been kept.');return;}
-  const records=dialogueRecords(this.c.workspace,this.d.thread().id,this.target),signature=JSON.stringify([source.item,records,[...this.state.collapsed],[...this.state.expanded]]);
+  const records=dialogueRecords(this.c.workspace,this.d.thread().id,this.target),signature=JSON.stringify([source.item,records,this.c.workspace.participants,[...this.state.collapsed],[...this.state.expanded]]);
   if(!force&&signature===this.signature)return;const refreshDetail=!force&&!this.d.dirty&&!this.d.saving&&!this.d.host.hidden&&!this.d.host.querySelector('form')&&this.d.viewId;this.signature=signature;this.heading.textContent=source.item.title+' · '+this.d.name(source.map.ownerId);
   const old=this.canvas.layout?.positions.get(this.selected),focus=document.activeElement,focusId=focus?.closest('[data-dialogue-entry]')?.dataset.dialogueEntry,focusLabel=focus?.textContent;
   this.tree=dialogueTree(records,this.state.collapsed);this.canvas.world.replaceChildren();this.cards.clear();
@@ -100,4 +100,3 @@ export class ArgumentDialogueUI{
   this.d.host.style.left=Math.max(12,Math.min(canvas.surface.clientWidth-w-12,x))+'px';this.d.host.style.top=Math.max(12,Math.min(canvas.surface.clientHeight-this.d.host.offsetHeight-12,y))+'px';
  }
 }
-

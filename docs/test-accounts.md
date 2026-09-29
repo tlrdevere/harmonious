@@ -8,6 +8,8 @@ The organizer opens their account menu and selects **Test accounts**. Enter a di
 
 The tester chooses **Use a test account** on the sign-in screen and enters their username and password. Each test account has a persistent identity, private starting map and normal participant permissions. Use one account per person. Shared maps are visible to other beta participants under the existing sharing rules.
 
+Participants can use account menu → **Change display name** to update their public name. The test username and login details stay the same; the organizer's account list shows the current name. See [display names](display-names.md).
+
 The organizer can use **Reset password** beside a listed test account to generate replacement login details. The previous password stops working; this is a recovery feature, not a session-revocation or account-deletion control. Credentials are displayed temporarily in the dialog, cleared on close, and never stored in browser storage or the map workspace. Copy them before closing; forgotten passwords are replaced rather than retrieved.
 
 ## Implementation and boundaries

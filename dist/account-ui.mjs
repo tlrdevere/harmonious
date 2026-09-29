@@ -30,6 +30,10 @@ export class AccountWorkspace{
     accountUI('account-change-email').onclick=()=>{accountUI('account-code-form').hidden=true;accountUI('account-email-form').hidden=false;accountUI('account-feedback').textContent='You can request another code after a short wait.';accountUI('account-email').focus();};
     accountUI('account-signout').onclick=()=>this.signOut();
     this.testAccounts=new TestAccountsUI(this);
+    const rename=document.createElement('button');rename.id='change-display-name';rename.type='button';rename.textContent='Change display name';controls.querySelector('.account-menu-content').prepend(rename);
+    const profileDialog=document.createElement('dialog');profileDialog.id='display-name-dialog';profileDialog.className='account-settings-dialog';profileDialog.setAttribute('aria-labelledby','display-name-title');profileDialog.innerHTML='<form id="display-name-form"><h2 id="display-name-title">Change display name</h2><p>This name appears on your maps and contributions. Your login details stay the same.</p><label for="display-name-value">Display name</label><input id="display-name-value" autocomplete="nickname" maxlength="100" required><p id="display-name-error" role="status" aria-live="polite"></p><div class="dialog-actions"><button id="display-name-cancel" type="button">Cancel</button><button id="display-name-save" class="primary" type="submit">Save display name</button></div></form>';document.body.append(profileDialog);
+    rename.onclick=()=>{if(!this.actor)return;accountUI('display-name-value').value=this.actor.name;accountUI('display-name-error').textContent='';profileDialog.showModal();accountUI('display-name-value').focus();accountUI('display-name-value').select();};
+    const closeProfile=()=>{if(this.profileSaving)return;profileDialog.close();accountUI('display-name-value').value='';rename.focus();};accountUI('display-name-cancel').onclick=closeProfile;profileDialog.addEventListener('cancel',event=>{event.preventDefault();closeProfile();});accountUI('display-name-form').onsubmit=event=>{event.preventDefault();this.saveDisplayName();};
     accountUI('edit-form').addEventListener('input',()=>this.scheduleDraft());accountUI('edit-form').addEventListener('change',()=>this.scheduleDraft());
     accountUI('comparison-form').addEventListener('input',()=>this.status());accountUI('comparison-form').addEventListener('change',()=>this.status());
     window.addEventListener('online',()=>{if(this.controller.workspaceDirty&&!this.blocked)this.schedule();});
@@ -39,7 +43,7 @@ export class AccountWorkspace{
     const c=this.controller;
     c.initialize=()=>this.initialize();c.save=()=>this.save();c.status=message=>this.status(message);c.openFile=file=>this.importFile(file);
     const mark=c.markDirty.bind(c);c.markDirty=()=>{mark();if(c.ready){for(const e of c.workspace.endorsements)if(e.participantId===this.actor?.id&&!this.baseline.has(accountKey('endorsement',e.id)))e.method='authenticated';for(const m of c.workspace.maps)if(m.ownerId===this.actor?.id&&!m.visibility)m.visibility='private';this.schedule();}};
-    const load=c.loadMap.bind(c);c.loadMap=id=>{const map=c.workspace.maps.find(m=>m.id===id);if(!map||this.actor&&map.ownerId!==this.actor.id)return;load(id);if(map&&this.actor)accountUI('map-person').textContent=`${map.person} · ${map.mapType==='reference'?'Reference map':'Personal worldview'} · ${map.visibility==='shared'?'Shared with beta participants':'Only you'}`;};
+    const load=c.loadMap.bind(c);c.loadMap=id=>{const map=c.workspace.maps.find(m=>m.id===id);if(!map||this.actor&&map.ownerId!==this.actor.id)return;load(id);this.renderAccountName();};
     const populate=c.populateMaps.bind(c);c.populateMaps=()=>{populate();const picker=accountUI('map-select');picker.replaceChildren(accountOption('','Choose a map…'),...c.workspace.maps.filter(m=>m.ownerId===this.actor?.id).map(m=>accountOption(m.id,m.name)));picker.value=c.activeMapId||'';};
     const show=c.showMapDialog.bind(c);c.showMapDialog=(rename=false,options={})=>{show(rename,options);accountUI('map-owner-input').replaceChildren(accountOption(this.actor.id,this.actor.name));accountUI('map-owner-input').disabled=true;accountUI('map-person-input').value=this.actor.name;accountUI('map-person-input').required=false;accountUI('map-person-group').hidden=true;accountUI('map-owner-input').hidden=true;document.querySelector('label[for="map-owner-input"]').hidden=true;accountUI('map-visibility').value=rename?(c.activeMap().visibility||'private'):'private';};
     const submit=accountUI('map-dialog-form').onsubmit;accountUI('map-dialog-form').onsubmit=e=>{const visibility=accountUI('map-visibility').value;submit(e);if(!accountUI('map-dialog').open){c.activeMap().visibility=visibility;c.loadMap(c.activeMapId);c.markDirty();}};
@@ -62,6 +66,24 @@ export class AccountWorkspace{
       this.baseline.set(key,accountClone(thread));this.revisions[key]=result.revision;
       return thread;
     }finally{this.loading=false;if(this.controller.workspaceDirty&&!this.blocked)this.schedule();}
+  }
+  renderAccountName(){
+    if(!this.actor)return;const c=this.controller,person=c.workspace.participants.find(p=>p.id===this.actor.id);if(person)this.actor={...this.actor,name:person.name};accountUI('account-display').textContent=this.actor.name;
+    const map=c.activeMap();if(map)accountUI('map-person').textContent=`${c.workspace.participants.find(p=>p.id===map.ownerId)?.name||map.person} · ${map.mapType==='reference'?'Reference map':'Personal worldview'} · ${map.visibility==='shared'?'Shared with beta participants':'Only you'}`;
+  }
+  async saveDisplayName(){
+    const c=this.controller,name=accountUI('display-name-value').value.trim(),error=accountUI('display-name-error');
+    if(!name||name.length>100){error.textContent='Enter a display name between 1 and 100 characters.';return;}
+    if(!this.actor||this.loading||this.saving||this.blocked){error.textContent='Finish saving your earlier changes, then try again. Your name has not been changed.';return;}
+    const id=this.actor.id,key=accountKey('profile',id),value={id,name},change={kind:'profile',id,expectedRevision:this.revisions[key],value};
+    this.profileSaving=true;this.loading=true;for(const field of accountUI('display-name-form').querySelectorAll('input,button'))field.disabled=true;error.textContent='Saving display name…';
+    try{
+      const result=await this.request('/api/workspace',{changes:[change]},'PUT');
+      const person=c.workspace.participants.find(p=>p.id===id);person.name=name;this.baseline.set(key,accountClone(value));this.revisions={...this.revisions,...result.revisions};this.renderAccountName();
+      c.populateMaps();if(c.mode==='compare')c.renderComparison();if(['discover','pods'].includes(c.mode))c.participation.refresh();if(c.mode==='argument')c.argument.render();c.discussion?.interactions?.refreshArgumentLog();
+      accountUI('display-name-dialog').close();accountUI('display-name-value').value='';accountUI('change-display-name').focus();c.message('Display name updated.');
+    }catch(e){error.textContent=e.status===409?'Your profile changed in another session. Cancel, refresh your account, and try again. Your entered name is still here.':e.message;}
+    finally{this.profileSaving=false;this.loading=false;for(const field of accountUI('display-name-form').querySelectorAll('input,button'))field.disabled=false;this.status();if(c.workspaceDirty&&!this.blocked)this.schedule();}
   }
   async sendCode(){
     if(this.signup?.turnstile&&!this.challenge.token){accountUI('account-feedback').textContent='Complete the security check first.';return;}
@@ -96,6 +118,7 @@ export class AccountWorkspace{
     if(reset)c.argument?.reset();
     if(d&&(reset||!d.dirty&&(lostConversation||!available(d.target)||!available(d.groupTarget)||d.viewId&&!visibleEntries.has(d.viewId)))){d.dirty=false;d.viewId=null;d.target=null;d.groupTarget=null;d.reasoning?.reset();if(d.host){d.host.hidden=true;d.host.replaceChildren();}}
     c.workspace=workspace;this.revisions=data.revisions;this.ownedKeys=data.ownedKeys;this.actor=data.actor;
+    this.renderAccountName();
     this.baseline=new Map(ownedAccountRecords(workspace,this.actor.id,this.ownedKeys).map(r=>[accountKey(r.kind,r.id),r.value]));
     c.ready=true;c.cloudLoaded=true;c.workspaceDirty=false;document.body.classList.remove('account-locked');
     if(reset){c.activeComparisonPair=null;c.activeMapId=null;c.editor.discardDraft();c.clearComparison();c.sides={a:{mapId:null,nodeId:null},b:{mapId:null,nodeId:null}};c.mode='library';c.updateNavigation?.();}
