@@ -2,9 +2,9 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
-The owner selected a simpler Argument prototype with exactly **Factual basis, Reasoning, Consequences and Feasibility**. The [four-category implementation](argument-four-categories-plan.md) is complete and undergoing release verification. It covers choosing one or more categories, optional explanation/reference, existing responses and preservation of earlier arguments. Argument resolution and the earlier proposed action-label/display redesign are outside this increment. The technology stack and existing deferrals remain unchanged. [Deployment status](deployment-status.md) identifies the published version.
+The [four-category Argument update](argument-four-categories-plan.md) is **live in Worker 54**, after all 53 local and 53 hosted checks, the additive database migration and public verification. It offers exactly **Factual basis, Reasoning, Consequences and Feasibility**, with optional explanation/reference, existing responses and preservation of earlier arguments. Next, refresh both PCs and follow **Four-category Argument** in [the owner checklist](user-testing-checklist.md). Argument resolution and the earlier proposed action-label/display redesign remain outside this increment. The technology stack and existing deferrals are unchanged. [Deployment status](deployment-status.md) records publication.
 
-## Latest published release — Worker 53
+## Preceding release — Worker 53
 
 The **joined agreement card plus simplified overview** is **live in Worker 53**, after all 53 local and 53 hosted checks and public verification. The [implementation plan](agreement-overview-plan.md) records the behavior: mutual agreement, disagreement and asymmetric assessments are recognizable at a distance while both original nodes and stable positions are preserved. Next, refresh both PCs and use the **Joined agreement cards and overview** section of [the owner checklist](user-testing-checklist.md). [Deployment status](deployment-status.md) records source and publication. Existing deferrals remain unchanged.
 

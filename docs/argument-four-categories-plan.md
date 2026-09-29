@@ -1,6 +1,6 @@
 # Argument: four-category prototype plan
 
-Planned and implemented September 29, 2026; undergoing release verification. [Deployment status](deployment-status.md) identifies the published application. This plan supersedes the earlier suggestions to rename Argument actions by target, redesign objection/response displays, or introduce response-status indicators.
+Planned, implemented and published September 29, 2026 as **Worker 54**, after all 53 local and 53 hosted checks, the additive database migration and public verification. [Deployment status](deployment-status.md) records the release evidence. This plan supersedes the earlier suggestions to rename Argument actions by target, redesign objection/response displays, or introduce response-status indicators.
 
 ## Intended experience
 
