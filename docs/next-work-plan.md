@@ -2,6 +2,10 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
+The **expandable node dispute log** is **live in Worker 56**, after all 53 local and hosted checks and public verification. Clicking an Argument node now shows its disputes and latest responses immediately; expand an entry for the full exchange. Refresh both PCs and test the log, recipient response, and updated response visibility using [the owner checklist](user-testing-checklist.md). No argument resolution is introduced. [Deployment status](deployment-status.md) records publication.
+
+## Preceding release — Worker 55
+
 The Dispute form now includes the node's full description below its title, including when editing a dispute. This follow-up is **live in Worker 55**, after all 53 local and hosted checks and public verification. Refresh Harmonious and check long descriptions and narrow screens using [the owner checklist](user-testing-checklist.md). [Deployment status](deployment-status.md) records publication.
 
 ## Preceding release — Worker 54

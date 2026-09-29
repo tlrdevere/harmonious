@@ -4,6 +4,20 @@ Updated September 29, 2026 (UTC).
 
 ## Current release
 
+Expandable node dispute logs deployed September 29, 2026 at **15:38:37 UTC** (11:38 a.m. in New York). Release source: `ef9a1522f4ed7d26284491d363f68433c75befa4` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **56**: `ba5982bf-30c3-47fc-9ab8-e36d78cdf371`, serving **100%** of traffic. Deployment: `c38dd09a-67be-4f4b-99e6-324d2a44f08a`.
+- Clicking a node in Argument shows its dispute log immediately. Collapsed entries show author, date, categories, comment preview, response count and the latest response. Expand for full dispute wording, references, earlier versions and complete responses. Respond is available to the intended recipient; existing edit/withdraw controls remain available through Manage. Withdrawn disputes have separate history.
+- The log uses the selected node and current comparison. Account refresh preserves expanded entries, scroll and focused controls while updating responses. Compare/Inquiry, draft safeguards, source maps and stored interaction semantics are preserved; no resolution workflow was added.
+- **53/53 local release checks passed**. Report: `build/verification/2026-09-29T15-28-37-446Z-104064/summary.json`. Runtime: Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge on Windows. Two-account browser coverage verifies direct recipient response, collapsed previews, expanded full responses, background/manual refresh, edited responses, reload, scope, keyboard use and narrow screens. Desktop and narrow captures passed visual review.
+- **53/53 hosted release checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36591039924), with all checks complete at **15:36:32 UTC**. Logs confirm Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/log-release-hosted.json` and `build/log-hosted-verification-evidence.json`.
+- Public verification confirms all **54 client files** and the homepage match the tested checkout, with configured sign-in, account denial, private-configuration denial and security headers passing. Evidence recorded at **15:39:16 UTC**: `build/public-log-verification.json`. Worker SHA-256: `ae0a3ad5aaa4fb72db84faf470efda0780619f6e609ca1571b0b608adee013cd`.
+- All eight encrypted bindings and runtime settings were inherited and verified unchanged. No database migration or production account test writes were required. Evidence: `build/log-release-evidence.json`. Subsequent release-note commits change documentation only.
+
+**Refresh Harmonious, select Argument, and click a node with a recorded dispute.** Its latest response appears directly in the log; expand to read the full exchange. Worker 55 is a compatible rollback. Existing deferrals remain in place.
+
+## Preceding full-description release
+
 Full descriptions in the Dispute form deployed September 29, 2026 at **15:11:27 UTC** (11:11 a.m. in New York). Release source: `56a9f97275fb052cecea879208c459bfb352bb4d` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **55**: `d053703c-1c24-4bcf-bee4-53398ae8d589`, serving **100%** of traffic. Deployment: `e53ef77b-f122-4f8b-b40d-8d53cd0104b7`.

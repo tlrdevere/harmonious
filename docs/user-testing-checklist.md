@@ -2,7 +2,7 @@
 
 ## First check: four-category Argument
 
-The four-category update shipped in Worker 54; full descriptions in the Dispute form are **live in Worker 55**, after all 53 local and 53 hosted checks and public verification. See [deployment status](deployment-status.md), then refresh both PCs.
+The direct node dispute log is **live in Worker 56**, after all 53 local and 53 hosted checks and public verification. It includes the four categories from Worker 54 and full descriptions from Worker 55. See [deployment status](deployment-status.md), then refresh both PCs.
 
 - [ ] In Argument, select the other person's node in SQ, TA and GS, including a cited node. **Dispute reasoning** offers exactly Factual basis, Reasoning, Consequences and Feasibility, with no preselection, Other or submenus.
 - [ ] Send with no category: the form should ask for at least one and keep the draft. Send with one or several categories, with and without an explanation/reference.
