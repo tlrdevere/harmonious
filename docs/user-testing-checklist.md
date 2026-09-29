@@ -2,7 +2,7 @@
 
 ## Next check: node-focused Argument dialogue
 
-Implementation is awaiting verified publication; check [deployment status](deployment-status.md) before testing and refresh both accounts.
+The dialogue canvas is **live in Worker 58**, after all **55 local and 55 hosted checks**, the additive database migration and live verification. Refresh both accounts before testing. See [deployment status](deployment-status.md).
 
 - [ ] In Argument, select an ordinary node and choose **Open argument canvas**, including one with no disputes. Read its full description, author and frame. Confirm the other participant can enter the same node.
 - [ ] Add a dispute, respond from the other account, then reply to that response. Branch from an earlier contribution. Connections should show the actual addressed contribution; a multi-category dispute stays one card.

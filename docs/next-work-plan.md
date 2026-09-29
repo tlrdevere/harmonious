@@ -2,7 +2,9 @@
 
 ## Current priorities — September 29, 2026 (UTC)
 
-The [node-focused Argument dialogue canvas](argument-dialogue-canvas-plan.md) is **implemented locally, awaiting final verification and publication**. It adds an Open argument canvas action, a claim/dispute/reply tree with explicit reply targets, and a return to the preserved comparison view. The log and canvas share the same records. Earlier replies retain their known dispute membership without invented response chains. Keep straight connections, expandable canvas space, the four categories, existing permissions and all deferrals; resolution remains outside scope.
+The [node-focused Argument dialogue canvas](argument-dialogue-canvas-plan.md) is **live in Worker 58**, after all **55 local and 55 hosted checks**, the additive database migration and public verification. It adds an Open argument canvas action, a claim/dispute/reply tree with explicit reply targets, and a return to the preserved comparison view. The log and canvas share the same records. Earlier replies retain their known dispute membership without invented response chains. Next, refresh both accounts and follow the dialogue section of [the owner checklist](user-testing-checklist.md). Straight connections, expandable canvas space, the four categories, existing permissions and all deferrals remain; resolution is outside scope.
+
+## Preceding release — Worker 57
 
 **Continuing Argument replies** are **live in Worker 57**, after all 53 local and hosted checks, the additive database migration and public verification. Both participants can keep replying under the original dispute with no fixed exchange limit or forced turn-taking. Messages stay chronological in its expanded log; earlier responses and own edit/withdraw histories remain available. Refresh both accounts and test repeated exchanges, refresh/reload and unfinished replies using [the owner checklist](user-testing-checklist.md). Argument resolution and existing deferrals remain outside this increment. [Deployment status](deployment-status.md) records publication.
 
