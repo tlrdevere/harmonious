@@ -1,8 +1,22 @@
 # Deployment status
 
-Updated September 29, 2026 (UTC).
+Updated September 30, 2026 (UTC).
 
 ## Current release
+
+Argument standstills deployed September 30, 2026 at **01:56:34 UTC** (September 29 at 9:56 p.m. in New York). Release source: `79c3e02ed62f271f3e06d9d77356ec81c9b9bd9d` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **61**: `0ce95e95-5f7f-49c7-85c7-ab6628cf8b13`, serving **100%** of traffic. Deployment: `addf5363-3398-4808-be69-ebe3ed9be2c5`.
+- Argument dispute/reply cards, their details and the node log offer **Propose standstill** with a required explanation. Source-node entry requires the exact existing point. The other participant can suggest changes or confirm the reviewed explanation; either can resume, and the proposer can withdraw. Revisions invalidate old confirmation. Markers, separate counts, Find and attributed history share one state. Replies remain available. See [the implementation plan](argument-standstill-plan.md) and [current workflow](current-argument-workflow.md).
+- **60/60 local release checks passed**: `build/verification/2026-09-30T01-44-34-207Z-112256/summary.json`, using Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge. Coverage includes actual dispute participants, exact causal state and reviewed context, self-confirmation/outsider rejection, source changes, terminal resumption/withdrawal, concurrent writes, privacy closure, old-client protection and lost acknowledgements. Two-user browser tests cover suggestions, revisions, confirmation, either-person resumption, review states, point selection, history, log/search, drafts, narrow screens and portable backup/import. Desktop and narrow captures passed visual review.
+- **60/60 hosted checks passed** on the exact release source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36656953895), with all checks complete at **01:53:40 UTC**. Runtime: Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/standstill-hosted-verification-evidence.json`.
+- Additive migration `supabase/migrations/20260930013031_argument_standstill.sql` was applied as remote migration **20260930015501**, named `argument_standstill`. Production verification confirms all three invoker functions have empty search paths and service-only execution, and the intended validation triggers are installed. The **121 records**, generation **161** and content fingerprint remained unchanged. Security advisors have no new findings; the existing [service-only-table notices](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) and [disabled leaked-password protection notice](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection) remain. Evidence: `build/standstill-database-verification.json`.
+- Public verification at **01:57:25 UTC** confirms all **59 client files** and the homepage match the tested checkout; configured sign-in, account denial, private-file denial and security headers passed. Worker SHA-256: `423c8be61619bd07a2a3779ff61d11046b599587913ce191b5bc67d580a759dc`. Evidence: `build/standstill-release-evidence.json`.
+- Existing runtime settings, eight encrypted bindings and the organizer binding were inherited unchanged. No production account or discussion test writes were performed. Source maps, counterpart links, assessments and the four dispute categories remain unchanged. Broader resolution and Pods remain deferred.
+
+**Refresh both accounts, open an Argument dispute or reply, and choose Propose standstill.** Follow the new [testing checklist](user-testing-checklist.md). Once standstills are saved, any rollback must retain their reader, `argument-standstill-v1` capability handling and validation; Worker 60 is not a compatible rollback. Subsequent release-note commits change documentation only.
+
+## Preceding display-name release
 
 Display-name editing deployed September 29, 2026 at **18:03:22 UTC** (2:03 p.m. in New York). Release source: `6434e1e8425f6ed0fc9c401fc44a1de273925c52` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 

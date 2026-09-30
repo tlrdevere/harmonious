@@ -4,7 +4,7 @@ The original v4 grammar was implemented on `redesign/node-interactions` and depl
 
 ## September 29 Argument standstills: current implementation
 
-The [standstill increment](argument-standstill-plan.md) is **locally implemented; release verification is underway**. [Deployment status](deployment-status.md) is the authority for the live Worker, migration and completed release checks. It is the narrow approved exception to the broader Argument-resolution deferral. It records participants' shared description of an obstacle; it does not decide who is right, assert agreement with the underlying node, close other branches or introduce Pods.
+The [standstill increment](argument-standstill-plan.md) is **live in Worker 61**, after 60/60 local and 60/60 hosted checks, the additive migration and live verification. [Deployment status](deployment-status.md) is the authority for the live Worker, migration and completed release checks. It is the narrow approved exception to the broader Argument-resolution deferral. It records participants' shared description of an obstacle; it does not decide who is right, assert agreement with the underlying node, close other branches or introduce Pods.
 
 | Action | Author and attachment | Required input and effect |
 | --- | --- | --- |

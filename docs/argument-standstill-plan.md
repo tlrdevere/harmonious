@@ -1,6 +1,6 @@
 # Argument standstill implementation plan
 
-Prepared September 29, 2026; implementation updated September 30, 2026 (UTC). **Implemented locally; release verification is underway.** Live baseline: Worker 60 on `redesign/node-interactions`. The current node-focused Argument canvas and chronological log share the same discussion records. See [deployment status](deployment-status.md) and [the dialogue canvas plan](argument-dialogue-canvas-plan.md).
+Prepared September 29, 2026; implementation updated September 30, 2026 (UTC). **Live in Worker 61**, after 60/60 local and 60/60 hosted checks, the additive database migration and live asset/access verification. Release source: `79c3e02ed62f271f3e06d9d77356ec81c9b9bd9d` on `redesign/node-interactions`. The current node-focused Argument canvas and chronological log share the same discussion records. See [deployment status](deployment-status.md) and [the dialogue canvas plan](argument-dialogue-canvas-plan.md).
 
 This increment lets either participant propose that discussion has reached a standstill at a specific node, explain why, and ask the other participant to confirm that account of the impasse. A confirmed standstill records their shared understanding of the present obstacle. It does not establish agreement with the underlying position, decide who is right, or permanently close discussion.
 
@@ -171,3 +171,5 @@ A participant can propose a standstill on a specific Argument point with a requi
 The additive migration is `supabase/migrations/20260930013031_argument_standstill.sql`. It adds invoker functions and a service-only validation trigger without rewriting existing application records. The Worker and account client require `argument-standstill-v1` when current, historical or incoming standstill records exist. Older portable readers reject the unknown kind rather than silently stripping it.
 
 Focused model, real account-policy, isolated PostgreSQL and two-user browser coverage is registered as three additional release checks, for 60 total. Release identity, verification results and rollout evidence are recorded in [deployment status](deployment-status.md) after publication.
+
+Published September 30, 2026 at 01:56:34 UTC as Worker 61. Remote migration: `20260930015501` (`argument_standstill`). All 121 existing records and generation 161 were unchanged by the migration. The 59 public client files and homepage match the tested build; runtime and organizer settings are preserved. See deployment status for complete evidence and rollback constraints.

@@ -2,7 +2,7 @@
 
 ## Next check: standstills at a specific Argument point
 
-**Locally implemented; release verification is underway.** Check [deployment status](deployment-status.md) for live availability, then refresh both accounts. The [standstill plan](argument-standstill-plan.md) and [current workflow](current-argument-workflow.md) describe the scope. Use disposable shared maps and two separate signed-in browser profiles.
+**Live in Worker 61**, after 60/60 local and 60/60 hosted checks, the additive migration and live verification. See [deployment status](deployment-status.md), then refresh both accounts. The [standstill plan](argument-standstill-plan.md) and [current workflow](current-argument-workflow.md) describe the scope. Use disposable shared maps and two separate signed-in browser profiles.
 
 - [ ] Create an ordinary-node dispute and at least two replies. From a dispute or reply card, choose **Propose standstill**. Confirm the form identifies the correct source node and exact contribution and makes their full descriptions available. Repeat from the log entry or contribution detail.
 - [ ] From the original claim card or source-node window, choose **Propose standstill**. It should require you to choose the relevant dispute or reply, without preselecting one. A node with no dispute should explain that a dispute is needed first. Frame containers and connection-only disputes should not offer this workflow.
