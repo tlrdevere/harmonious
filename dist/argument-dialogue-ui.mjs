@@ -23,6 +23,7 @@ export class ArgumentDialogueUI{
  key(target=this.target){return JSON.stringify([this.d.actor(),this.d.thread()?.id,target?.mapId,target?.nodeId]);}
  url(entry=null){const p=new URLSearchParams({comparison:this.d.thread().id,view:'dialogue',map:this.target.mapId,node:this.target.nodeId});if(entry&&entry!=='claim')p.set('entry',entry);return location.pathname+location.search+'#'+p;}
  async open(target,{entry=null,route=true}={}){
+  const requestedProposal=entry&&this.d.standstills?.proposal(entry);if(requestedProposal){if(JSON.stringify(requestedProposal.target)!==JSON.stringify(target)){this.c.message('This standstill belongs to another source.');return false;}entry=requestedProposal.standstill.anchor.entryId;}
   const source=interactionSource(this.c.workspace,target);let thread=this.d.thread();
   if(!thread&&source&&source.item.parent!==null&&[this.c.sides.a.mapId,this.c.sides.b.mapId].includes(target.mapId)){try{thread=await this.c.ensureComparison();}catch(error){this.c.message(error.message);return false;}}
   if(!thread||!source||source.item.parent===null||![thread.aMapId,thread.bMapId].includes(target.mapId)){this.c.message('This node is unavailable in this comparison.');return false;}
@@ -33,8 +34,8 @@ export class ArgumentDialogueUI{
   this.d.canvas.layerControls.hidden=true;this.d.viewOptions.hidden=true;this.canvas.surface.append(this.d.host,this.d.search.host);
   this.heading.textContent=source.item.title+' · '+this.d.name(source.map.ownerId);this.refresh(true);
   this.canvas.camera=this.state.camera?{...this.state.camera}:{x:40,y:50-(this.canvas.layout.positions.get('claim')?.y||0)*.85,z:.85};this.canvas.drawCamera();
-  if(entry)this.reveal(entry);history[route?'pushState':'replaceState'](null,'',this.url(entry));
-  this.backButton.focus({preventScroll:true});return true;
+  if(entry)this.reveal(entry);history[route?'pushState':'replaceState'](null,'',this.url(requestedProposal?.id||entry));
+  if(requestedProposal)this.d.standstills.open(requestedProposal.id);else this.backButton.focus({preventScroll:true});return true;
  }
  detach(){
   this.state.camera={...this.canvas.camera};this.host.hidden=true;this.comparisonHost.hidden=false;this.c.canvas.surface.hidden=false;this.c.canvas.surface.append(this.d.host,this.d.search.host);this.d.canvas.layerControls.hidden=false;this.d.viewOptions.hidden=false;this.active=false;
@@ -64,7 +65,7 @@ export class ArgumentDialogueUI{
   if(this.scope!==this.key()||this.d.mode()!=='argument'){if(!this.d.dirty)this.close({route:false});return;}
   const source=interactionSource(this.c.workspace,this.target);
   if(!source){this.canvas.world.replaceChildren();this.heading.textContent='Source unavailable';if(!this.d.dirty){this.d.canLeave();this.detach();}this.c.message('This source is no longer available. Any unfinished reply has been kept.');return;}
-  const records=dialogueRecords(this.c.workspace,this.d.thread().id,this.target),signature=JSON.stringify([source.item,records,this.c.workspace.participants,[...this.state.collapsed],[...this.state.expanded]]);
+  const records=dialogueRecords(this.c.workspace,this.d.thread().id,this.target),signature=JSON.stringify([source.item,records,this.c.workspace.discussions.filter(r=>r.kind==='standstill'&&r.comparisonId===this.d.thread().id),this.c.workspace.participants,[...this.state.collapsed],[...this.state.expanded]]);
   if(!force&&signature===this.signature)return;const refreshDetail=!force&&!this.d.dirty&&!this.d.saving&&!this.d.host.hidden&&!this.d.host.querySelector('form')&&this.d.viewId;this.signature=signature;this.heading.textContent=source.item.title+' · '+this.d.name(source.map.ownerId);
   const old=this.canvas.layout?.positions.get(this.selected),focus=document.activeElement,focusId=focus?.closest('[data-dialogue-entry]')?.dataset.dialogueEntry,focusLabel=focus?.textContent;
   this.tree=dialogueTree(records,this.state.collapsed);this.canvas.world.replaceChildren();this.cards.clear();
@@ -80,17 +81,21 @@ export class ArgumentDialogueUI{
    if(text.length>180&&id!=='claim')card.append(dialogueButton(this.state.expanded.has(id)?'Less text':'Full text',()=>{this.selected=id;this.state.expanded.has(id)?this.state.expanded.delete(id):this.state.expanded.add(id);this.refresh(true);}));
    if(r?.interaction.version===6)card.append(dialogueEl('small','Earlier response — no specific reply target recorded','dialogue-history-note'));
    if(r?.interaction.replyTo){const addressed=this.tree.nodes.get(r.interaction.replyTo.entryId)?.record;if(addressed&&addressed.version!==r.interaction.replyTo.version)card.append(dialogueEl('small','Addressed an earlier version · inspect history','dialogue-history-note'));}
+   this.d.standstills?.dialogueMarkers(card,id,this.tree);
    const actions=dialogueEl('footer');
    if(!r&&source.map.ownerId!==this.d.actor()&&interactionOptions(this.c.workspace,this.target,'dispute').length)actions.append(dialogueButton('Dispute reasoning',()=>{if(!this.d.canLeave())return;this.selected='claim';this.d.target={...this.target};this.d.interactions.compose('dispute');}));
    if(r&&r.status==='active'&&canReplyArgument(this.root(r),this.d.actor()))actions.append(dialogueButton(r.action==='dispute'&&r.interaction.recipientId===this.d.actor()&&!this.d.interactions.responses(r.id).length?'Respond':'Reply',()=>this.reply(r)));
+   if(r)this.d.standstills?.resumeControls(actions,id);
    if(r)actions.append(dialogueButton('Details',()=>this.inspect(id)));
+   if(!r)actions.append(dialogueButton('Propose standstill',()=>this.d.standstills.choose(this.target)));
+   else if(this.d.standstills?.eligible(id))actions.append(dialogueButton('Propose standstill',()=>this.d.standstills.compose(id)));
    if(n.count){const collapsed=this.state.collapsed.has(id),button=dialogueButton(collapsed?'Expand · '+n.count:'Collapse · '+n.count,()=>{if(this.d.dirty){this.c.message('Finish or close this draft before collapsing the dialogue.');return;}this.selected=id;collapsed?this.state.collapsed.delete(id):this.state.collapsed.add(id);this.refresh(true);});button.setAttribute('aria-expanded',String(!collapsed));actions.append(button);}
    card.append(actions);this.canvas.world.append(card);this.cards.set(id,card);sizes.set(id,{w:card.offsetWidth,h:card.offsetHeight});
   }
   this.canvas.layout=layoutDialogue(this.tree,sizes);
   for(const [id,p]of this.canvas.layout.positions){this.cards.get(id).style.transform='translate('+p.x+'px,'+p.y+'px)';const parent=this.tree.nodes.get(id).parent,a=this.canvas.layout.positions.get(parent);if(a){const line=this.canvas.svgElement('line',{x1:a.x+a.w,y1:a.y+a.h/2,x2:p.x,y2:p.y+p.h/2,stroke:'#8195a7','stroke-width':1.5});line.append(this.canvas.svgElement('title'));line.firstChild.textContent=parent==='claim'?'Disputes':'Responds to';svg.append(line);}}
   const next=this.canvas.layout.positions.get(this.selected);if(old&&next){this.canvas.camera.x+=(old.x-next.x)*this.canvas.camera.z;this.canvas.camera.y+=(old.y-next.y)*this.canvas.camera.z;}this.canvas.drawCamera();
-  if(refreshDetail){const scroll=this.d.host.scrollTop;this.d.interactions.open(refreshDetail);this.d.host.scrollTop=scroll;}
+  if(refreshDetail){const scroll=this.d.host.scrollTop;this.d.open(refreshDetail);this.d.host.scrollTop=scroll;}
   if(focusId&&this.cards.has(focusId)){[...this.cards.get(focusId).querySelectorAll('button')].find(b=>b.textContent===focusLabel)?.focus({preventScroll:true});}
  }
  positionPopover(){

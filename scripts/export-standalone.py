@@ -8,7 +8,7 @@ css=(root/'dist/style.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/library.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/reasoning.css').read_text(encoding='utf-8')
 parts=[]
-for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mjs','frame-palette.mjs','model.mjs','data.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','premise.mjs','premise-ui.mjs','reflection.mjs','reflection-ui.mjs','interaction-grammar.mjs','argument-dialogue.mjs','discussion.mjs','interaction-presentation.mjs','interaction-search-ui.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','comparison-routing.mjs','reasoning-view.mjs','reasoning-ui.mjs','interaction-application.mjs','interaction-application-ui.mjs','interaction-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','map-connections-ui.mjs','source-connections-ui.mjs','compare-canvas.mjs','argument-dialogue-ui.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-summary.mjs','library-ui.mjs','node-actions.mjs','node-face-editor.mjs','test-accounts-ui.mjs','account-ui.mjs','workspace-ui.mjs','app.mjs']:
+for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mjs','frame-palette.mjs','model.mjs','data.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','premise.mjs','premise-ui.mjs','reflection.mjs','reflection-ui.mjs','interaction-grammar.mjs','argument-dialogue.mjs','standstill.mjs','discussion.mjs','standstill-ui.mjs','interaction-presentation.mjs','interaction-search-ui.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','comparison-routing.mjs','reasoning-view.mjs','reasoning-ui.mjs','interaction-application.mjs','interaction-application-ui.mjs','interaction-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','map-connections-ui.mjs','source-connections-ui.mjs','compare-canvas.mjs','argument-dialogue-ui.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-summary.mjs','library-ui.mjs','node-actions.mjs','node-face-editor.mjs','test-accounts-ui.mjs','account-ui.mjs','workspace-ui.mjs','app.mjs']:
     code=(root/'dist'/name).read_text(encoding='utf-8')
     code=re.sub(r'^import .*?;\n','',code,flags=re.M)
     code=re.sub(r'^export ','',code,flags=re.M)
@@ -36,6 +36,9 @@ for name in ['account-model.mjs','layout.mjs','confidence.mjs','confidence-ui.mj
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='adoption-fulfillment.mjs':
         names='adoptionActions,isAdoptionReceipt,adoptionDefinitionKey,adoptionFulfillmentId,adoptionSourceSnapshot,adoptionState,adoptionPreview,prepareAdoption,validateAdoptionRecord,validateAdoptionBatch'
+        code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
+    if name in ['standstill.mjs','standstill-ui.mjs']:
+        names=','.join(re.findall(r'^export (?:async )?(?:function|class|const) (\w+)',(root/'dist'/name).read_text(encoding='utf-8'),flags=re.M))
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     parts.append(code)
 script='globalThis.HARMONIOUS_FILE_MODE=true;\n'+'\n'.join(parts)

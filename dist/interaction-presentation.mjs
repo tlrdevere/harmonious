@@ -2,6 +2,7 @@ import {DISCUSSION_LABELS,discussionHealth} from './discussion.mjs';
 import {counterpartState,sameCounterpartSource} from './counterparts.mjs';
 import {interactionLabel,optionsForClassification} from './interaction-grammar.mjs';
 import {graphEdges} from './model.mjs';
+import {standstillState,STANDSTILL_ACTIONS} from './standstill.mjs';
 
 const parentTarget=target=>['entry','inference'].includes(target?.type);
 const modes=new Set(['compare','inquiry','argument']);
@@ -44,10 +45,11 @@ export function counterpartDisplay(workspace,comparisonId,target){
   return {state,label,assessments:[a,b],target,other};
 }
 
-export const isConversationRoot=record=>!!record&&record.kind!=='context'&&!isResponse(record);
+export const isConversationRoot=record=>!!record&&!['context','standstill'].includes(record.kind)&&!isResponse(record);
 
 // Categories describe presentation, not a conversion to the earlier grammar.
 export function interactionCategory(record){
+  if(record?.kind==='standstill')return 'standstills';
   if(isResponse(record))return 'responses';
   if(record?.kind==='interaction')return {compare:'positions',inquiry:'questions',argument:'challenges'}[record.interaction?.mode]||'earlier';
   if(record?.kind==='relationship')return 'positions';
@@ -68,7 +70,7 @@ function recordContext(records){
       seen.add(current.id);path.push(current.id);
       if(current.kind==='interaction'&&modes.has(current.interaction?.mode)){mode=current.interaction.mode;break;}
       if(current.kind==='inquiry'){mode='inquiry';break;}
-      if(['argument','reflection'].includes(current.kind)||current.kind==='reply'&&current.layer==='arguments'||current.target?.type==='inference'){mode='argument';break;}
+      if(['argument','reflection','standstill'].includes(current.kind)||current.kind==='reply'&&current.layer==='arguments'||current.target?.type==='inference'){mode='argument';break;}
       if(!parentTarget(current.target))break;
       current=byId.get(current.target.entryId);
     }
@@ -120,6 +122,11 @@ function referenceText(workspace,record){
 }
 
 function present(workspace,record,context,authorName){
+  if(record.kind==='standstill'){
+    const proposal=record.action==='propose_standstill'?record:context.byId.get(record.target.entryId),state=proposal&&standstillState(workspace,proposal),source=state?.context?.available&&accessibleSource(workspace,proposal.target),label=record.action==='propose_standstill'?(state?.label||'Unavailable'):STANDSTILL_ACTIONS[record.action]||'Standstill',preview=source?record.body||proposal.body:'Source unavailable',targetLabel=source?.label||'Unavailable source';
+    const searchText=[label,state?.label,authorName(record.authorId),targetLabel,source&&preview,source&&record.action==='propose_standstill'&&state.events.flatMap(event=>[event.body,authorName(event.authorId),STANDSTILL_ACTIONS[event.action]]).join(' ')].filter(Boolean).join(' ').toLocaleLowerCase();
+    return {label,choices:[],preview,searchText,mode:'argument',anchor:proposal?.target||null,response:record.action!=='propose_standstill',category:'standstills'};
+  }
   const response=isResponse(record),category=interactionCategory(record),mode=context.modeOf(record),anchor=context.anchorOf(record);
   const metadata=record.interaction;
   // Saved classification keeps an earlier ground intelligible when its source
@@ -168,6 +175,7 @@ export function searchInteractions(workspace,records,{mode,query='',filter='all'
     const presentation=present(workspace,record,context,authorName);
     if(mode&&presentation.mode!==mode)continue;
     if(filter==='disputes'&&(!isConversationRoot(record)||presentation.category!=='challenges'))continue;
+    if(filter==='standstills'&&record.kind!=='standstill')continue;
     if(!words.every(word=>presentation.searchText.includes(word)))continue;
     results.push({entry:record,...presentation});
   }

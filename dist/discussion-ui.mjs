@@ -1,4 +1,5 @@
 import {ArgumentDialogueUI} from './argument-dialogue-ui.mjs';
+import {StandstillUI} from './standstill-ui.mjs';
 import {InteractionUI} from './interaction-ui.mjs';
 import {InteractionSearchUI} from './interaction-search-ui.mjs';
 import {entryMode,interactionCategory,conversationThreads,nodeAssessment,counterpartAssessment,counterpartDisplay} from './interaction-presentation.mjs';
@@ -75,7 +76,7 @@ export class DiscussionUI{
     discussUI('compare-view-mode').textContent='Map & conversation';discussUI('argument-mode').textContent='Earlier reasoning';
     for(const b of controls.querySelectorAll(':scope > [data-layer]'))if(b.dataset.layer!=='inquiries'){options.append(b);if(b.dataset.layer==='arguments')b.hidden=true;}
     this.reasoning=new ReasoningUI(this);
-    this.search=new InteractionSearchUI(this);this.dialogue=new ArgumentDialogueUI(this);
+    this.search=new InteractionSearchUI(this);this.dialogue=new ArgumentDialogueUI(this);this.standstills=new StandstillUI(this);
   }
   setMode(mode){
     const views=discussUI('comparison-view-modes'),heading=discussUI('comparison-context').querySelector('.context-heading');
@@ -124,13 +125,14 @@ export class DiscussionUI{
     const counterpartSide=counterpartReturn&&['a','b'].find(side=>this.canvas.states[side].map?.id===counterpartReturn.mapId),counterpartFocus=counterpartSide&&this.canvas.cards.get(comparisonNodeKey(counterpartSide,counterpartReturn.nodeId))?.querySelector('.node-main'),marker=entry&&[...this.canvas.world.querySelectorAll('[data-entry]')].find(el=>el.dataset.entry===entry),connectionFocus=connectionReturn&&([...this.canvas.world.querySelectorAll('[data-connection-branch],[data-connection-pair]')].find(el=>connectionReturn.branchKey?el.dataset.connectionBranch===connectionReturn.branchKey:el.dataset.connectionPair===connectionReturn.pairKey)||this.canvas.cards.get(connectionReturn.nodeKey)?.querySelector('.node-main')),confidenceFocus=confidenceReturn&&this.canvas.cards.get(confidenceReturn)?.querySelector('.node-confidence');
     (counterpartFocus||confidenceFocus||connectionFocus||marker||(this.returnFocus?.isConnected?this.returnFocus:this.canvas.surface)).focus({preventScroll:true});return true;
   }
-  shell(title){this.viewOptions.open=false;this.viewId=null;this.hostMode=this.mode();this.host.replaceChildren();this.host.hidden=false;const header=discussEl('header');header.append(discussEl('strong',title),discussButton('Close',()=>this.close()));this.host.append(header);this.positionPopover();}
+  shell(title){this.viewOptions.open=false;this.viewId=null;delete this.host.dataset.standstillId;this.hostMode=this.mode();this.host.replaceChildren();this.host.hidden=false;const header=discussEl('header');header.append(discussEl('strong',title),discussButton('Close',()=>this.close()));this.host.append(header);this.positionPopover();}
   actionGroup(title,buttons){if(!buttons.length)return;const section=discussEl('section','','discussion-action-group'),actions=discussEl('div','','discussion-actions');section.append(discussEl('h3',title));actions.append(...buttons);section.append(actions);this.host.append(section);}
   selectNode(side,id){if(!this.canLeave())return;this.counterparts.returnControl=null;this.confidenceReturn=null;this.target={type:'node',mapId:this.c.sides[side].mapId,nodeId:id};this.returnFocus=this.canvas.cards.get(comparisonNodeKey(side,id))?.querySelector('.node-main');this.actions();}
   selectTarget(target){if(!this.canLeave())return false;this.counterparts.returnControl=null;this.confidenceReturn=null;this.target=target;this.returnFocus=document.activeElement;this.canvas.sourceHighlights.select(this.sourceEdgeKeys?.get(stableJSON(target))||null);this.actions();return true;}
   attachmentCategory(record){const category=interactionCategory(record);return category==='counterparts'?'questions':category;}
   revealInteraction(id,{responseContext=false}={}){
     const r=this.allEntries().find(record=>record.id===id);if(!r)return false;
+    if(r.kind==='standstill'){this.standstills.reveal(id);return true;}
     if(this.dialogue?.active){const anchor=conversationAnchor(this.c.workspace.discussions,r);if(stableJSON(anchor)===stableJSON(this.dialogue.target)&&r.interaction?.mode==='argument'){if(!this.canLeave())return false;this.interactions.open(id);this.dialogue.reveal(id);return true;}if(!this.dialogue.close())return false;}
     const returnFocus=document.activeElement?.closest('.interaction-search')?this.search.button:document.activeElement;if(!this.canLeave())return false;
     this.activateMode(this.entryMode(r));this.reasoning.anchor=null;this.reasoning.focusId=null;this.reasoning.returnId=null;
@@ -199,6 +201,7 @@ export class DiscussionUI{
     }catch(e){let error=this.host.querySelector('[role=alert]');if(!error){error=discussEl('p');error.setAttribute('role','alert');this.host.append(error);}error.textContent=e.message;}finally{this.saving=false;this.host.inert=false;}
   }
   open(id,{context=false,mode=null}={}){
+    if(this.c.workspace.discussions?.find(r=>r.id===id)?.kind==='standstill'){this.standstills.open(id);return;}
     if(this.c.workspace.discussions?.find(r=>r.id===id)?.kind==='interaction'){this.interactions.open(id);return;}
     const annotation=this.c.workspace.discussions?.find(r=>r.id===id&&isReflection(r));if(annotation){this.reflections.open(annotation);return;}
     if(!this.canLeave())return;const r=this.c.workspace.discussions?.find(e=>e.id===id);if(!r)return;const recordMode=this.entryMode(r);if(mode)this.activateMode(mode);else if(recordMode==='argument'||!context&&this.mode()!=='argument')this.activateMode(recordMode);this.target={type:'entry',entryId:id};this.returnFocus=document.activeElement;this.shell(contributionLabel(r));this.viewId=id;this.groupTarget=null;
@@ -422,7 +425,7 @@ export class DiscussionUI{
       if(rail.card){rail.card.hidden=false;rail.card.querySelector('.node-bottom').append(bar);}
       else{canvas.world.append(bar);this.items.push({type:'badge',target:rail.target,b:bar});}
     }
-    this.counterparts.draw();
+    this.counterparts.draw();this.standstills?.draw();this.standstills?.refresh();
     this.reasoning.draw();this.search?.sync();
     canvas.hint.textContent=this.mode()==='inquiry'?'Select another person’s node or connection to ask or offer something.':this.mode()==='compare'?'Select another person’s node or connection to record your position.':'Select another person’s node or reasoning connection to dispute it.';
     document.querySelector('.comparison-canvas-footer').textContent=this.mode()==='inquiry'?'Ask, clarify, or offer · Drag empty space to pan · Scroll to zoom':this.mode()==='compare'?'Record your position · Drag empty space to pan · Scroll to zoom':'Dispute a node or connection · Drag empty space to pan · Scroll to zoom';

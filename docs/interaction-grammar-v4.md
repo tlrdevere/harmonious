@@ -2,6 +2,31 @@
 
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
+## September 29 Argument standstills: current implementation
+
+The [standstill increment](argument-standstill-plan.md) is **locally implemented; release verification is underway**. [Deployment status](deployment-status.md) is the authority for the live Worker, migration and completed release checks. It is the narrow approved exception to the broader Argument-resolution deferral. It records participants' shared description of an obstacle; it does not decide who is right, assert agreement with the underlying node, close other branches or introduce Pods.
+
+| Action | Author and attachment | Required input and effect |
+| --- | --- | --- |
+| **Propose standstill** / `propose_standstill` | Either of the actual two dispute participants; mandatory source node plus an existing active dispute or reply in the same comparison | A trimmed, nonempty explanation, up to 10,000 characters. Records Standstill proposed. Source-node and claim-card entry points require an explicit contribution choice. |
+| **Suggest changes** / `suggest_standstill` | The other participant, targeting the exact proposal revision and latest causal state | A trimmed, nonempty suggestion, up to 10,000 characters. Preserves the proposer's wording and supersedes earlier confirmation until explicit reconfirmation. |
+| **Confirm standstill** / `confirm_standstill` | The other participant, after reading the full current explanation and reviewed context | An explicit receipt for that wording and context. The proposer cannot supply the second person's confirmation. |
+| **Revise explanation** / **Review and renew proposal** | Only the proposer, keeping the fixed source/dispute/anchor identity | A new proposal version and reviewed context. Earlier wording and confirmations remain historical; the new version returns to proposed. |
+| **Resume discussion** / `resume_standstill` | Either participant, targeting the latest accessible proposal state, including Needs review | An explicit immutable receipt ending the proposal instance. No reply or permission from the other person is required. Cancel saves nothing. |
+| **Withdraw proposal** | Only the proposer, through the proposal's ordinary authored withdrawal revision | Ends the proposal instance while preserving its permitted history. The other participant uses Resume discussion. |
+
+The form asks **Why do you believe this argument cannot move forward at this time?** Confirmation states **You are confirming this description of the impasse, not agreeing with the underlying position.** There is no extra dispute category or reason selector. Replies stay available and do not silently confirm or end a standstill. At most one unfinished instance by the same author can occupy the same addressed point; separate authors can retain different proposals. Resumed and withdrawn instances are terminal, and a later impasse requires a new ID.
+
+The record family is `kind: 'standstill'`, with `layer: 'arguments'` and metadata `standstill.version: 1`, separate from the existing interaction grammar versions. Proposals retain the comparison ID, mandatory source target, original dispute ID, fixed addressed entry/original version, currently reviewed anchor/dispute revisions and source snapshots. Proposal edits use immutable version history. Suggestions, confirmations and resumptions are separate author-owned immutable rows targeting the exact proposal version. Their `previous` reference forms one causal sequence; `reviewedContext` binds the source snapshot and anchor/dispute revisions seen before submission. Client timestamps do not determine the current shared state.
+
+`dist/standstill.mjs` provides the common state and count projection: proposed, confirmed, needs-review, resumed, withdrawn and unavailable. Source or anchor changes invalidate current confirmation; an unrelated new message does not. Withdrawing the original dispute makes standstills beneath its replies unavailable. Missing or inaccessible dependencies suppress a current shared-state claim instead of falling back to an old confirmation. The model, Worker and database reject outsiders, self-confirmation, fabricated anchors, stale causal transitions and cross-dispute attachments. Exact retries reuse stable IDs through the atomic account-save path.
+
+`dist/standstill-ui.mjs` integrates the composer and detail controls with source windows, the node log, `dist/argument-dialogue-ui.mjs`, shared presentation and search. Standstills are annotations, not extra dialogue or retired-reasoning cards. Proposed, confirmed and needs-review counts remain separate from dispute/reply counts and from each other. Collapsed summaries reveal the actual contribution; explanations, suggestions, authors and status are searchable. The same comparison/source/entry route can reopen a proposal detail. Current authorized history remains attributed, including confirmations of earlier wording.
+
+The account client declares `argument-standstill-v1`. Capability checks cover current records, historical versions and incoming writes; unsupported older tabs receive the established draft-preserving refresh-required response. The workspace envelope remains schema version **6**. The current portable reader and standalone exporter preserve this distinct record family; older readers reject the unsupported discussion kind before saving instead of dropping it. Authenticated backup import retains its existing private-map-copy boundary. A post-release rollback must retain the new reader, capability checks and validation once standstill records exist.
+
+The current technical catalog adds `tests/standstill.test.mjs`, `tests/standstill-database.test.mjs` and `tests/standstill-browser.test.mjs` alongside the existing reply/dialogue and interaction checks. These cover model/API rules, isolated database parity and the two-account interface. The actual full-suite result and live release evidence belong in deployment status; the historical suite counts below describe their original releases.
+
 ## September 29 node-focused Argument dialogue
 
 The [node dialogue canvas](argument-dialogue-canvas-plan.md) **shipped in Worker 58**, after all **55 local and 55 hosted checks**, the additive database migration and public verification. New targeted continuations use metadata version **7** and the `argument-dialogue-v1` capability. Their canonical target remains the original dispute; `replyTo` identifies the immutable addressed contribution and revision. The addressed entry must belong to the same dispute/comparison and be active/current at creation. Recipient identity remains the other dispute participant, including same-author follow-ups. Versions 4–6 retain their meaning, and existing records are not rewritten. Old clients encountering version 7 receive the draft-preserving refresh prompt. The canvas is a projection of the same log, with no resolution or extra relationship categories.
@@ -86,7 +111,7 @@ Copies of the revised uploads are preserved in [the design references](design/in
 | Map / Create | Edit; Add child node, optionally as a reason; Inspect details; Connect existing node; direct Confidence | Author's own map |
 | Compare | Agree, Disagree, No position | Another participant's ordinary node or connection |
 | Inquiry | Request reason, Request explanation, Propose alternative, Offer reason | Another participant's ordinary node or connection |
-| Argument | Dispute reasoning | Another participant's ordinary node or eligible typed connection |
+| Argument | Dispute reasoning; contextual Reply; Propose standstill and its review/response controls | Disputes address another participant's ordinary node or eligible typed connection. Standstills are limited to ordinary-node disputes and their addressed replies. |
 | Within the originating mode | Respond | Intended recipient of an active request, proposal, offer, or dispute |
 
 Map editing retains its Maps destination. Compare, Inquiry, and Argument share a comparison canvas, source maps, and camera. Changing modes parks an unfinished form; returning restores it. Changing targets or leaving the form uses the discard safeguard.
@@ -144,12 +169,12 @@ Organizational edges do not offer unsupported copy or wording-revision operation
 - Counterpart requests and create/choose counterpart flows remain in Compare. Request counterpart is unavailable when a counterpart is already linked.
 - Confidence remains author-controlled through the persistent node slot and creation/edit forms. Definitions and standards retain their central library and invoked references in inspection.
 - Old Ask functionality is replaced in the new workflow by Inquiry's request menus.
-- Standalone adoption suggestions, reflection/outcome entry tools, generic Resolve/Reopen, and old challenge/reply menus are not new grammar actions. Historical records and underlying model checks remain for compatibility.
-- Dragging/rearranging, Likely Future filtering, merging nodes, termination status, and automatic adoption remain outside this prototype.
+- Standalone adoption suggestions, reflection/outcome entry tools, generic Resolve/Reopen, and old challenge/reply menus are not new grammar actions. Historical records and underlying model checks remain for compatibility. The separate standstill family above does not rename or reactivate those historical records.
+- The narrow standstill workflow is implemented locally; broader resolution, automatic verdicts, Pod convergence, dragging/rearranging, Likely Future filtering, merging source records and automatic adoption remain deferred. The released joined agreement cards are a display projection, not merged source ownership.
 
-## Implementation and verification boundaries
+## Original v4 implementation and verification boundaries (historical)
 
-### Local testing checklist
+### Original local testing checklist
 
 Open `review/Harmonious-interactions-preview.html`. Use **Preview as** to switch between Alex and Blair. These are disposable sample identities, not signed-in accounts. Reopening resets the samples; Download backup retains a copy of your experiments.
 

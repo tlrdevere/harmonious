@@ -50,6 +50,7 @@ export class InteractionUI{
     const entries=d.recentConversations(d.allEntries().filter(r=>r.kind==='interaction'&&r.action==='dispute'&&stableJSON(r.target)===stableJSON(d.target)));
     const active=entries.filter(r=>r.status==='active'),withdrawn=entries.filter(r=>r.status==='withdrawn');
     section.append(interactionEl('h3',`Disputes (${active.length})`));
+    if(discussionSource(ws,d.target)?.item.parent!==null)d.standstills.sourceControls(section,d.target);
     if(!active.length)section.append(interactionEl('p','No disputes recorded on this node yet.','field-help'));
     const render=r=>{
       const p=interactionPresentation(ws,r),replies=this.responses(r.id),current=replies.filter(reply=>reply.status==='active'),latest=current.at(-1);
@@ -69,11 +70,11 @@ export class InteractionUI{
       for(const reply of replies){
         const response=interactionEl('section','','argument-log-reply');response.dataset.response=reply.id;
         response.append(interactionEl('strong',`${d.name(reply.authorId)}${reply.status==='withdrawn'?' · Withdrawn response':''}`),interactionEl('small',new Date(reply.createdAt).toLocaleString(),'argument-log-date'));
-        this.content(reply,response);this.replyControl(reply,response,'Reply to this response');
+        this.content(reply,response);this.replyControl(reply,response,'Reply to this response');d.standstills.pointControls(response,reply);
         if(reply.authorId===d.actor()&&reply.status==='active')response.append(interactionButton('Manage response',()=>this.open(reply.id),'discussion-text-action'));
         body.append(response);
       }
-      this.replyControl(r,body);
+      this.replyControl(r,body);d.standstills.pointControls(body,r);
       if(r.authorId===d.actor())body.append(interactionButton('Manage dispute',()=>this.open(r.id),'discussion-text-action'));
       card.append(summary,body);card.addEventListener('toggle',()=>d.positionPopover());return card;
     };
@@ -85,10 +86,11 @@ export class InteractionUI{
     const d=this.d,old=d.host?.querySelector('.argument-log');
     if(!old||d.host.hidden||d.mode()!=='argument'||d.target?.type!=='node'||d.dirty||d.saving||d.host.querySelector('form'))return;
     if(old.argumentSnapshot===stableJSON(this.c.workspace))return;
-    const open=new Set([...old.querySelectorAll('details[open][data-dispute]')].map(el=>el.dataset.dispute)),historyOpen=old.querySelector('.argument-log-history')?.open;
+    const open=new Set([...old.querySelectorAll('details[open][data-dispute]')].map(el=>el.dataset.dispute)),standstillOpen=new Set([...old.querySelectorAll('details[open][data-standstill-history]')].map(el=>el.dataset.standstillHistory)),historyOpen=old.querySelector('.argument-log-history')?.open;
     const focused=document.activeElement,focusId=old.contains(focused)&&focused.closest('[data-dispute]')?.dataset.dispute,responseId=focused?.closest('[data-response]')?.dataset.response,scroll=d.host.scrollTop;
     this.argumentLog();const next=d.host.querySelector('.argument-log:last-child');old.replaceWith(next);
     for(const el of next.querySelectorAll('[data-dispute]'))el.open=open.has(el.dataset.dispute);
+    for(const el of next.querySelectorAll('[data-standstill-history]'))el.open=standstillOpen.has(el.dataset.standstillHistory);
     const history=next.querySelector('.argument-log-history');if(history)history.open=!!historyOpen;
     if(focusId){const card=[...next.querySelectorAll('[data-dispute]')].find(el=>el.dataset.dispute===focusId),scope=responseId?[...card?.querySelectorAll('[data-response]')||[]].find(el=>el.dataset.response===responseId):card,button=focused.matches('button')&&[...scope?.querySelectorAll('button')||[]].find(el=>el.textContent===focused.textContent);(button||card?.querySelector('summary'))?.focus({preventScroll:true});}
     d.positionPopover();d.host.scrollTop=scroll;
@@ -187,6 +189,7 @@ export class InteractionUI{
     const parent=r.target.type==='entry'?this.c.workspace.discussions.find(p=>p.id===r.target.entryId):null;
     this.content(r,d.host);
     const argumentReply=this.replyControl(r,d.host);
+    if(r.interaction?.mode==='argument')d.standstills.pointControls(d.host,r);
     if(!argumentReply&&r.status==='active'&&r.action!=='respond'&&['request_reason','request_explanation','propose_alternative','offer_reason','dispute'].includes(r.action)&&r.interaction.recipientId===d.actor())d.actionGroup('Your response',[interactionButton('Respond',()=>this.compose('respond'))]);
     if(r.status==='withdrawn')d.host.append(interactionEl('p','Withdrawn','discussion-state'));
     const replies=this.responses(id);

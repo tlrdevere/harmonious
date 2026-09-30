@@ -6,7 +6,7 @@ export const reasoningTargetKey=target=>stableJSON(target);
 const entryTarget=id=>({type:'entry',entryId:id});
 const inferenceTarget=id=>({type:'inference',entryId:id});
 const hasParent=target=>['entry','inference'].includes(target?.type);
-const attachedOnly=r=>r?.kind==='interaction'||isReflection(r);
+const attachedOnly=r=>['interaction','standstill'].includes(r?.kind)||isReflection(r);
 const ordinary=r=>r.status==='active'&&(r.kind==='argument'||r.kind==='reply'&&r.layer==='arguments'&&r.action==='reply');
 const byTime=(a,b)=>a.createdAt.localeCompare(b.createdAt)||a.id.localeCompare(b.id);
 

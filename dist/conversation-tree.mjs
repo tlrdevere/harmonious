@@ -52,7 +52,7 @@ export function challengeState(records,entry){
 export function conversationGroups(records){
   const groups=new Map();
   for(const r of records){
-    if(r.status!=='active'||['relationship','correspondence','context'].includes(r.kind)||isReflectionOutcome(r))continue;
+    if(r.status!=='active'||['relationship','correspondence','context','standstill'].includes(r.kind)||isReflectionOutcome(r))continue;
     const target=conversationAnchor(records,r);if(!target)continue;
     const key=stableJSON(target);if(!groups.has(key))groups.set(key,{key,target,entries:[],questions:0,reasons:0,challenges:0,openChallenges:0});
     const g=groups.get(key);g.entries.push(r);

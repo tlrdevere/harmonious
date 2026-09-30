@@ -89,7 +89,20 @@ export function projectAccountWorkspace(snapshot,actorId){
     const newest=records.reduce((a,b)=>Date.parse(b.createdAt)>Date.parse(a.createdAt)||Date.parse(b.createdAt)===Date.parse(a.createdAt)&&String(b.id)>String(a.id)?b:a);
     if(hidden.has(newest.id))for(const r of records)hidden.add(r.id);
   }
-  let changed=true;while(changed){changed=false;for(const r of discussions)if(!hidden.has(r.id)&&[r.target,r.other].some(t=>t?.entryId&&hidden.has(t.entryId))){hidden.add(r.id);changed=true;}}
+  const references=record=>[record,...(record.history||[])].flatMap(r=>[r.target?.entryId,r.other?.entryId,r.interaction?.replyTo?.entryId,r.standstill?.disputeId,r.standstill?.anchor?.entryId,r.standstill?.previous?.entryId]).filter(Boolean);
+  // A hidden successor must not resurrect an earlier confirmation. Hide the
+  // complete standstill family when any history or causal dependency is hidden.
+  const families=new Map();
+  for(const r of discussions)if(r.kind==='standstill'){
+    const id=r.action==='propose_standstill'?r.id:r.target?.entryId;
+    if(!families.has(id))families.set(id,[]);families.get(id).push(r);
+  }
+  const available=new Set(discussions.map(r=>r.id));
+  let changed=true;while(changed){
+    changed=false;
+    for(const r of discussions)if(!hidden.has(r.id)&&references(r).some(id=>hidden.has(id)||r.kind==='standstill'&&!available.has(id))){hidden.add(r.id);changed=true;}
+    for(const records of families.values())if(records.some(r=>hidden.has(r.id)))for(const r of records)if(!hidden.has(r.id)){hidden.add(r.id);changed=true;}
+  }
   discussions=discussions.filter(r=>!hidden.has(r.id));
   const workspace={schemaVersion:6,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
   if(maps.length)validateWorkspace(workspace);
@@ -232,7 +245,8 @@ export function orderAccountChanges(changes){
       const step=stack.pop(),id=step.change.id;if(done.has(id))continue;
       if(step.expanded){path.delete(id);done.add(id);ordered.push(step.change);continue;}
       check(!path.has(id),'Conversation targets cannot form a cycle.');path.add(id);stack.push({...step,expanded:true});
-      for(const target of [step.change.value.other,step.change.value.target])if(['entry','inference'].includes(target?.type)&&discussions.has(target.entryId))stack.push({change:discussions.get(target.entryId),expanded:false});
+      const value=step.change.value,dependencies=[value.other?.entryId,value.target?.entryId,value.interaction?.replyTo?.entryId,value.standstill?.disputeId,value.standstill?.anchor?.entryId,value.standstill?.previous?.entryId];
+      for(const dependency of new Set(dependencies))if(dependency!==id&&discussions.has(dependency))stack.push({change:discussions.get(dependency),expanded:false});
     }
   }
   return [...changes.filter(change=>change.kind!=='discussion'),...ordered];
