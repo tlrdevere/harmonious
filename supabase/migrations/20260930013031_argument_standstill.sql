@@ -129,4 +129,3 @@ create trigger harmonious_standstill_identity before insert or update on public.
 -- narrow withdrawal path can preserve an unavailable addressed contribution.
 drop trigger harmonious_discussion_identity on public.harmonious_records;
 create trigger harmonious_discussion_identity before insert or update on public.harmonious_records for each row when (new.kind<>'discussion' or new.content->>'kind' is distinct from 'counterpart_unlink' and new.content->>'kind' is distinct from 'standstill') execute function public.harmonious_check_discussion();
-
