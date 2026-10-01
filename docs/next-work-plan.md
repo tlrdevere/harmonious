@@ -1,5 +1,8 @@
 # Harmonious next-work plan
 
+[Owner-only map deletion](map-deletion.md) is **live in Worker 65**, after **64/64 local and 64/64 hosted checks**, the additive database safeguards and exact live verification. Refresh, open My maps, and use Delete map on a disposable map. Existing copies/history remain; comparisons using a deleted source become unavailable. The empty library supports creating another map. Follow the deletion section of [the checklist](user-testing-checklist.md), then continue user testing. The technology stack and existing deferrals are unchanged.
+
+
 The top navigation highlight fix is live in **Worker 64**, after all 62 local and hosted checks and live verification. Refresh and check each top destination and library section, then continue user testing. Existing deferrals remain unchanged.
 
 The [above/below reply placement increment](argument-reply-placement.md) is live in **Worker 63**, after all 62 local and hosted checks and live verification. Refresh both accounts and test mixed-direction conversations in the inner Argument canvas. Placement remains visual; no new argument categories or resolution rules are introduced. Existing deferrals remain unchanged.

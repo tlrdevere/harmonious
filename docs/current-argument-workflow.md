@@ -1,5 +1,7 @@
 # Working in a shared Comparison
 
+[Owner-only map deletion](map-deletion.md) is live in **Worker 65**. Deleting a source makes its comparisons unavailable for new contributions. Independent copies and recorded history are retained; current source contents are no longer browsable. My maps offers Delete map with confirmation. See [deployment status](deployment-status.md).
+
 Top navigation highlighting is corrected in **Worker 64**. Maps, Comparisons and Pods remain highlighted while browsing their library sections; choosing Map Library explicitly highlights Map Library. Reloads preserve the selected destination. Definitions & standards remains under Map Library.
 
 On the inner Argument canvas, response cards now offer **Reply**, **Reply above**, and **Reply below**. The latter two place the same kind of reply above or below the addressed response; both participants see the saved placement. The canvas expands with straight connections. See [reply placement](argument-reply-placement.md) and [deployment status](deployment-status.md) for publication.

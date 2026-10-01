@@ -4,6 +4,18 @@ Updated October 1, 2026 (UTC).
 
 ## Current release
 
+Owner-only map deletion deployed **2026-10-01T17:56:49.963872Z**. Release source: `b009e46929d0128700a08c1b0a07e28a7f42edc6` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **65**: `67810c6e-8417-4341-8e28-82ce9c00764f`, serving **100%** of traffic. Deployment: `b7940e37-7eae-4718-b3a4-c409031cd574`.
+- **My maps → Delete map** names the map and confirms removal. Only the owner can delete; facilitator sessions cannot. Deleted maps disappear from personal/shared browsing and source pickers. Existing comparisons have unavailable sources. Independent copies and historical records are retained privately as appropriate; there is no restore action. See [map deletion](map-deletion.md).
+- **64/64 local checks passed**: `build/verification/2026-10-01T17-41-01-441Z-100280/summary.json`. **64/64 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36901375728). Coverage includes ownership, origin checks, cancellation, concurrent edits, stale-save rejection, lost-response retries, retained copies/history, empty accounts, new maps after deletion, database enforcement, and desktop/narrow confirmations. Evidence: `build/deletion-hosted-verification-evidence.json`.
+- Additive migration: local `20261001173221_map_deletion.sql`; remote `20261001175518_map_deletion`. The deployed function exactly matches the tested source, uses invoker security with an empty search path, and is executable only by the service role. Existing data remained generation **174**, **132 records**, fingerprint `1777021fba5a02ae1f1bc54840ba602d`. No production maps were deleted in testing. Security and performance advisor findings are unchanged.
+- Live verification confirms all **62 client files** and the homepage match the checkout, configured sign-in, access restrictions and security headers. Worker SHA-256: `069469b06233ada077d5ef6ba62f75bef4469b33cc026d60e86a4f0b98ad2176`. Runtime settings and bindings are unchanged. Evidence: `build/deletion-release-evidence.json`.
+
+**Refresh Harmonious, open Map Library → My maps, and select Delete map on a disposable map to try it.** Older tabs receive an update message if their workspace becomes empty. Once deletion is used, rollback must preserve deletion markers and filtering. Later documentation-only commits do not change this deployed bundle. Existing deferrals and the technology stack remain unchanged.
+
+## Previous release — Worker 64
+
 Navigation highlighting deployed **2026-10-01T17:17:21.790026Z**. Release source: `f478de848407b99bf95eaa0918371f550134e64a` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **64**: `7dbe9a26-37da-43f9-b36f-f355288882e6`, serving **100%** of traffic. Deployment: `45a51347-8d87-45d7-bddc-b04f4871c090`.
