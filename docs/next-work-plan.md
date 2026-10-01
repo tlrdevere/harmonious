@@ -1,6 +1,6 @@
 # Harmonious next-work plan
 
-The [above/below reply placement increment](argument-reply-placement.md) is implemented and undergoing release verification. After publication, test mixed-direction conversations in the inner Argument canvas. Placement remains visual; no new argument categories or resolution rules are introduced. Existing deferrals remain unchanged.
+The [above/below reply placement increment](argument-reply-placement.md) is live in **Worker 63**, after all 62 local and hosted checks and live verification. Refresh both accounts and test mixed-direction conversations in the inner Argument canvas. Placement remains visual; no new argument categories or resolution rules are introduced. Existing deferrals remain unchanged.
 
 ## Current priorities — October 1, 2026 (UTC)
 

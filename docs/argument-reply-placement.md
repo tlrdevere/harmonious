@@ -1,6 +1,6 @@
 # Argument reply placement
 
-Implementation ready for release verification, October 1, 2026. Deployment status is the authority for publication.
+Live in **Worker 63**, October 1, 2026, after **62/62 local and 62/62 hosted checks**, the additive database migration and live verification. [Deployment status](deployment-status.md) records the exact source and evidence.
 
 On the inner Argument canvas, an active response offers **Reply**, **Reply above**, and **Reply below** in a separate action group. Reply retains horizontal placement. Above and below are visual choices, with no inferred agreement, objection category or different response type. They use the same composer, explicit addressed contribution, chronological log and permissions. Disputes retain their existing Respond/Reply workflow, including the first recipient's outcome choices.
 

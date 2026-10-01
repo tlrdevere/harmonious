@@ -4,6 +4,20 @@ Updated October 1, 2026 (UTC).
 
 ## Current release
 
+Above/below Argument replies deployed **2026-10-01T16:51:01.929594Z**. Release source: `88b028e39e3c99a6d4cd4355758783c2dbc14b11` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **63**: `bd1770d2-2754-4918-bca5-01576b6f42a6`, serving **100%** of traffic. Deployment: `021b108b-4e0f-4575-be3d-0339f96107d6`.
+- Response cards in the inner Argument canvas offer **Reply**, **Reply above**, and **Reply below**. Placement is shared and preserved through edits, reload and facilitator approval. It changes presentation only. The occupied canvas expands, with measured cards and straight connections avoiding unrelated cards. See [reply placement](argument-reply-placement.md).
+- **62/62 local checks passed**: `build/verification/2026-10-01T16-32-50-595Z-112468/summary.json` (Node 24.19.0, Python 3.12.14, Playwright 1.62.1, Edge). Coverage includes mixed directions, reversals, crowded siblings, card/line clearance, persistence, immutable history, direct PostgreSQL validation, old-client recovery, two-account browser use and facilitator drafts. Desktop and narrow-screen captures were reviewed.
+- **62/62 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36893449095). Evidence: `build/placement-hosted-verification-evidence.json`.
+- Additive migration: local `20261001162538_argument_reply_placement.sql`; remote ledger `20261001163913_argument_reply_placement`. The deployed validator matches the tested function, uses an empty search path and invoker security, and remains executable only by the service role. Existing data remained generation **161**, **121 records**, fingerprint `96aea225c6eb8c1a2d59d67b76645222`. No production test content was created.
+- Live verification confirms all **62 client files** and the homepage match the checkout, configured sign-in, account/private-path denial and security headers. Worker SHA-256: `b9e859c141dc0a3e38b8a5b0e42e34e74fdebf44535a3c8af8da927a8326597b`. Evidence: `build/placement-release-evidence.json`.
+- Runtime settings and all bindings were inherited unchanged. The security advisor results are unchanged. Existing deferrals and the technology stack remain unchanged.
+
+**Refresh Harmonious, open an Argument canvas, then use Reply above or Reply below on a response card.** Follow [the testing checklist](user-testing-checklist.md). Once positioned replies are saved, rollback must retain `argument-placement-v1`, metadata validation and rendering support; Worker 62 cannot read that metadata. Later documentation-only commits do not change this deployed bundle.
+
+## Previous release — Worker 62
+
 Facilitator mode deployed October 1, 2026 at **01:55:54 UTC** (September 30, 9:55 p.m. in New York). Release source: `635b32c107774a0e4c8e3e8be35ddd7612176d24` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **62**: `63750b6f-c045-4312-9805-f1ca93a56977`, serving **100%** of traffic. Deployment: `f9f07dd4-ecb9-4c07-94e9-3f7616d3a4ec`.
