@@ -48,3 +48,11 @@ export function facilitatorLabel(ws,records){
  if(last.draftId&&last.method==='direct')return `Entered by ${name(last.enteredBy)} · Approved by ${name(last.participantId)}`;
  return last.operatorId===last.participantId?(records.some(r=>r.operatorId!==r.participantId||r.enteredBy&&r.enteredBy!==r.participantId)?'Facilitated history':''):last.method==='verbal'?`Approval recorded by ${name(last.operatorId)}`:`Entered by ${name(last.operatorId)}`;
 }
+export function nodeFacilitation(ws,mapId,nodeId){
+ const related=new Set(ws.discussions.filter(r=>r.target?.type==='node'&&r.target.mapId===mapId&&r.target.nodeId===nodeId).map(r=>r.id));
+ let changed=true;while(changed){changed=false;for(const r of ws.discussions)if(['entry','inference'].includes(r.target?.type)&&related.has(r.target.entryId)&&!related.has(r.id)){related.add(r.id);changed=true;}}
+ const own=facilitatorHistory(ws,{kind:'map',id:mapId,nodeId}),activity=(ws.facilitationHistory||[]).filter(r=>r.kind==='discussion'&&related.has(r.recordId));
+ const facilitated=activity.some(r=>r.operatorId!==r.participantId||r.enteredBy&&r.enteredBy!==r.participantId);
+ const label=facilitatorLabel(ws,own)||(facilitated?'Facilitated activity':'');
+ return {records:(ws.facilitationHistory||[]).filter(r=>own.includes(r)||activity.includes(r)),label};
+}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {fixture,alice,bob,organizer,outsider,caps} from './facilitation-fixture.mjs';
 import {handleAccountAPI,saveAccountChanges,accountWorkspace} from '../worker/account-api.mjs';
 import {validateWorkspace} from '../dist/workspace.mjs';
-import {validateFacilitatedBatch,facilitatorLabel} from '../dist/facilitation.mjs';
+import {validateFacilitatedBatch,facilitatorLabel,nodeFacilitation} from '../dist/facilitation.mjs';
 import {addNode} from './accounts.test.mjs';
 import {makeDiscussion} from '../dist/discussion.mjs';
 import {counterpartDisplay} from '../dist/interaction-presentation.mjs';
@@ -42,6 +42,7 @@ try{
  assert.notEqual(counterpartDisplay((await accountWorkspace(f.store,alice)).workspace,thread.id,refs.Alice).state,'agree','One facilitated decision does not become bilateral agreement');
  await contribution(bob,{kind:'interaction',action:'endorse',target:refs.Alice,body:'Agree',interaction:{mode:'compare',options:[]}});
  assert.equal(counterpartDisplay((await accountWorkspace(f.store,alice)).workspace,thread.id,refs.Alice).state,'agree');
+ const activityView=(await accountWorkspace(f.store,alice)).workspace;activityView.facilitationHistory=activityView.facilitationHistory.filter(r=>r.kind!=='map'||r.recordId!==refs.Bob.mapId);assert.equal(nodeFacilitation(activityView,refs.Bob.mapId,refs.Bob.nodeId).label,'Facilitated activity','An assessment is not authorship of its target node');assert.match(nodeFacilitation(activityView,refs.Alice.mapId,refs.Alice.nodeId).label,/Entered by Taylor/);
  const dispute=(await contribution(alice,{kind:'interaction',action:'dispute',target:refs.Bob,body:'We disagree about the evidence',interaction:{mode:'argument',options:['factual_basis']}})).value;
  const reply=(await contribution(bob,{kind:'interaction',action:'respond',target:{type:'entry',entryId:dispute.id},body:'The evidence is inconclusive',interaction:{mode:'argument',options:['reply'],replyTo:{entryId:dispute.id,version:1}}})).value;
  const ws=(await accountWorkspace(f.store,alice)).workspace,proposal=(await contribution(alice,{kind:'standstill',action:'propose_standstill',target:refs.Bob,body:'We need different evidence to proceed',standstill:standstillProposalMetadata(ws,thread.id,reply.id)})).value;
