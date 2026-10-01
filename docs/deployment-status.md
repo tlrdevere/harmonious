@@ -4,6 +4,18 @@ Updated October 1, 2026 (UTC).
 
 ## Current release
 
+Navigation highlighting deployed **2026-10-01T17:17:21.790026Z**. Release source: `f478de848407b99bf95eaa0918371f550134e64a` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **64**: `7dbe9a26-37da-43f9-b36f-f355288882e6`, serving **100%** of traffic. Deployment: `45a51347-8d87-45d7-bddc-b04f4871c090`.
+- The top navigation follows Maps, Comparisons and Pods even when their lists use the shared library view. Explicit Map Library navigation stays highlighted as Map Library. Section changes, reloads and keyboard navigation preserve one current destination, including its accessible current-page state. Definitions & standards remains under Map Library.
+- **62/62 local checks passed**: `build/verification/2026-10-01T17-04-45-954Z-117424/summary.json`. **62/62 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36896772346). Added browser assertions cover top-level and library-section clicks, reloads, keyboard use and narrow screens. Desktop and narrow screenshots were reviewed. Evidence: `build/navigation-hosted-verification-evidence.json`.
+- Live verification confirms all **62 client files** and the homepage match the checkout, configured sign-in, access restrictions and security headers. Worker SHA-256: `aa2bae100df5425f41514ebf499c978e70644403cc765f6821412a53303f8552`. Evidence: `build/navigation-release-evidence.json`.
+- No database migration or data change was needed. Runtime settings and all bindings were inherited unchanged. The technology stack and existing deferrals remain unchanged.
+
+**Refresh Harmonious and select each top navigation option.** Only the current destination should be highlighted. The blue keyboard-focus outline is distinct from the selected tab. Later documentation-only commits do not change this deployed bundle.
+
+## Previous release — Worker 63
+
 Above/below Argument replies deployed **2026-10-01T16:51:01.929594Z**. Release source: `88b028e39e3c99a6d4cd4355758783c2dbc14b11` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
 - Worker version **63**: `bd1770d2-2754-4918-bca5-01576b6f42a6`, serving **100%** of traffic. Deployment: `021b108b-4e0f-4575-be3d-0339f96107d6`.

@@ -1,5 +1,7 @@
 # Working in a shared Comparison
 
+Top navigation highlighting is corrected in **Worker 64**. Maps, Comparisons and Pods remain highlighted while browsing their library sections; choosing Map Library explicitly highlights Map Library. Reloads preserve the selected destination. Definitions & standards remains under Map Library.
+
 On the inner Argument canvas, response cards now offer **Reply**, **Reply above**, and **Reply below**. The latter two place the same kind of reply above or below the addressed response; both participants see the saved placement. The canvas expands with straight connections. See [reply placement](argument-reply-placement.md) and [deployment status](deployment-status.md) for publication.
 
 The [facilitator workflow](facilitator-mode-plan.md) is live in **Worker 62**, adding assisted entry for individually enabled test accounts. The organizer can record the represented participant's disputes, replies and standstill choices, with explicit direction and visible recorder attribution. Private drafts do not enter the Argument log or canvas until approved. Existing eligibility and two-participant confirmation rules still apply.

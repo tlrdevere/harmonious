@@ -1,5 +1,11 @@
 # Harmonious: what to check on your next visit
 
+## Top navigation — Worker 64
+
+- [ ] Select Map Library, Maps, Comparisons and Pods. Only the selected destination should have the active highlight.
+- [ ] Switch library sections, reload, and repeat with the keyboard or a narrow screen. The current destination should remain accurate. Clicking Map Library should highlight Map Library; Definitions & standards also belongs there.
+
+
 ## Above/below Argument replies — Worker 63
 
 - [ ] In the inner Argument canvas, select **Reply above** on a response and send a reply. Repeat with **Reply below** and the ordinary **Reply**. Check that each connects to the intended response.
