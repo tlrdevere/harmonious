@@ -8,7 +8,7 @@ const libButton=(text,action,className='')=>{const button=libEl('button',text,cl
 // The Library lists saved objects. Opening a canvas is always a deliberate action.
 export class LibraryUI{
   constructor(controller){
-    this.c=controller;this.definitions=new DefinitionsUI(controller);this.section='maps';this.query='';this.browsing=false;
+    this.c=controller;this.definitions=new DefinitionsUI(controller);this.section='maps';this.home=true;this.query='';this.browsing=false;
     const section=libEl('section','','library-workspace');section.id='library-workspace';section.hidden=true;
     section.innerHTML='<div class="library-heading"><div><div class="eyebrow">YOUR WORKSPACE</div><h1>Map Library</h1><p>Choose where to begin, or return to a conversation.</p></div><div id="library-create" class="library-actions"></div></div><nav id="library-sections" class="library-sections" aria-label="Library sections"></nav><label for="library-search">Find in this section</label><input id="library-search" type="search" placeholder="Search by map name or person"><div id="library-results" class="library-grid"></div>';
     libUI('editor-main').before(section);
@@ -43,8 +43,8 @@ export class LibraryUI{
     const podHeading=document.querySelector('#pods-workspace h1');if(podHeading)podHeading.textContent='Derived pod maps';
     const podNote=libEl('p','This prototype derives shared nodes from recorded co-signs. Pod authoring will be designed separately.','field-help');libUI('pods-workspace').prepend(libButton('← Pods in Library',()=>this.open('pods')),podNote);
   }
-  open(section=this.section){
-    if(!this.c.showMode('library'))return false;this.c.message();this.section=section;this.browsing=false;this.query='';libUI('library-search').value='';this.render();this.route({library:section});return true;
+  open(section=this.section,{home=false}={}){
+    if(!this.c.showMode('library'))return false;this.c.message();this.section=section;this.home=home;this.browsing=false;this.query='';libUI('library-search').value='';this.render();this.route({library:section,...(home?{home:'1'}:{})});return true;
   }
   route(values){const hash=new URLSearchParams(values);history.replaceState(null,'',`${location.pathname}${location.search}#${hash}`);}
   ownedMaps(){return this.c.workspace.maps.filter(map=>!map.unavailable&&this.c.canEditMap(map));}
@@ -55,6 +55,7 @@ export class LibraryUI{
   }
   render(){
     if(!libUI('library-results'))return;
+    if(this.c.mode==='library')this.c.updateTopNavigation();
     for(const button of libUI('library-sections').children)button.setAttribute('aria-current',String(button.className===`library-section-${this.section}`));
     const host=libUI('library-results');host.replaceChildren();const ws=this.c.workspace;
     if(this.section==='definitions')this.definitions.render(host,this.query);
@@ -131,7 +132,7 @@ export class LibraryUI{
     if(route.has('map'))this.openMap(route.get('map'),route.get('node'));
     else if(route.has('source')){const id=route.get('source');if(this.c.workspace.maps.some(m=>m.id===id&&!m.unavailable))this.openSource(id,route.get('node'));else{this.open('comparisons');this.c.message('This source map is unavailable.');}}
     else if(route.has('pod')){const id=route.get('pod');if(this.c.workspace.maps.some(m=>m.id===id&&!m.unavailable)){this.c.participation.podMapId=id;this.c.showMode('pods');}else this.open('pods');}
-    else this.open(['maps','comparisons','pods','definitions'].includes(route.get('library'))?route.get('library'):'maps');
+    else this.open(['maps','comparisons','pods','definitions'].includes(route.get('library'))?route.get('library'):'maps',{home:!route.has('library')||route.get('home')==='1'});
     return true;
   }
 }

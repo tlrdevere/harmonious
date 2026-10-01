@@ -142,6 +142,17 @@ try{
 
   // Real entry path: essential map selection must not depend on View options,
   // nor disappear when the passive source identity labels are clicked.
+  const activeTop=async id=>{
+    assert.deepEqual(await a.locator('.mode-tabs button.active').evaluateAll(buttons=>buttons.map(b=>b.id)),[id]);
+    assert.deepEqual(await a.locator('.mode-tabs button[aria-current="page"]').evaluateAll(buttons=>buttons.map(b=>b.id)),[id]);
+  };
+  await a.goto(origin+'/?navigation');await a.locator('#library-workspace').waitFor();await activeTop('discover-mode');
+  for(const id of ['comparison-mode','pods-mode','individual-mode','discover-mode']){await a.locator('#'+id).click();await activeTop(id);}
+  await a.reload();await a.locator('#library-workspace').waitFor();await activeTop('discover-mode');
+  for(const [section,id]of [['maps','individual-mode'],['comparisons','comparison-mode'],['pods','pods-mode'],['definitions','discover-mode']]){await a.locator('.library-section-'+section).click();await activeTop(id);}
+  await a.locator('#comparison-mode').click();await a.reload();await a.locator('#library-workspace').waitFor();await activeTop('comparison-mode');
+  await a.setViewportSize({width:390,height:844});await a.locator('#pods-mode').focus();await a.keyboard.press('Enter');await activeTop('pods-mode');await a.locator('#comparison-mode').click();await activeTop('comparison-mode');
+  await a.screenshot({path:'build/design-review/top-navigation-narrow.png',fullPage:true});await a.setViewportSize({width:1440,height:1000});await a.screenshot({path:'build/design-review/top-navigation-desktop.png',fullPage:true});
   const pairCount=(await view(store,alice)).workspace.comparisonThreads.length;
   await a.goto(origin+'/#library=comparisons');await a.getByRole('button',{name:'Choose maps',exact:true}).click();
   const setup=a.getByRole('region',{name:'Choose comparison maps',exact:true}),start=a.locator('#start-comparison');

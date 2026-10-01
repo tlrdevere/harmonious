@@ -56,9 +56,14 @@ export class WorkspaceController{
     document.querySelector('.map-switcher').hidden=mode!=='individual'||!this.activeMap();
     ui('workspace-nav').hidden=!!this.accountMode&&document.querySelector('.map-switcher').hidden;
     for(const [name,section]of [['library','library-workspace'],['individual','editor-main'],['compare','comparison-workspace'],['argument','argument-workspace'],['discover','discover-workspace'],['pods','pods-workspace']])ui(section).hidden=mode!==name;
-    for(const [id,active]of [['discover-mode',mode==='library'],['individual-mode',mode==='individual'],['comparison-mode',['compare','argument','discover'].includes(mode)],['pods-mode',mode==='pods']]){ui(id).classList.toggle('active',active);ui(id).setAttribute('aria-current',active?'page':'false');}
+    this.updateTopNavigation();
     ui('comparison-context').hidden=!['compare','argument'].includes(mode);
     if(['compare','argument'].includes(mode)){this.discussion?.setMode(mode);this.library.context();}
+  }
+  updateTopNavigation(){
+    const mode=this.mode,section=mode==='library'&&!this.library.home?this.library.section:null;
+    const selected=section?({maps:'individual',comparisons:'compare',pods:'pods'}[section]||'library'):mode;
+    for(const [id,active]of [['discover-mode',selected==='library'],['individual-mode',selected==='individual'],['comparison-mode',['compare','argument','discover'].includes(selected)],['pods-mode',selected==='pods']]){ui(id).classList.toggle('active',active);ui(id).setAttribute('aria-current',active?'page':'false');}
   }
   canLeaveComparison(){return (!this.discussion||this.discussion.canLeave())&&(!this.comparisonDirty||confirm('Discard the unrecorded comparison changes?'));}
   showMode(mode){
@@ -248,7 +253,7 @@ export class WorkspaceController{
     ui('elicitation-response').addEventListener('input',()=>{ui('divergence-confirmation').checked=false;});
     ui('shared-question').addEventListener('input',()=>this.renderElicitation(this.workspace.comparisons.find(record=>record.id===this.editingRecord)));
     ui('start-comparison').onclick=()=>this.startComparison();window.addEventListener('hashchange',()=>this.openComparisonRoute());
-    ui('individual-mode').onclick=()=>this.activeMapId?this.library.openMap(this.activeMapId):this.library.open('maps');ui('comparison-mode').onclick=()=>this.library.open('comparisons');ui('discover-mode').onclick=()=>this.library.open();ui('pods-mode').onclick=()=>this.library.open('pods');ui('explore-current').onclick=()=>this.library.open('maps');
+    ui('individual-mode').onclick=()=>this.activeMapId?this.library.openMap(this.activeMapId):this.library.open('maps');ui('comparison-mode').onclick=()=>this.library.open('comparisons');ui('discover-mode').onclick=()=>this.library.open(undefined,{home:true});ui('pods-mode').onclick=()=>this.library.open('pods');ui('explore-current').onclick=()=>this.library.open('maps');
     ui('map-select').onchange=()=>{const id=ui('map-select').value;if(id)this.library.openMap(id);else this.library.open('maps');};
     ui('new-map').onclick=()=>this.showMapDialog();ui('map-settings').onclick=()=>this.showMapDialog(true);ui('close-map-dialog').onclick=()=>ui('map-dialog').close();
     ui('map-owner-input').onchange=()=>{const fresh=ui('map-owner-input').value==='new';ui('map-person-group').hidden=!fresh;ui('map-person-input').required=fresh;};
