@@ -1,5 +1,15 @@
 # Harmonious: what to check on your next visit
 
+## Above/below Argument replies
+
+- [ ] In the inner Argument canvas, select **Reply above** on a response and send a reply. Repeat with **Reply below** and the ordinary **Reply**. Check that each connects to the intended response.
+- [ ] Refresh the other account. Check that placement and text match, and that all replies also appear in the chronological log.
+- [ ] Add several replies on the same side, then reply above/below those replies. Expand longer text, collapse and reopen branches, and use Fit dialogue. Cards should have room with straight connections.
+- [ ] Edit a positioned reply and refresh; it should retain its side. Check keyboard access, narrow screens, unfinished drafts and facilitator draft approval.
+
+See [deployment status](deployment-status.md) for publication.
+
+
 ## Facilitator testing — Worker 62
 
 - [ ] From the organizer's **Test accounts** list, enable **Facilitation** for a test participant only after receiving their permission. Enter their workspace and check that the banner identifies both people. Your other tab should remain your own account.

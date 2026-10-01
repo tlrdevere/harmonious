@@ -1,5 +1,7 @@
 # Harmonious next-work plan
 
+The [above/below reply placement increment](argument-reply-placement.md) is implemented and undergoing release verification. After publication, test mixed-direction conversations in the inner Argument canvas. Placement remains visual; no new argument categories or resolution rules are introduced. Existing deferrals remain unchanged.
+
 ## Current priorities — October 1, 2026 (UTC)
 
 The [facilitator workflow](facilitator-mode-plan.md) is **live in Worker 62**, after 62/62 local and 62/62 hosted checks, an additive migration and live verification. Start assisted testing from **Test accounts → Facilitation** after receiving each participant's permission. Use the [testing checklist](user-testing-checklist.md) to verify private drafts, recorded instructions, direct or verbal approval, attribution and revocation. No accounts were enabled automatically. All existing deferrals remain unchanged; the next step is feedback from real-user testing.

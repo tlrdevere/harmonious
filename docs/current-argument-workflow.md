@@ -1,5 +1,7 @@
 # Working in a shared Comparison
 
+On the inner Argument canvas, response cards now offer **Reply**, **Reply above**, and **Reply below**. The latter two place the same kind of reply above or below the addressed response; both participants see the saved placement. The canvas expands with straight connections. See [reply placement](argument-reply-placement.md) and [deployment status](deployment-status.md) for publication.
+
 The [facilitator workflow](facilitator-mode-plan.md) is live in **Worker 62**, adding assisted entry for individually enabled test accounts. The organizer can record the represented participant's disputes, replies and standstill choices, with explicit direction and visible recorder attribution. Private drafts do not enter the Argument log or canvas until approved. Existing eligibility and two-participant confirmation rules still apply.
 
 The [Argument standstill workflow](argument-standstill-plan.md) was **released in Worker 61**, after 60/60 local and 60/60 hosted checks, the additive migration and live verification. See [deployment status](deployment-status.md) for the live version. It adds a narrowly scoped, attributed description of an impasse; broader Argument resolution and Pods remain deferred. The release history below is retained for the preceding features.

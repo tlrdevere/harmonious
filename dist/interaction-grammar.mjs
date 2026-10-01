@@ -91,13 +91,14 @@ export function makeInteraction(ws,input,actor,version=input.action==='dispute'?
  const classification=interactionClassification(ws,input.target),parent=ws.discussions?.find(r=>r.id===input.target?.entryId),allowed=optionsForClassification(classification,input.action,version),selected=input.options||[];
  check(Array.isArray(selected)&&selected.every(id=>allowed.some(o=>o.id===id))&&new Set(selected).size===selected.length,'Choose options that apply to this source.');
  const options=allowed.filter(o=>selected.includes(o.id)).map(o=>o.id),mode=input.action==='respond'?parent?.interaction?.mode:input.mode;
- return {version,mode,options,...(version===7?{replyTo:structuredClone(input.replyTo)}:{}),otherText:options.includes('other')?(input.otherText||'').trim():'',reference:interactionReference(ws,input.comparisonId,input.reference),recipientId:interactionRecipient(ws,input.target,input.action,actor,version),classification,signals:allowed.filter(o=>selected.includes(o.id)&&o.signal).map(o=>({optionId:o.id,tag:o.signal}))};
+ return {version,mode,options,...(version===7?{replyTo:structuredClone(input.replyTo)}:{}),...(input.placement!==undefined?{placement:input.placement}:{}),otherText:options.includes('other')?(input.otherText||'').trim():'',reference:interactionReference(ws,input.comparisonId,input.reference),recipientId:interactionRecipient(ws,input.target,input.action,actor,version),classification,signals:allowed.filter(o=>selected.includes(o.id)&&o.signal).map(o=>({optionId:o.id,tag:o.signal}))};
 }
 export function validateInteractionRecord(r){
  if(r.kind!=='interaction'){check(!r.interaction,'Interaction metadata belongs only to a grammar interaction.');return;}
  const m=r.interaction,c=m?.classification;
  if(m?.version===7)check(exact(m.replyTo,['entryId','version'])&&typeof m.replyTo.entryId==='string'&&m.replyTo.entryId!==r.id&&Number.isSafeInteger(m.replyTo.version)&&m.replyTo.version>0,'Invalid reply target.');
- check(exact(m,['version','mode','options','otherText','reference','recipientId','classification','signals',...(m?.version===7?['replyTo']:[])])&&(m.version===4||m.version===5&&r.action==='dispute'||[6,7].includes(m.version)&&r.action==='respond'&&m.mode==='argument')&&Object.hasOwn(INTERACTION_ACTIONS,m.mode),'Invalid interaction metadata.');
+ check(exact(m,['version','mode','options','otherText','reference','recipientId','classification','signals',...(m?.version===7?['replyTo']:[]),...(m&&Object.hasOwn(m,'placement')?['placement']:[])])&&(m.version===4||m.version===5&&r.action==='dispute'||[6,7].includes(m.version)&&r.action==='respond'&&m.mode==='argument')&&Object.hasOwn(INTERACTION_ACTIONS,m.mode),'Invalid interaction metadata.');
+ if(Object.hasOwn(m,'placement'))check(m.version===7&&['right','above','below'].includes(m.placement),'Invalid reply placement.');
  if([6,7].includes(m.version))check(typeof r.body==='string'&&r.body.trim().length>0,'Write a reply before sending.');
  check(exact(c,['targetType','frame','edgeType','hasSource','parentAction'])&&c.targetType===r.target.type&&typeof c.hasSource==='boolean','Invalid interaction source classification.');
  check(r.action==='respond'||interactionActions(m.mode).some(a=>a.id===r.action),'Choose an interaction for this mode.');
@@ -118,7 +119,8 @@ export function validateInteractionEdit(ws,old,r,actor){
  if(old)check(([6,7].includes(old.interaction.version)||[6,7].includes(r.interaction.version))?old.interaction.version===r.interaction.version:true,'A reply keeps its original type.');
  if(r.interaction.version===7){
   const ref=r.interaction.replyTo,addressed=ws.discussions.find(e=>e.id===ref.entryId);
-  for(const v of r.history)check(eq(v.interaction.replyTo,ref),'A reply keeps its original target.');
+  for(const v of r.history){check(eq(v.interaction.replyTo,ref),'A reply keeps its original target.');check(v.interaction.placement===r.interaction.placement,'A reply keeps its original placement.');}
+  check(!old||old.interaction.placement===r.interaction.placement,'A reply keeps its original placement.');
   check(!old||eq(old.interaction.replyTo,ref),'A reply keeps its original target.');
   check(addressed&&addressed.id!==r.id&&addressed.comparisonId===r.comparisonId&&(addressed.id===r.target.entryId||addressed.kind==='interaction'&&addressed.action==='respond'&&addressed.target.entryId===r.target.entryId),'Choose a contribution in this dispute.');
   check(old||addressed.status==='active'&&addressed.version===ref.version,'The reply target changed or was withdrawn. Reopen it before sending.');

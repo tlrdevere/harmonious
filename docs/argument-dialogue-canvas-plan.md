@@ -1,5 +1,7 @@
 # Node-focused dialogue canvas in Argument
 
+The [reply-placement increment](argument-reply-placement.md) extends this canvas with above/below replies and measured multi-direction spacing. Existing dialogue semantics remain unchanged; see [deployment status](deployment-status.md) for its release.
+
 Implemented and published September 29, 2026 as **Worker 58**, after all **55 local and 55 hosted checks**, the additive database migration and live verification. Source: `b58c121405f9fdd8a40d54706516a58b0d5fd089`. Baseline: Worker 57, with continuing replies and the direct node dispute log. See [deployment status](deployment-status.md).
 
 ## Purpose and scope

@@ -1,7 +1,7 @@
 import {frameOf} from './model.mjs';
 import {comparisonNodeKey} from './comparison-layout.mjs';
 import {ComparisonCanvas} from './compare-canvas.mjs';
-import {dialogueRecords,dialogueTree,layoutDialogue} from './argument-dialogue.mjs';
+import {dialogueRecords,dialogueTree,layoutDialogue,dialogueLine} from './argument-dialogue.mjs';
 import {interactionPresentation} from './interaction-presentation.mjs';
 import {interactionSource,interactionOptions,canReplyArgument} from './interaction-grammar.mjs';
 
@@ -33,7 +33,7 @@ export class ArgumentDialogueUI{
   this.active=true;this.selected=entry||'claim';this.d.activateMode('argument');this.host.hidden=false;this.comparisonHost.hidden=true;this.c.canvas.surface.hidden=true;
   this.d.canvas.layerControls.hidden=true;this.d.viewOptions.hidden=true;this.canvas.surface.append(this.d.host,this.d.search.host);
   this.heading.textContent=source.item.title+' · '+this.d.name(source.map.ownerId);this.refresh(true);
-  this.canvas.camera=this.state.camera?{...this.state.camera}:{x:40,y:50-(this.canvas.layout.positions.get('claim')?.y||0)*.85,z:.85};this.canvas.drawCamera();
+  this.canvas.camera=this.state.camera?{...this.state.camera}:{x:40-(this.canvas.layout.positions.get('claim')?.x||0)*.85,y:50-(this.canvas.layout.positions.get('claim')?.y||0)*.85,z:.85};this.canvas.drawCamera();
   if(entry)this.reveal(entry);history[route?'pushState':'replaceState'](null,'',this.url(requestedProposal?.id||entry));
   if(requestedProposal)this.d.standstills.open(requestedProposal.id);else this.backButton.focus({preventScroll:true});return true;
  }
@@ -47,10 +47,10 @@ export class ArgumentDialogueUI{
   this.d.selectTarget(target);const side=['a','b'].find(side=>this.c.sides[side].mapId===target.mapId);this.d.returnFocus=this.c.canvas.cards.get(comparisonNodeKey(side,target.nodeId))?.querySelector('.node-main');this.d.host.querySelector('header button')?.focus({preventScroll:true});return true;
  }
  root(r){return r.action==='dispute'?r:this.c.workspace.discussions.find(e=>e.id===r.target.entryId);}
- reply(r){
+ reply(r,placement=undefined){
   if(!this.d.canLeave())return;this.d.target={type:'entry',entryId:this.root(r).id};
   const root=this.root(r),first=r.id===root.id&&root.interaction.recipientId===this.d.actor()&&!this.d.interactions.responses(root.id).length;
-  this.selected=r.id;this.d.interactions.compose(first?'respond':'reply',null,{replyTo:{entryId:r.id,version:r.version}});this.positionPopover();this.d.host.querySelector('#interaction-comment')?.focus({preventScroll:true});
+  this.selected=r.id;this.d.interactions.compose(first?'respond':'reply',null,{replyTo:{entryId:r.id,version:r.version},placement});this.positionPopover();this.d.host.querySelector('#interaction-comment')?.focus({preventScroll:true});
  }
  inspect(id){if(!this.d.canLeave())return;this.selected=id;if(id==='claim'){this.d.target={...this.target};this.d.interactions.sourceActions();}else this.d.interactions.open(id);this.reveal(id);this.positionPopover();}
  log(){if(!this.d.canLeave())return;this.selected='claim';this.d.target={...this.target};this.d.shell('Chronological dispute log');this.d.interactions.argumentLog();this.positionPopover();}
@@ -84,7 +84,12 @@ export class ArgumentDialogueUI{
    this.d.standstills?.dialogueMarkers(card,id,this.tree);
    const actions=dialogueEl('footer');
    if(!r&&source.map.ownerId!==this.d.actor()&&interactionOptions(this.c.workspace,this.target,'dispute').length)actions.append(dialogueButton('Dispute reasoning',()=>{if(!this.d.canLeave())return;this.selected='claim';this.d.target={...this.target};this.d.interactions.compose('dispute');}));
-   if(r&&r.status==='active'&&canReplyArgument(this.root(r),this.d.actor()))actions.append(dialogueButton(r.action==='dispute'&&r.interaction.recipientId===this.d.actor()&&!this.d.interactions.responses(r.id).length?'Respond':'Reply',()=>this.reply(r)));
+   if(r&&r.status==='active'&&canReplyArgument(this.root(r),this.d.actor())){
+    const replies=dialogueEl('div','','dialogue-reply-actions');replies.setAttribute('role','group');replies.setAttribute('aria-label','Add a response');
+    replies.append(dialogueButton(r.action==='dispute'&&r.interaction.recipientId===this.d.actor()&&!this.d.interactions.responses(r.id).length?'Respond':'Reply',()=>this.reply(r)));
+    if(r.action==='respond')for(const side of ['above','below'])replies.append(dialogueButton('Reply '+side,()=>this.reply(r,side)));
+    actions.append(replies);
+   }
    if(r)this.d.standstills?.resumeControls(actions,id);
    if(r)actions.append(dialogueButton('Details',()=>this.inspect(id)));
    if(!r)actions.append(dialogueButton('Propose standstill',()=>this.d.standstills.choose(this.target)));
@@ -93,7 +98,7 @@ export class ArgumentDialogueUI{
    card.append(actions);this.canvas.world.append(card);this.cards.set(id,card);sizes.set(id,{w:card.offsetWidth,h:card.offsetHeight});
   }
   this.canvas.layout=layoutDialogue(this.tree,sizes);
-  for(const [id,p]of this.canvas.layout.positions){this.cards.get(id).style.transform='translate('+p.x+'px,'+p.y+'px)';const parent=this.tree.nodes.get(id).parent,a=this.canvas.layout.positions.get(parent);if(a){const line=this.canvas.svgElement('line',{x1:a.x+a.w,y1:a.y+a.h/2,x2:p.x,y2:p.y+p.h/2,stroke:'#8195a7','stroke-width':1.5});line.append(this.canvas.svgElement('title'));line.firstChild.textContent=parent==='claim'?'Disputes':'Responds to';svg.append(line);}}
+  for(const [id,p]of this.canvas.layout.positions){this.cards.get(id).style.transform='translate('+p.x+'px,'+p.y+'px)';const parent=this.tree.nodes.get(id).parent,a=this.canvas.layout.positions.get(parent);if(a){const line=this.canvas.svgElement('line',{...dialogueLine(a,p),stroke:'#8195a7','stroke-width':1.5});line.append(this.canvas.svgElement('title'));line.firstChild.textContent=parent==='claim'?'Disputes':'Responds to';svg.append(line);}}
   const next=this.canvas.layout.positions.get(this.selected);if(old&&next){this.canvas.camera.x+=(old.x-next.x)*this.canvas.camera.z;this.canvas.camera.y+=(old.y-next.y)*this.canvas.camera.z;}this.canvas.drawCamera();
   if(refreshDetail){const scroll=this.d.host.scrollTop;this.d.open(refreshDetail);this.d.host.scrollTop=scroll;}
   if(focusId&&this.cards.has(focusId)){[...this.cards.get(focusId).querySelectorAll('button')].find(b=>b.textContent===focusLabel)?.focus({preventScroll:true});}

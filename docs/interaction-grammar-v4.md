@@ -1,5 +1,7 @@
 # Interaction grammar v4
 
+The [experimental reply placement increment](argument-reply-placement.md) adds optional immutable `interaction.placement` to targeted grammar-v7 replies: `right`, `above`, or `below`. It has no argumentative meaning. Missing placement preserves the earlier horizontal default. The `argument-placement-v1` capability protects this metadata across saved workspaces and history; [deployment status](deployment-status.md) records publication.
+
 The original v4 grammar was implemented on `redesign/node-interactions` and deployed at the owner's request on September 23, 2026 at 00:25 UTC (September 22 in New York). Its database migration is applied. That initial release passed **44 active release checks**; report: `build/verification/2026-09-22T22-53-25-909Z-38200/summary.json`. [Deployment status](deployment-status.md) identifies subsequent published releases. The optional portable review file remains `review/Harmonious-interactions-preview.html`.
 
 ## September 29 Argument standstills: current implementation

@@ -40,6 +40,19 @@ try{
  await close(a);await a.getByRole('button',{name:'Chronological log',exact:true}).click();await pop(a).locator('[data-dispute="'+dispute.id+'"] summary').click();assert.match(await pop(a).innerText(),/Could we ask the night shift/);await close(a);
  await focusClick(card(a,first.id).getByRole('button',{name:'Reply',exact:true}));await a.locator('#interaction-comment').fill('Another question: how many people attended?');await click(a,'Send reply');await saved(a);const sibling=(await records()).at(-1);assert.equal(sibling.interaction.replyTo.entryId,first.id);
  await load(b);await focusClick(card(b,follow.id).getByRole('button',{name:'Reply',exact:true}));await b.locator('#interaction-comment').fill('Yes, we can do a separate survey.');await click(b,'Send reply');await saved(b);const nested=(await records()).at(-1);assert.equal(nested.interaction.replyTo.entryId,follow.id);
+ // Placement is shared, remains attached to the selected response and is visible in the log.
+ for(const [side,actorPage]of [['above',a],['below',b]]){
+  await load(actorPage);await focusClick(card(actorPage,first.id).getByRole('button',{name:'Reply '+side,exact:true}));
+  assert.match(await pop(actorPage).innerText(),/Placement does not change/);
+  await actorPage.locator('#interaction-comment').fill('Placed '+side+' the first response');await click(actorPage,'Send reply');await saved(actorPage);
+  const r=(await records()).at(-1);assert.equal(r.interaction.placement,side);assert.equal(r.interaction.replyTo.entryId,first.id);ids[side]=r.id;
+ }
+ await load(b);
+ const geometry=await b.locator('.dialogue-card').evaluateAll(els=>els.map(e=>{const m=new DOMMatrix(e.style.transform);return {id:e.dataset.dialogueEntry,x:m.e,y:m.f,w:e.offsetWidth,h:e.offsetHeight};}));
+ const parent=geometry.find(r=>r.id===first.id),up=geometry.find(r=>r.id===ids.above),down=geometry.find(r=>r.id===ids.below);
+ assert(up.y+up.h<parent.y);assert(down.y>parent.y+parent.h);
+ for(const p of geometry)for(const q of geometry)if(p.id!==q.id)assert(!(p.x<q.x+q.w&&p.x+p.w>q.x&&p.y<q.y+q.h&&p.y+p.h>q.y));
+ await focusClick(card(b,ids.below).getByRole('button',{name:'Details',exact:true}));await click(b,'Edit');await b.locator('#interaction-comment').fill('Edited reply still below');await click(b,'Save changes');await saved(b);assert.equal((await records()).find(r=>r.id===ids.below).interaction.placement,'below');
  await close(b);await b.locator('.dialogue-canvas').getByRole('button',{name:'Fit dialogue',exact:true}).click();
  await b.screenshot({path:'build/design-review/argument-dialogue-desktop.png'});
  const rectangles=await b.locator('.dialogue-card').evaluateAll(els=>els.map(e=>({id:e.dataset.dialogueEntry,x:e.offsetLeft,y:e.offsetTop,transform:e.style.transform,w:e.offsetWidth,h:e.offsetHeight})));assert(rectangles.length>=6);

@@ -110,15 +110,17 @@ export class InteractionUI{
     const health=discussionHealth(ws,r);if(['changed','unavailable'].includes(health.state))host.append(interactionEl('p',health.label,'review-warning'));
     if(r.history.length){const history=interactionEl('details','','interaction-history');history.append(interactionEl('summary','Earlier versions'));for(const revision of r.history){const section=interactionEl('section'),presentation=interactionPresentation(ws,revision);section.append(interactionEl('strong',`Version ${revision.version}`));for(const label of presentation.choices)section.append(interactionEl('p',label,'interaction-selected'));for(const text of [revision.interaction.otherText,revision.body].filter(Boolean))section.append(interactionEl('p',text,'discussion-body'));history.append(section);}host.append(history);}
   }
-  compose(action,old=null,{replyTo=null}={}){
+  compose(action,old=null,{replyTo=null,placement=undefined}={}){
     const d=this.d;if(!d.canLeave())return;
     const continuation=action==='reply'||[6,7].includes(old?.interaction.version);if(continuation)action='respond';
     const target=old?.target||d.target,ws=this.c.workspace,parent=target.type==='entry'?ws.discussions.find(r=>r.id===target.entryId):null;
     replyTo=old?.interaction.replyTo||replyTo||(continuation&&!old&&parent?{entryId:parent.id,version:parent.version}:null);
+    placement=old?old.interaction.placement:placement;
     const mode=old?interactionMode(old):action==='respond'?interactionMode(parent):d.mode();
     d.activateMode(mode);d.target=target;d.shell(old?'Edit '+interactionLabel(old):continuation?'Reply':interactionLabel(action));
     const converting=action==='dispute'&&old?.interaction.version===4;
     if(replyTo){const addressed=ws.discussions.find(r=>r.id===replyTo.entryId);d.host.append(interactionEl('p',addressed?'Replying to '+d.name(addressed.authorId)+' · '+(addressed.body||interactionPresentation(ws,addressed).preview).slice(0,160):'Reply target unavailable','dialogue-reply-target'));}
+    if(placement)d.host.append(interactionEl('p',`Place ${placement==='right'?'to the right':placement} of this response. Placement does not change the meaning of your reply.`,'field-help'));
     const form=interactionEl('form','','interaction-form'),choices=continuation?[]:interactionOptions(ws,target,action),selected=new Set(continuation?['reply']:converting?[]:old?.interaction.options||[]);
     if(old&&action==='dispute'&&!choices.length){d.host.append(interactionEl('p','This source no longer offers dispute choices. You can keep the saved interaction or withdraw it from its details.','review-warning'),interactionButton('Back to interaction',()=>this.open(old.id)));d.positionPopover();return;}
     const reviewed=discussionSourceSnapshot(ws,target),recordId=old?.id||'discussion-'+crypto.randomUUID(),nodeId='node-'+crypto.randomUUID();
@@ -153,7 +155,7 @@ export class InteractionUI{
     form.onsubmit=async e=>{e.preventDefault();if(d.saving)return;if(earlierChoices.some(option=>selected.has(option.id))){this.error(form,'Clear the earlier choices that are no longer offered for this source before saving.');d.positionPopover();return;}d.saving=true;d.dirty=true;d.host.inert=true;
       try{
         if(!this.c.editor.flushDraft())throw Error('Finish your map edit first.');this.c.captureActive();
-        const thread=await this.c.ensureComparison(),input={id:recordId,kind:'interaction',action,target,comparisonId:thread.id,body:comment.value,interaction:{mode,...(continuation&&replyTo?{replyTo}:{}),options:[...selected],otherText:other.value,reference:reference.value&&reference.value!=='new'?JSON.parse(reference.value):null}};
+        const thread=await this.c.ensureComparison(),input={id:recordId,kind:'interaction',action,target,comparisonId:thread.id,body:comment.value,interaction:{mode,...(continuation&&replyTo?{replyTo}:{}),...(placement!==undefined?{placement}:{}),options:[...selected],otherText:other.value,reference:reference.value&&reference.value!=='new'?JSON.parse(reference.value):null}};
         const draft=stableJSON({input,newNode:reference.value==='new'?{mapId:mapSelect.value,frame:frameSelect.value,title:nodeTitle.value}:null});
         const prepare=workspace=>{
           const already=workspace.discussions.find(r=>r.id===recordId);

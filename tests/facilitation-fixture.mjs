@@ -7,7 +7,7 @@ import {accountKey,ownedAccountRecords,accountChanges} from '../dist/account-mod
 import {synchronizeIdeas} from '../dist/adoption.mjs';
 export {alice,bob};
 export const organizer={id:'33333333-3333-4333-8333-333333333333',name:'Taylor'},outsider={id:'44444444-4444-4444-8444-444444444444',name:'Outside'};
-export const caps='comparison-reasoning-v1,comparison-adoption-v1,comparison-premise-v1,comparison-reflection-v1,interaction-grammar-v4,counterpart-integrity-v1,argument-categories-v1,argument-replies-v1,argument-dialogue-v1,argument-standstill-v1,facilitation-v1';
+export const caps='comparison-reasoning-v1,comparison-adoption-v1,comparison-premise-v1,comparison-reflection-v1,interaction-grammar-v4,counterpart-integrity-v1,argument-categories-v1,argument-replies-v1,argument-dialogue-v1,argument-placement-v1,argument-standstill-v1,facilitation-v1';
 export async function fixture(){
  const db=new PGlite(),env={APP_ORIGIN:'https://harmonious.example',SUPABASE_URL:'https://project.supabase.co',SUPABASE_PUBLISHABLE_KEY:'public-test',SUPABASE_SECRET_KEY:'server-test',TEST_ACCOUNT_ADMIN_ID:organizer.id,SIGNUP_MODE:'public'};
  await db.exec('create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);');
