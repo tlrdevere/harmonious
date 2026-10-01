@@ -1,5 +1,15 @@
 # Harmonious: what to check on your next visit
 
+## Delete your own map
+
+- Refresh, open My maps and select Delete map. Check the map name and explanation. Cancel or Escape should leave it unchanged.
+- Confirm with a disposable map. It should disappear from your library and shared browsing, including after a refresh.
+- A comparison using it should show an unavailable source; existing independent copies remain.
+- Delete your last disposable map and create a new one from the empty library.
+- Other users’ maps and facilitator sessions must not offer Delete map.
+- Change the map in a second tab before confirming: deletion should ask you to refresh and review it.
+
+
 ## Top navigation — Worker 64
 
 - [ ] Select Map Library, Maps, Comparisons and Pods. Only the selected destination should have the active highlight.

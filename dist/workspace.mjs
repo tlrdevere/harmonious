@@ -166,7 +166,7 @@ export function recordComparison(workspace,input,existing=null,actorId=null){
   return {...nextBase,comparisonId:thread.id,createdBy,participants,judgments,proposalVersions:versions,aMapId:a.id,bMapId:b.id,...comparisonJudgmentValue(nextBase,primary),aSnapshot:nextBase.aSnapshot,bSnapshot:nextBase.bSnapshot,history:primary.history,createdAt:nextBase.createdAt||now,updatedAt:now};
 }
 export function validateWorkspace(workspace){
-  if(![1,2,3,4,5,6,7].includes(workspace?.schemaVersion)||!Array.isArray(workspace.maps)||!Array.isArray(workspace.comparisons)||workspace.maps.length<1||workspace.maps.length>100)throw Error('This is not a supported Harmonious workspace.');
+  if(![1,2,3,4,5,6,7].includes(workspace?.schemaVersion)||!Array.isArray(workspace.maps)||!Array.isArray(workspace.comparisons)||workspace.maps.filter(m=>!m.deletedAt).length>100)throw Error('This is not a supported Harmonious workspace.');
   const ids=new Set();
   for(const map of workspace.maps){
     if(typeof map.id!=='string'||ids.has(map.id)||typeof map.name!=='string'||!map.name.trim()||typeof map.person!=='string'||!Number.isSafeInteger(map.revision)||map.revision<1||!Array.isArray(map.nodes)||!Array.isArray(map.relations)||map.nodes.length>2000)throw Error('A map contains invalid or duplicate details.');

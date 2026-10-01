@@ -62,7 +62,9 @@ export class LibraryUI{
     if(this.section==='maps')for(const map of libraryMapOrder(this.ownedMaps())){
       if(!this.matches(`${map.name} ${this.name(map)}`))continue;
       const updated=map.updatedAt?new Date(map.updatedAt).toLocaleDateString():'';
-      const card=this.card(map.name,`${this.name(map)} · ${map.visibility==='shared'?'Shared with beta participants':'Private'}${updated?' · Updated '+updated:''}`,()=>this.openMap(map.id),'Open map'),actions=libEl('div','','library-actions');card.dataset.map=map.id;actions.append(card.querySelector('button'),libButton('Copy map',()=>this.c.showMapDialog(false,{fromMapId:map.id}),'text-button'));card.append(actions);host.append(card);
+      const card=this.card(map.name,`${this.name(map)} · ${map.visibility==='shared'?'Shared with beta participants':'Private'}${updated?' · Updated '+updated:''}`,()=>this.openMap(map.id),'Open map'),actions=libEl('div','','library-actions');card.dataset.map=map.id;actions.append(card.querySelector('button'),libButton('Copy map',()=>this.c.showMapDialog(false,{fromMapId:map.id}),'text-button'));
+      if(this.c.account&&!this.c.account.facilitator?.context&&map.ownerId===this.c.account.actor?.id)actions.append(libButton('Delete map',()=>this.c.account.confirmMapDeletion(map.id),'text-button danger'));
+      card.append(actions);host.append(card);
     }
     libUI('library-search').placeholder=this.browsing?'Search shared maps by name or person':'Search by map name or person';
     if(this.section==='comparisons'&&this.browsing){this.renderDiscovery(host);return;}

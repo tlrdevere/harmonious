@@ -8,6 +8,19 @@ import {accountKey,stableJSON} from '../dist/account-model.mjs';
 import {adoptionFulfillmentId,isAdoptionReceipt} from '../dist/adoption-fulfillment.mjs';
 const accountResponse=(data,status=200,cookies=[])=>{const headers=new Headers({'cache-control':'no-store','x-content-type-options':'nosniff'});for(const cookie of cookies)headers.append('set-cookie',cookie);return Response.json(data,{status,headers});};
 export const REASONING_CAPABILITY='comparison-reasoning-v1';
+export const MAP_DELETION_CAPABILITY='map-deletion-v1';
+export async function deleteAccountMap(store,actor,input){
+  if(typeof input?.id!=='string'||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<1)throw new AccountError('Choose a saved map to delete.');
+  for(let attempt=0;attempt<4;attempt++){
+    const snapshot=await store.snapshot(),record=snapshot.records.find(r=>r.kind==='map'&&r.id===input.id);
+    if(!record||record.ownerId!==actor.id)throw new AccountError('You can only delete your own maps.',403);
+    if(record.value.deletedAt)return accountWorkspace(store,actor);
+    if(record.revision!==input.expectedRevision)throw new AccountError('This map changed in another session. Cancel, refresh maps and review it before deleting.',409);
+    const changes=validateAccountChanges(snapshot,actor.id,[{kind:'map',id:record.id,expectedRevision:record.revision,value:{...record.value,visibility:'private',deletedAt:new Date().toISOString()}}],{allowMapDeletion:true});
+    try{await store.commit(actor.id,snapshot.revision,changes);return accountWorkspace(store,actor);}catch(error){if(error.snapshotChanged)continue;throw error;}
+  }
+  throw new AccountError('Changes arrived while deleting. Please try again.',409);
+}
 export const ADOPTION_CAPABILITY='comparison-adoption-v1';
 export const PREMISE_CAPABILITY='comparison-premise-v1';
 export const REFLECTION_CAPABILITY='comparison-reflection-v1';
@@ -114,7 +127,14 @@ export async function handleAccountAPI(request,env,dependencies={}){
     if(path==='/api/admin/test-accounts'&&request.method==='GET')return accountResponse(await currentTestAccountNames(store,await new TestAccounts(auth).list(session.actor,Number(new URL(request.url).searchParams.get('page')||1))),200,cookies);
     if(path==='/api/admin/test-accounts'&&request.method==='POST')return accountResponse(await new TestAccounts(auth).create(session.actor,await accountBody(request,4096)),201,cookies);
     if(path==='/api/admin/test-accounts/reset'&&request.method==='POST')return accountResponse(await currentTestAccountNames(store,await new TestAccounts(auth).reset(session.actor,await accountBody(request,4096))),200,cookies);
-    if(path==='/api/workspace'&&request.method==='GET')return accountResponse(await accountWorkspace(store,session.actor,capabilities),200,cookies);
+    if(path==='/api/maps/delete'&&request.method==='POST')return accountResponse(await deleteAccountMap(store,session.actor,await accountBody(request,4096)),200,cookies);
+    if(path==='/api/workspace'&&request.method==='GET'){
+      const data=await accountWorkspace(store,session.actor,capabilities);
+      if(!data.workspace.maps.length&&!declared.includes(MAP_DELETION_CAPABILITY)){
+        const error=new AccountError('Refresh Harmonious to open your empty map library. Your unsaved work is still on this page.',409);error.code='CLIENT_UPDATE_REQUIRED';error.requiredCapability=MAP_DELETION_CAPABILITY;throw error;
+      }
+      return accountResponse(data,200,cookies);
+    }
     if(path==='/api/comparisons'&&request.method==='POST')return accountResponse(await startAccountComparison(store,session.actor.id,await accountBody(request,4096),capabilities),200,cookies);
     if(path==='/api/workspace'&&request.method==='PUT'){const input=await accountBody(request);return accountResponse(await saveAccountChanges(store,session.actor.id,input.changes,capabilities),200,cookies);}
     throw new AccountError('Not found.',404);

@@ -47,7 +47,7 @@ function accountComparisonValue(workspace,record,ownerId){
 // are shared only while both sources remain visible to the other participant.
 export function projectAccountWorkspace(snapshot,actorId){
   const full=fullAccountWorkspace(snapshot),owned=snapshot.records.filter(r=>r.ownerId===actorId),ownKeys=new Set(owned.map(r=>accountKey(r.kind,r.id)));
-  const maps=full.maps.filter(m=>m.ownerId===actorId||m.visibility==='shared'),visibleIds=new Set(maps.map(m=>m.id));
+  const maps=full.maps.filter(m=>!m.deletedAt&&(m.ownerId===actorId||m.visibility==='shared')),visibleIds=new Set(maps.map(m=>m.id));
   const comparisonRecords=snapshot.records.filter(r=>r.kind==='comparison'),comparisons=comparisonRecords.map(r=>accountComparisonValue(full,r.value,r.ownerId)).filter(c=>ownKeys.has(accountKey('comparison',c.id))||(comparisonParticipants(full,c).includes(actorId)&&visibleIds.has(c.aMapId)&&visibleIds.has(c.bMapId)));
   const healthIndexes=new Map();
   const endorsements=full.endorsements.filter(e=>e.participantId===actorId||visibleIds.has(e.sourceMapId)&&full.maps.find(m=>m.id===e.sourceMapId)?.visibility==='shared').map(e=>{
@@ -74,7 +74,7 @@ export function projectAccountWorkspace(snapshot,actorId){
   // shared, neither a saved snapshot nor a descendant response may disclose it.
   const referenceVisible=(value,participants)=>{
     if(!value||typeof value!=='object')return true;
-    if(value.interaction?.reference){const map=full.maps.find(m=>m.id===value.interaction.reference.target.mapId);if(!map||!participants.every(id=>map.ownerId===id||map.visibility==='shared'))return false;}
+    if(value.interaction?.reference){const map=full.maps.find(m=>m.id===value.interaction.reference.target.mapId);if(!map||map.deletedAt||!participants.every(id=>map.ownerId===id||map.visibility==='shared'))return false;}
     return Object.values(value).every(child=>referenceVisible(child,participants));
   };
   const hidden=new Set(discussions.filter(r=>!referenceVisible(r,full.comparisonThreads.find(t=>t.id===r.comparisonId)?.participants||[actorId])).map(r=>r.id));
@@ -132,7 +132,7 @@ function validateEndorsement(candidate,old,value,actorId,latestVersions){
   const ids=value.entries.map(e=>e.sourceNodeId);
   check(equal(value.context,selectionContext(source,ids))&&equal(value.scopeNodeIds,scopeNodeIds(source,value.scope,value.anchorId)),'The selected map structure changed. Review the selection again.',409);
 }
-export function validateAccountChanges(snapshot,actorId,input){
+export function validateAccountChanges(snapshot,actorId,input,{allowMapDeletion=false}={}){
   check(Array.isArray(input)&&input.length>0&&input.length<=500,'Choose between 1 and 500 changes.');
   const records=new Map(snapshot.records.map(r=>[accountKey(r.kind,r.id),accountClone(r)])),seen=new Set(),fullBefore=fullAccountWorkspace(snapshot);
   const before=projectAccountWorkspace(snapshot,actorId).workspace,visibleMaps=new Set(before.maps.filter(m=>!m.unavailable).map(m=>m.id));
@@ -145,11 +145,24 @@ export function validateAccountChanges(snapshot,actorId,input){
     check(!existing||existing.ownerId===actorId||sharedComparisonMember,'You can only change your own maps and choices.',403);
     check((existing?.revision||0)===expectedRevision,'This item changed in another session. Download your work, then reopen saved before continuing.',409);
     if(kind==='profile')check(id===actorId&&typeof value.name==='string'&&value.name.trim().length>0&&value.name.length<=100&&Object.keys(value).every(k=>['id','name'].includes(k)),'Invalid display name.');
-    if(kind==='map')check(value.ownerId===actorId&&['private','shared'].includes(value.visibility)&&!value.unavailable,'You can only save your own private or shared maps.',403);
+    if(kind==='map'){
+      check(!existing?.value.deletedAt,'This map was deleted. Refresh maps before continuing.',409);
+      check(value.ownerId===actorId&&['private','shared'].includes(value.visibility)&&!value.unavailable,'You can only save your own private or shared maps.',403);
+      if(Object.hasOwn(value,'deletedAt'))check(allowMapDeletion&&existing&&typeof value.deletedAt==='string'&&Number.isFinite(Date.parse(value.deletedAt))&&value.visibility==='private'&&equal({...value,deletedAt:undefined,visibility:existing.value.visibility},{...existing.value,deletedAt:undefined}),'Use Delete map to remove your own map.',403);
+    }
     if(kind==='idea'&&existing){const old=existing.value;check(value.originMapId===old.originMapId&&value.originNodeId===old.originNodeId&&value.versions.length>=old.versions.length&&equal(value.versions.slice(0,old.versions.length),old.versions),'Earlier wording versions must remain unchanged.');}
     records.set(key,{kind,id,ownerId:existing?.ownerId||actorId,revision:(existing?.revision||0)+1,value:accountClone(value)});
   }
   const candidate=fullAccountWorkspace({records:[...records.values()]});
+  const deletedIds=new Set(candidate.maps.filter(m=>m.deletedAt).map(m=>m.id));
+  const referencesDeleted=value=>value&&typeof value==='object'&&Object.entries(value).some(([key,child])=>(['mapId','aMapId','bMapId','originMapId','sourceMapId','targetMapId'].includes(key)&&deletedIds.has(child))||referencesDeleted(child));
+  for(const {kind,value} of input){
+    if(kind==='map'||kind==='profile'||kind==='definition')continue;
+    const thread=candidate.comparisonThreads.find(t=>t.id===value.comparisonId),proposal=candidate.comparisons.find(p=>p.id===value.proposalId);
+    // Withdrawing an old co-sign is still allowed; no new contributions can use deleted sources.
+    if(kind==='endorsement'&&value.status!=='active')continue;
+    check(!referencesDeleted(value)&&!referencesDeleted(thread)&&!referencesDeleted(proposal),'A source map was deleted. Refresh maps before continuing.',409);
+  }
   for(const {value} of input.filter(c=>c.kind==='discussion'&&isReflectionOutcome(c.value)&&c.value.status==='active'))check(candidate.discussions.filter(r=>isReflectionOutcome(r)&&r.status==='active'&&r.authorId===value.authorId&&r.target?.entryId===value.target?.entryId).length===1,'You already have an outcome here. Reopen the point to edit your existing assessment.',409);
   try{validateReflections(candidate);}catch(error){throw new AccountError(error.message);}
   const latestVersions=visibleVersionIndex(candidate,actorId);

@@ -7,7 +7,7 @@ export function stableJSON(value){
   return JSON.stringify(value);
 }
 export function ownedAccountRecords(workspace,actorId,ownedKeys=[]){
-  const known=new Set(ownedKeys),maps=workspace.maps.filter(m=>m.ownerId===actorId),mapIds=new Set(maps.map(m=>m.id)),records=[];
+  const known=new Set(ownedKeys),maps=workspace.maps.filter(m=>m.ownerId===actorId&&!m.unavailable&&!m.deletedAt),mapIds=new Set(maps.map(m=>m.id)),records=[];
   const add=(kind,value)=>records.push({kind,id:value.id,value:accountClone(value)});
   const person=workspace.participants.find(p=>p.id===actorId);if(person)add('profile',person);
   for(const m of maps)add('map',m);

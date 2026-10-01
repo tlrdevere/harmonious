@@ -44,8 +44,8 @@ export class AccountWorkspace{
     const c=this.controller;
     c.initialize=()=>this.initialize();c.save=()=>this.save();c.status=message=>this.status(message);c.openFile=file=>this.importFile(file);
     const mark=c.markDirty.bind(c);c.markDirty=()=>{mark();if(c.ready){for(const e of c.workspace.endorsements)if(e.participantId===this.actor?.id&&!this.baseline.has(accountKey('endorsement',e.id)))e.method='authenticated';for(const m of c.workspace.maps)if(m.ownerId===this.actor?.id&&!m.visibility)m.visibility='private';this.schedule();}};
-    const load=c.loadMap.bind(c);c.loadMap=id=>{if(this.facilitator?.context&&c.workspaceDirty&&id!==c.activeMapId){c.message('Review this facilitator contribution before opening another map.');return;}const map=c.workspace.maps.find(m=>m.id===id);if(!map||this.actor&&map.ownerId!==this.actor.id)return;load(id);this.renderAccountName();};
-    const populate=c.populateMaps.bind(c);c.populateMaps=()=>{populate();const picker=accountUI('map-select');picker.replaceChildren(accountOption('','Choose a map…'),...c.workspace.maps.filter(m=>m.ownerId===this.actor?.id).map(m=>accountOption(m.id,m.name)));picker.value=c.activeMapId||'';};
+    const load=c.loadMap.bind(c);c.loadMap=id=>{if(this.facilitator?.context&&c.workspaceDirty&&id!==c.activeMapId){c.message('Review this facilitator contribution before opening another map.');return;}const map=c.workspace.maps.find(m=>m.id===id);if(!map||map.unavailable||this.actor&&map.ownerId!==this.actor.id)return;load(id);this.renderAccountName();};
+    const populate=c.populateMaps.bind(c);c.populateMaps=()=>{populate();const picker=accountUI('map-select');picker.replaceChildren(accountOption('','Choose a map…'),...c.workspace.maps.filter(m=>m.ownerId===this.actor?.id&&!m.unavailable).map(m=>accountOption(m.id,m.name)));picker.value=c.activeMapId||'';};
     const show=c.showMapDialog.bind(c);c.showMapDialog=(rename=false,options={})=>{if(this.facilitator?.context&&this.facilitator.pending()){c.message('Review this facilitator contribution before changing maps.');return;}show(rename,options);accountUI('map-owner-input').replaceChildren(accountOption(this.actor.id,this.actor.name));accountUI('map-owner-input').disabled=true;accountUI('map-person-input').value=this.actor.name;accountUI('map-person-input').required=false;accountUI('map-person-group').hidden=true;accountUI('map-owner-input').hidden=true;document.querySelector('label[for="map-owner-input"]').hidden=true;accountUI('map-visibility').value=rename?(c.activeMap().visibility||'private'):'private';};
     const submit=accountUI('map-dialog-form').onsubmit;accountUI('map-dialog-form').onsubmit=e=>{const visibility=accountUI('map-visibility').value;submit(e);if(!accountUI('map-dialog').open){c.activeMap().visibility=visibility;c.loadMap(c.activeMapId);c.markDirty();}};
     const action=c.participation.refreshAction.bind(c.participation);c.participation.refreshAction=()=>{action();if(c.participation.pending?.mode!=='copy')accountUI('adoption-meaning').textContent+=' Your display name and co-sign are visible to beta participants who can view this source. A private destination map stays private.';};
@@ -54,7 +54,7 @@ export class AccountWorkspace{
   async request(path,body,method='POST'){
     const epoch=this.facilitator?.epoch,context=this.facilitator?.context,delegated=context&&(path==='/api/workspace'||path==='/api/comparisons');
     if(context&&path==='/api/workspace'&&body!==undefined)throw Error('Review this contribution before publishing it for the participant.');
-    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1, interaction-grammar-v4, counterpart-integrity-v1, argument-categories-v1, argument-replies-v1, argument-dialogue-v1, argument-placement-v1, argument-standstill-v1, facilitation-v1',...(delegated?{'X-Harmonious-Participant':context.participantId,'X-Harmonious-Grant-Version':String(context.version)}:{}),...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
+    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1, interaction-grammar-v4, counterpart-integrity-v1, argument-categories-v1, argument-replies-v1, argument-dialogue-v1, argument-placement-v1, map-deletion-v1, argument-standstill-v1, facilitation-v1',...(delegated?{'X-Harmonious-Participant':context.participantId,'X-Harmonious-Grant-Version':String(context.version)}:{}),...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
     let data;try{data=await response.json();}catch{throw Error('The service could not be reached. Your work is still on this page.');}
     if(delegated&&epoch!==this.facilitator.epoch)throw Error('Participant context changed.');
     if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;error.code=data.code;if(error.code==='CLIENT_UPDATE_REQUIRED'){this.blocked=true;this.controller.message(error.message);this.status('Update needed · Your work is still on this page');}throw error;}return data;
@@ -88,6 +88,32 @@ export class AccountWorkspace{
       accountUI('display-name-dialog').close();accountUI('display-name-value').value='';accountUI('change-display-name').focus();c.message('Display name updated.');
     }catch(e){error.textContent=e.status===409?'Your profile changed in another session. Cancel, refresh your account, and try again. Your entered name is still here.':e.message;}
     finally{this.profileSaving=false;this.loading=false;for(const field of accountUI('display-name-form').querySelectorAll('input,button'))field.disabled=false;this.status();if(c.workspaceDirty&&!this.blocked)this.schedule();}
+  }
+  async confirmMapDeletion(id){
+    const c=this.controller;
+    if(this.facilitator?.context||this.loading||this.saving||c.editor.hasDraft()||c.comparisonDirty||c.discussion?.dirty||c.argument?.dirty){c.message('Finish your current changes before deleting a map.');return;}
+    await this.save();
+    const map=c.workspace.maps.find(m=>m.id===id&&!m.unavailable&&m.ownerId===this.actor?.id);
+    if(!map||this.blocked||c.workspaceDirty)return;
+    document.getElementById('delete-map-dialog')?.remove();
+    const dialog=document.createElement('dialog');dialog.id='delete-map-dialog';dialog.className='account-settings-dialog';dialog.setAttribute('aria-labelledby','delete-map-title');
+    dialog.innerHTML='<form><h2 id="delete-map-title">Delete map?</h2><p id="delete-map-name"></p><p>This removes the map from your library and shared browsing. Comparisons using it become unavailable. Existing copies and previously recorded contributions are kept. This cannot be undone.</p><p id="delete-map-error" role="status" aria-live="polite"></p><div class="dialog-actions"><button type="button" id="delete-map-cancel">Cancel</button><button type="submit" id="delete-map-confirm" class="danger">Delete map</button></div></form>';
+    document.body.append(dialog);dialog.querySelector('#delete-map-name').textContent=map.name;
+    const request={id,expectedRevision:this.revisions[accountKey('map',id)]},actorId=this.actor.id;
+    let busy=false;
+    const close=()=>{if(!busy){dialog.close();c.library.render();document.querySelector('#library-results button')?.focus();}};
+    dialog.querySelector('#delete-map-cancel').onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
+    dialog.querySelector('form').onsubmit=async event=>{
+      event.preventDefault();if(busy)return;
+      if(this.actor?.id!==actorId||this.facilitator?.context||c.workspaceDirty){dialog.querySelector('#delete-map-error').textContent='Your account or map changed. Cancel and review it before deleting.';return;}
+      busy=true;this.loading=true;dialog.querySelectorAll('button').forEach(b=>b.disabled=true);dialog.querySelector('#delete-map-error').textContent='Deleting map…';
+      try{
+        const data=await this.request('/api/maps/delete',request);
+        this.accept(data,true);dialog.close();c.library.open('maps');c.message('Map deleted.');document.querySelector('#library-results button, #library-create button')?.focus();
+      }catch(error){dialog.querySelector('#delete-map-error').textContent=error.message;}
+      finally{busy=false;this.loading=false;dialog.querySelectorAll('button').forEach(b=>b.disabled=false);this.status();}
+    };
+    dialog.showModal();dialog.querySelector('#delete-map-cancel').focus();
   }
   async sendCode(){
     if(this.signup?.turnstile&&!this.challenge.token){accountUI('account-feedback').textContent='Complete the security check first.';return;}
@@ -126,7 +152,7 @@ export class AccountWorkspace{
     this.baseline=new Map(ownedAccountRecords(workspace,this.actor.id,this.ownedKeys).map(r=>[accountKey(r.kind,r.id),r.value]));
     c.ready=true;c.cloudLoaded=true;c.workspaceDirty=false;document.body.classList.remove('account-locked');
     if(reset){c.activeComparisonPair=null;c.activeMapId=null;c.editor.discardDraft();c.clearComparison();c.sides={a:{mapId:null,nodeId:null},b:{mapId:null,nodeId:null}};c.mode='library';c.updateNavigation?.();}
-    else if(c.activeMapId&&!workspace.maps.some(m=>m.id===c.activeMapId&&m.ownerId===this.actor.id)){c.activeMapId=null;if(c.mode==='individual')c.library.open('maps');}
+    else if(c.activeMapId&&!workspace.maps.some(m=>m.id===c.activeMapId&&m.ownerId===this.actor.id&&!m.unavailable)){c.activeMapId=null;if(c.mode==='individual')c.library.open('maps');}
     if(c.editingRecord&&!workspace.comparisons.some(record=>record.id===c.editingRecord))c.clearComparison();
     if(c.activeMapId&&(reset||oldContent!==stableJSON(c.activeMap())))c.loadMap(c.activeMapId);
     const selected=workspace.comparisons.find(record=>record.id===c.editingRecord);

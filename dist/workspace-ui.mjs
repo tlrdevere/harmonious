@@ -14,7 +14,7 @@ export class WorkspaceController{
   constructor(editor){
     this.editor=editor;this.workspace=initialWorkspace();this.activeMapId=null;this.baseline='';this.ready=false;this.loadingMap=false;this.workspaceDirty=false;this.comparisonDirty=false;this.serverRevision=0;this.cloudLoaded=false;this.mode='individual';this.editingRecord=null;this.activeComparisonPair=null;ui('comparison-mode').textContent='Compare & align';ui('discover-mode').textContent='Map Library';ui('discover-mode').title='Browse maps and contributions';
     this.fileMode=globalThis.HARMONIOUS_FILE_MODE===true||!['http:','https:'].includes(location.protocol);
-    this.sides={a:{mapId:this.workspace.maps[0].id,nodeId:null},b:{mapId:this.workspace.maps[1].id,nodeId:null}};
+    this.sides={a:{mapId:this.workspace.maps[0]?.id||null,nodeId:null},b:{mapId:this.workspace.maps[1]?.id||null,nodeId:null}};
     this.canvas=new ComparisonCanvas(ui('compare-canvas'),(side,id)=>this.selectSource(side,id),id=>this.openRecord(id),{ownerName:map=>this.workspace.participants.find(p=>p.id===map?.ownerId)?.name||map?.person||'Participant'});
     this.participation=new ParticipationUI(this);
     this.argument=new ArgumentUI(this);
@@ -25,7 +25,7 @@ export class WorkspaceController{
     if(globalThis.HARMONIOUS_ACCOUNTS===true){this.accountMode=true;this.account=new AccountWorkspace(this);}
     this.updateNavigation();this.facilitationPresentation=new FacilitationPresentation(this);
   }
-  canEditMap(map){return !!map&&(!this.accountMode||map.ownerId===this.account?.actor?.id);}
+  canEditMap(map){return !!map&&!map.unavailable&&!map.deletedAt&&(!this.accountMode||map.ownerId===this.account?.actor?.id);}
   activeMap(){return this.workspace.maps.find(m=>m.id===this.activeMapId);}
   captureActive(){
     if(!this.ready||this.loadingMap||!this.canEditMap(this.activeMap()))return;const content=this.editor.getMapData(),serialized=JSON.stringify(content);
@@ -39,7 +39,7 @@ export class WorkspaceController{
     this.ready=false;for(const id of ['editor-main','comparison-workspace','argument-workspace','discover-workspace','pods-workspace','workspace-nav'])ui(id).inert=true;this.status('Opening saved workspace…');
     try{const response=await fetch('/api/workspace',{cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not open the saved workspace.');if(data.workspace)this.workspace=validateWorkspace(data.workspace);this.serverRevision=data.revision;this.cloudLoaded=true;this.workspaceDirty=!data.workspace;}
     catch(error){this.message(`${error.message} You can use Open file or download a backup. Reopen saved will retry.`);this.cloudLoaded=false;}
-    finally{this.argument?.reset();this.ready=true;for(const id of ['editor-main','comparison-workspace','argument-workspace','discover-workspace','pods-workspace','workspace-nav'])ui(id).inert=false;this.activeComparisonPair=null;this.clearComparison();this.activeMapId=null;this.sides={a:{mapId:this.workspace.maps[0].id,nodeId:null},b:{mapId:this.workspace.maps[1]?.id||null,nodeId:null}};this.mode='library';this.updateNavigation();this.populateMaps();this.status(this.cloudLoaded?null:'Saved workspace unavailable');if(this.mode==='compare')this.renderComparison();this.participation.peopleSelection=null;this.participation.refresh();}
+    finally{this.argument?.reset();this.ready=true;for(const id of ['editor-main','comparison-workspace','argument-workspace','discover-workspace','pods-workspace','workspace-nav'])ui(id).inert=false;this.activeComparisonPair=null;this.clearComparison();this.activeMapId=null;this.sides={a:{mapId:this.workspace.maps[0]?.id||null,nodeId:null},b:{mapId:this.workspace.maps[1]?.id||null,nodeId:null}};this.mode='library';this.updateNavigation();this.populateMaps();this.status(this.cloudLoaded?null:'Saved workspace unavailable');if(this.mode==='compare')this.renderComparison();this.participation.peopleSelection=null;this.participation.refresh();}
   }
   loadMap(id){
     const map=this.workspace.maps.find(m=>m.id===id);if(!map)return;this.loadingMap=true;this.activeMapId=id;this.editor.setMap(map);this.baseline=JSON.stringify({nodes:map.nodes,relations:map.relations});this.loadingMap=false;
@@ -232,7 +232,7 @@ export class WorkspaceController{
   }
   async openFile(file){
     if(!file)return;try{if(file.size>2_000_000)throw Error('This file exceeds the 2 MB prototype limit.');const workspace=validateWorkspace(JSON.parse(await file.text()));if((this.workspaceDirty||this.comparisonDirty||this.discussion?.dirty||this.argument?.dirty||this.editor.hasDraft())&&!confirm('Replace the current unsaved workspace with this file?'))return;
-      this.argument?.reset();this.loadingMap=true;this.workspace=workspace;this.activeMapId=workspace.maps[0].id;this.sides={a:{mapId:workspace.maps[0].id,nodeId:null},b:{mapId:workspace.maps[1]?.id||null,nodeId:null}};this.activeComparisonPair=null;this.clearComparison();this.loadMap(this.activeMapId);this.populateMaps();this.workspaceDirty=!this.fileMode;this.status('Workspace file opened');this.message();if(this.mode==='compare')this.renderComparison();this.participation.peopleSelection=null;this.participation.refresh();}
+      this.argument?.reset();this.loadingMap=true;this.workspace=workspace;this.activeMapId=workspace.maps[0]?.id||null;this.sides={a:{mapId:workspace.maps[0]?.id||null,nodeId:null},b:{mapId:workspace.maps[1]?.id||null,nodeId:null}};this.activeComparisonPair=null;this.clearComparison();this.loadMap(this.activeMapId);this.populateMaps();this.workspaceDirty=!this.fileMode;this.status('Workspace file opened');this.message();if(this.mode==='compare')this.renderComparison();this.participation.peopleSelection=null;this.participation.refresh();}
     catch(error){this.message(`File was not opened: ${error.message}`);}finally{ui('workspace-file').value='';}
   }
   showMapDialog(rename=false,{type='personal',newPerson=false,fromMapId=null}={}){
