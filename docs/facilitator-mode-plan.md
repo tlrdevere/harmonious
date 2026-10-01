@@ -1,6 +1,6 @@
 # Facilitator mode implementation plan
 
-**Implemented; final release verification is in progress.** Worker 61 remains live until the additive migration, exact-source hosted checks and deployment complete. No participants are automatically enabled. See [deployment status](deployment-status.md).
+**Implemented and live in Worker 62**, after 62/62 local and 62/62 hosted checks, the additive migration and live verification. No participants are automatically enabled. See [deployment status](deployment-status.md).
 
 Let the organizer help a participant build their map and take part in a comparison while remaining signed into the organizer's own account. Keep the participant's ownership and decisions distinct from the facilitator's act of entering them. Support spoken instructions and approval during an assisted session, without requiring the participant to operate a device.
 

@@ -1,8 +1,22 @@
 # Deployment status
 
-Updated September 30, 2026 (UTC).
+Updated October 1, 2026 (UTC).
 
 ## Current release
+
+Facilitator mode deployed October 1, 2026 at **01:55:54 UTC** (September 30, 9:55 p.m. in New York). Release source: `635b32c107774a0e4c8e3e8be35ddd7612176d24` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
+
+- Worker version **62**: `63750b6f-c045-4312-9805-f1ca93a56977`, serving **100%** of traffic. Deployment: `f9f07dd4-ecb9-4c07-94e9-3f7616d3a4ec`.
+- **Test accounts → Facilitation** records permission for an individual test participant. **Facilitation & drafts** opens their workspace while the organizer remains signed in. Explicitly directed entries, private wording drafts, direct participant approval, recorded verbal approval, revocation and visible historical attribution are implemented. Node authorship remains distinct from facilitated activity attached to a node. See [the implemented workflow and scope](facilitator-mode-plan.md).
+- **62/62 local release checks passed** on the final source: `build/verification/2026-10-01T01-47-55-056Z-114504/summary.json`, using Node 24.19.0, Python 3.12.14, Playwright 1.62.1 and Edge. Added isolated PostgreSQL and browser coverage includes private drafts, approval and attribution, grant revision/revocation, stale destinations, retries, separate decisions by both participants, standstill confirmation, child creation, context switching and narrow screens. Desktop and narrow captures were reviewed; the refresh sizing issue and clipped attribution badge found during visual review were corrected.
+- **62/62 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/36802784187), completed **01:52:46 UTC**. Runtime: Node 24.21.0, Python 3.13.15, Playwright 1.62.1 and Chromium. Evidence: `build/facilitation-hosted-verification-evidence.json`.
+- Additive migration: local `20260930021548_facilitator_mode.sql`; remote ledger `20261001015427_facilitator_mode`. The four new stores are service-only with RLS enabled; browser roles cannot access tables or execute the protected functions. Existing data remained **generation 161 / 121 records / fingerprint `96aea225c6eb8c1a2d59d67b76645222`**. Grants, drafts, audit and operation stores were all empty after migration: no participant was automatically enabled. No production test content or accounts were created.
+- Live verification confirms all **62 client files** and the homepage match the checkout, configured sign-in, account/private-path denial and security headers, plus unauthenticated denial at the facilitator and delegated workspace endpoints. Worker SHA-256: `42a7916282b8cbb4e5437285fcf4ecb0fd646967617200829aa2537a8b69c493`. Evidence: `build/facilitation-release-evidence.json`.
+- Runtime settings, eight encrypted bindings and the verified organizer binding were inherited unchanged. Advisor review showed the expected service-only RLS/no-policy informational notices and the pre-existing leaked-password-protection warning; no new warning category was introduced. The technology stack and existing deferrals remain unchanged.
+
+**Refresh Harmonious, open Test accounts, then choose Facilitation beside a tester.** Receive and record their permission before entering their workspace. Follow [the facilitator checklist](user-testing-checklist.md). Once facilitator provenance is saved, rollback must retain schema 7, `facilitation-v1`, attribution projection and protected writes; Worker 61 is not a compatible rollback for such data. Subsequent release-note commits change documentation only.
+
+## Preceding standstill release
 
 Argument standstills deployed September 30, 2026 at **01:56:34 UTC** (September 29 at 9:56 p.m. in New York). Release source: `79c3e02ed62f271f3e06d9d77356ec81c9b9bd9d` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 

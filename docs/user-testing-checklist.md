@@ -1,6 +1,6 @@
 # Harmonious: what to check on your next visit
 
-## Facilitator testing (after the facilitator release)
+## Facilitator testing — Worker 62
 
 - [ ] From the organizer's **Test accounts** list, enable **Facilitation** for a test participant only after receiving their permission. Enter their workspace and check that the banner identifies both people. Your other tab should remain your own account.
 - [ ] Edit one node or frame, or add a child. Use **Review contribution → Save draft for … to review**. Check the other account's map: its published wording must remain unchanged. The participant should find the draft under **Facilitation & drafts** and be able to approve or decline it.
