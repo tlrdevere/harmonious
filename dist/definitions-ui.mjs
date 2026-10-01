@@ -18,7 +18,7 @@ export class DefinitionsUI{
   error(e){let p=this.dialog.querySelector('[role=alert]');if(!p){p=defEl('p');p.setAttribute('role','alert');this.dialog.append(p);}p.textContent=e.message;}
   changed(){this.dirty=false;this.c.markDirty();this.c.library.render();if(this.c.mode==='compare')this.c.renderComparison();}
   render(host,query=''){
-    const lead=defEl('article','','library-card');lead.append(defEl('h2','Definitions & standards'),defEl('p','Create once, then use a specific version on any of your nodes or edges. Your unused library wording stays private.'),defButton('Create definition or standard',()=>this.edit()));host.append(lead);
+    const lead=defEl('article','','library-card');lead.append(defEl('h2','Definitions & standards'),defEl('p','Create once, then use a specific version on any of your nodes or edges. Your unused library wording stays private.'),defButton('Create definition or standard',()=>this.edit()));if(this.c.account?.facilitator?.context){const b=lead.querySelector('button');b.disabled=true;b.title='Definition authoring is unavailable during facilitation.';}host.append(lead);
     for(const d of this.own()){
       const v=d.versions.at(-1);if(query&&!`${v.title} ${v.body}`.toLowerCase().includes(query))continue;
       const card=defEl('article','','library-card');card.append(defEl('h2',v.title),defEl('p',`${d.type==='standard'?'Standard':'Definition'} · Version ${v.version}${d.status==='archived'?' · Archived':''}`),defEl('p',v.body),defButton('View entry',()=>this.view(d.id)));host.append(card);
@@ -27,6 +27,7 @@ export class DefinitionsUI{
   view(id){
     const d=this.own().find(d=>d.id===id);if(!d)return;const v=d.versions.at(-1);this.shell(v.title);
     this.dialog.append(defEl('p',`${d.type} · Version ${v.version} · ${d.status}`),defEl('p',v.body,'definition-wording'),defButton('Edit entry',()=>this.edit(d)),defButton(d.status==='archived'?'Restore entry':'Archive entry',()=>{try{const next=makeDefinition(this.c.workspace,{status:d.status==='active'?'archived':'active'},this.actor(),d);this.c.workspace.definitions=this.c.workspace.definitions.map(x=>x.id===id?next:x);this.changed();this.view(id);}catch(e){this.error(e);}}));
+    if(this.c.account?.facilitator?.context)for(const b of this.dialog.querySelectorAll('button'))if(['Edit entry','Restore entry','Archive entry'].includes(b.textContent)){b.disabled=true;b.title='Definition authoring is unavailable during facilitation.';}
     if(d.copiedFrom){const origin=d.copiedFrom,author=this.c.workspace.participants.find(p=>p.id===origin.authorId)?.name||'another participant',source=defEl('details');source.append(defEl('summary',`Copied from ${author} · Version ${origin.version}`),defEl('h3',origin.title),defEl('p',origin.body,'definition-wording'),defEl('p','This is your independent library entry. Later edits do not update the original.','field-help'));this.dialog.append(source);}
     const history=defEl('details');history.append(defEl('summary','Earlier versions'));for(const old of d.versions.slice(0,-1).reverse())history.append(defEl('h3',`${old.title} · Version ${old.version}`),defEl('p',old.body,'definition-wording'));this.dialog.append(history);
     const uses=(this.c.workspace.discussions||[]).filter(r=>r.kind==='context'&&r.status==='active'&&r.definitionRefs?.some(ref=>ref.definitionId===id));this.dialog.append(defEl('h3','Used on your maps'));
@@ -34,6 +35,7 @@ export class DefinitionsUI{
     if(!uses.length)this.dialog.append(defEl('p','Not yet used on a node or edge.'));
   }
   edit(old=null){
+    if(this.c.account?.facilitator?.context){this.shell('Definitions & standards');this.dialog.append(defEl('p','Existing definitions can be read and referenced. Create or revise entries outside facilitation.'));return;}
     this.shell(old?'Edit library entry':'Create definition or standard');const form=defEl('form'),type=defEl('select');type.id='definition-type';for(const value of ['definition','standard']){const o=defEl('option',value==='definition'?'Definition':'Standard');o.value=value;type.append(o);}type.value=old?.type||'definition';type.disabled=!!old;
     const title=defEl('input');title.id='definition-title';title.required=true;title.maxLength=200;title.value=old?.versions.at(-1).title||'';
     const body=defEl('textarea');body.id='definition-body';body.rows=6;body.required=true;body.maxLength=10000;body.value=old?.versions.at(-1).body||'';

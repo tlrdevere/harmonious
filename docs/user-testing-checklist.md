@@ -1,5 +1,16 @@
 # Harmonious: what to check on your next visit
 
+## Facilitator testing (after the facilitator release)
+
+- [ ] From the organizer's **Test accounts** list, enable **Facilitation** for a test participant only after receiving their permission. Enter their workspace and check that the banner identifies both people. Your other tab should remain your own account.
+- [ ] Edit one node or frame, or add a child. Use **Review contribution → Save draft for … to review**. Check the other account's map: its published wording must remain unchanged. The participant should find the draft under **Facilitation & drafts** and be able to approve or decline it.
+- [ ] Record a participant's exact instructions using the separate checkbox and **Record for …**. Check the node badge and contribution history. Change the participant's wording directly afterward: earlier facilitator attribution must remain, without claiming the facilitator made the later edit.
+- [ ] Save another wording draft and record verbal approval after the participant reviews that exact wording. Check **Approval recorded by …**. Change the destination independently before approving another draft; approval should be rejected without overwriting the newer content.
+- [ ] Record a dispute and a reply in separate participant contexts. Assist each person's Agree/Disagree or standstill choice separately. The other person's permission and instruction must be recorded independently; a person cannot confirm their own standstill. Check both individual attribution and the **Facilitated** pair label.
+- [ ] Try switching participants with an unfinished edit. Review, save the draft, or explicitly discard it first. Reload should return to your own account. Stop facilitation from the participant account and check that the organizer loses delegated access; re-enabling must not revive old forms or draft approvals.
+- [ ] Check narrow screens, keyboard navigation, failure/retry and **Exit facilitation**. Check that credentials, permission records and private drafts never appear in another participant's comparison or shared backup.
+
+
 ## Next check: standstills at a specific Argument point
 
 **Live in Worker 61**, after 60/60 local and 60/60 hosted checks, the additive migration and live verification. See [deployment status](deployment-status.md), then refresh both accounts. The [standstill plan](argument-standstill-plan.md) and [current workflow](current-argument-workflow.md) describe the scope. Use disposable shared maps and two separate signed-in browser profiles.

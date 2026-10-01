@@ -207,3 +207,7 @@ Active browser suites are `map-grammar-browser`, `interaction-grammar-browser`, 
 The complete 44-check run passed, including all five active browser suites, the standalone preview's request/response flow, database checks, and the Worker build. Retiring a suite does not imply every historical screen has been revalidated under the new UI. Worker version 41 and its migration are live; all existing stored records matched their pre-deployment checksum.
 
 See [protected baseline preparation](interaction-redesign-preparation.md) for the stable tag and source backup. Source rollback is not a database rollback. Once new grammar interactions are stored, prefer a forward fix over the older Worker, which cannot read their format. Older open tabs must reload; the new Worker checks client capabilities before serving or accepting unsupported records.
+
+## Facilitated entry
+
+The facilitator release preserves the existing interaction grammar. An enabled test participant remains the author; the signed-in organizer is separately recorded as operator. Every published facilitated decision requires explicit direction for that participant. Private drafts are limited to wording proposals and are absent from agreement and Argument projections until exact approval. No facilitated entry supplies both people's decisions, creates implicit agreement or changes standstill confirmation eligibility. See [the workflow](facilitator-mode-plan.md) for supported actions and limits.

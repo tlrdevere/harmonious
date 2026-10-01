@@ -533,6 +533,8 @@ class ComparisonAgreementView{
       if(!edge)continue;
       const names=members.map(m=>ws.maps.find(map=>map.id===m.mapId)?.nodes.find(n=>n.id===m.nodeId)?.title||'Node');
       const descriptions=display.assessments.map((a,i)=>`${d.name(a.authorId)}: ${a.label} about ${names[i]}${a.needsReview?' · Needs review':''}`);
+      const facilitated=display.assessments.some(a=>(ws.facilitationHistory||[]).some(r=>r.kind==='discussion'&&r.recordId===a.record?.id&&(r.operatorId!==r.participantId||r.enteredBy!==r.participantId)));
+      if(facilitated)display.label+=' · Facilitated';
       const detail=`${display.label}. ${descriptions.join('. ')}`;
       const el=discussEl('div','','agreement-pair'),open=()=>{
         const current=d.projectConnections().groups.find(g=>g.key===edge.connection.key);

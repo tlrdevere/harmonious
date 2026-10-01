@@ -17,7 +17,7 @@ export function synchronizeIdeas(workspace,map){
   }
 }
 export function upgradeWorkspace(workspace){
-  if([2,3,4,5,6].includes(workspace.schemaVersion))return workspace;
+  if([2,3,4,5,6,7].includes(workspace.schemaVersion))return workspace;
   if(workspace.schemaVersion!==1)throw Error('This workspace version is not supported.');
   workspace.schemaVersion=2;workspace.participants=[];workspace.ideas=[];workspace.endorsements=[];
   for(const map of workspace.maps){map.mapType='personal';map.ownerId=`participant:${map.id}`;workspace.participants.push({id:map.ownerId,name:map.person.trim()||map.name});synchronizeIdeas(workspace,map);}

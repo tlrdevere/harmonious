@@ -6,6 +6,7 @@ export class InteractionApplicationUI{
   constructor(ui){this.ui=ui;this.d=ui.d;this.c=ui.c;}
   actions(record){
     let p;try{p=interactionApplicationPreview(this.c.workspace,record.id,this.d.actor());}catch{return;}
+    if(this.c.account?.facilitator?.context&&p.operation==='copy'&&p.origin.target.type==='edge'){this.d.host.append(applicationEl('p','Copying both endpoints together is unavailable during facilitation. Add individual nodes through the map editor.','field-help'));return;}
     if(p.receipt){this.d.host.append(applicationEl('p','Applied to your map','field-help'));return;}
     this.d.actionGroup('Your map',[applicationButton(p.operation==='revise'?'Review a revision':p.operation==='reason'?'Review adding this reason':'Review adding to my map',()=>this.form(record.id))]);
   }

@@ -1,3 +1,4 @@
+import {FacilitationPresentation} from './facilitation-presentation.mjs';
 import {initialWorkspace,validateWorkspace,startComparisonThread,comparisonHealth,comparisonJudgments,comparisonJudgmentFor,comparisonConsensus,comparisonPairKey,comparisonProposalVersions,comparisonElicitation,comparisonResponseSet,QUESTION_STATUSES,ANSWER_STATUSES} from './workspace.mjs';
 import {stableJSON} from './account-model.mjs';
 import {ComparisonCanvas} from './compare-canvas.mjs';
@@ -22,7 +23,7 @@ export class WorkspaceController{
     this.activeMapId=null;this.mode='library';
     this.bind();
     if(globalThis.HARMONIOUS_ACCOUNTS===true){this.accountMode=true;this.account=new AccountWorkspace(this);}
-    this.updateNavigation();
+    this.updateNavigation();this.facilitationPresentation=new FacilitationPresentation(this);
   }
   canEditMap(map){return !!map&&(!this.accountMode||map.ownerId===this.account?.actor?.id);}
   activeMap(){return this.workspace.maps.find(m=>m.id===this.activeMapId);}

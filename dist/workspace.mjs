@@ -1,3 +1,4 @@
+import {validateFacilitationHistory} from './facilitation.mjs';
 import { roots, exampleMap, exampleRelations } from './data.mjs';
 import { validateGraph, graphEdges } from './model.mjs';
 import {upgradeWorkspace,validateAdoptionData,createOwnedMap} from './adoption.mjs';
@@ -165,7 +166,7 @@ export function recordComparison(workspace,input,existing=null,actorId=null){
   return {...nextBase,comparisonId:thread.id,createdBy,participants,judgments,proposalVersions:versions,aMapId:a.id,bMapId:b.id,...comparisonJudgmentValue(nextBase,primary),aSnapshot:nextBase.aSnapshot,bSnapshot:nextBase.bSnapshot,history:primary.history,createdAt:nextBase.createdAt||now,updatedAt:now};
 }
 export function validateWorkspace(workspace){
-  if(![1,2,3,4,5,6].includes(workspace?.schemaVersion)||!Array.isArray(workspace.maps)||!Array.isArray(workspace.comparisons)||workspace.maps.length<1||workspace.maps.length>100)throw Error('This is not a supported Harmonious workspace.');
+  if(![1,2,3,4,5,6,7].includes(workspace?.schemaVersion)||!Array.isArray(workspace.maps)||!Array.isArray(workspace.comparisons)||workspace.maps.length<1||workspace.maps.length>100)throw Error('This is not a supported Harmonious workspace.');
   const ids=new Set();
   for(const map of workspace.maps){
     if(typeof map.id!=='string'||ids.has(map.id)||typeof map.name!=='string'||!map.name.trim()||typeof map.person!=='string'||!Number.isSafeInteger(map.revision)||map.revision<1||!Array.isArray(map.nodes)||!Array.isArray(map.relations)||map.nodes.length>2000)throw Error('A map contains invalid or duplicate details.');
@@ -220,6 +221,6 @@ export function validateWorkspace(workspace){
     threadIds.add(thread.id);pairs.add(pair);
   }
   for(const proposal of workspace.comparisons)if(!workspace.comparisonThreads.some(thread=>thread.id===proposal.comparisonId&&comparisonPairKey(thread)===comparisonPairKey(proposal)))throw Error('A proposed judgment must belong to its overall comparison.');
-  validateArguments(workspace);validateDefinitions(workspace);validateDiscussions(workspace);workspace.schemaVersion=6;
+  validateArguments(workspace);validateDefinitions(workspace);validateDiscussions(workspace);validateFacilitationHistory(workspace);workspace.schemaVersion=workspace.facilitationHistory?.length?7:6;
   return workspace;
 }

@@ -107,6 +107,8 @@ export function projectAccountWorkspace(snapshot,actorId){
   const workspace={schemaVersion:6,participants:full.participants,maps,ideas,endorsements,comparisons,comparisonThreads,argumentNodes,argumentEdges,discussions,definitions:full.definitions.filter(d=>d.authorId===actorId)};
   if(maps.length)validateWorkspace(workspace);
   const accessibleRevisions=snapshot.records.filter(r=>r.kind==='comparison'&&comparisons.some(c=>c.id===r.id)||r.kind==='comparison_thread'&&comparisonThreads.some(c=>c.id===r.id));
+  const history=(snapshot.facilitationHistory||[]).filter(r=>r.kind==='map'?maps.some(m=>m.id===r.recordId&&!m.unavailable):discussions.some(d=>d.id===r.recordId));
+  if(history.length){workspace.facilitationHistory=history;workspace.schemaVersion=7;}
   return {workspace,ownedKeys:[...ownKeys],revisions:Object.fromEntries([...owned,...accessibleRevisions].map(r=>[accountKey(r.kind,r.id),r.revision]))};
 }
 function validateEndorsement(candidate,old,value,actorId,latestVersions){

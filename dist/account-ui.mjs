@@ -1,3 +1,4 @@
+import {FacilitatorUI} from './facilitator-ui.mjs';
 import {AccountChallenge} from './account-challenge.mjs';
 import {TestAccountsUI} from './test-accounts-ui.mjs';
 import {validateWorkspace,newId} from './workspace.mjs';
@@ -9,7 +10,7 @@ const accountOption=(value,label)=>{const o=document.createElement('option');o.v
 export class AccountWorkspace{
   constructor(controller){
     this.controller=controller;this.actor=null;this.baseline=new Map();this.revisions={};this.ownedKeys=[];this.timer=null;this.draftTimer=null;this.saving=false;this.blocked=false;this.loading=false;
-    this.mount();this.install();
+    this.mount();this.install();this.facilitator=new FacilitatorUI(this);
   }
   mount(){
     document.body.classList.add('accounts','account-locked');
@@ -43,16 +44,19 @@ export class AccountWorkspace{
     const c=this.controller;
     c.initialize=()=>this.initialize();c.save=()=>this.save();c.status=message=>this.status(message);c.openFile=file=>this.importFile(file);
     const mark=c.markDirty.bind(c);c.markDirty=()=>{mark();if(c.ready){for(const e of c.workspace.endorsements)if(e.participantId===this.actor?.id&&!this.baseline.has(accountKey('endorsement',e.id)))e.method='authenticated';for(const m of c.workspace.maps)if(m.ownerId===this.actor?.id&&!m.visibility)m.visibility='private';this.schedule();}};
-    const load=c.loadMap.bind(c);c.loadMap=id=>{const map=c.workspace.maps.find(m=>m.id===id);if(!map||this.actor&&map.ownerId!==this.actor.id)return;load(id);this.renderAccountName();};
+    const load=c.loadMap.bind(c);c.loadMap=id=>{if(this.facilitator?.context&&c.workspaceDirty&&id!==c.activeMapId){c.message('Review this facilitator contribution before opening another map.');return;}const map=c.workspace.maps.find(m=>m.id===id);if(!map||this.actor&&map.ownerId!==this.actor.id)return;load(id);this.renderAccountName();};
     const populate=c.populateMaps.bind(c);c.populateMaps=()=>{populate();const picker=accountUI('map-select');picker.replaceChildren(accountOption('','Choose a map…'),...c.workspace.maps.filter(m=>m.ownerId===this.actor?.id).map(m=>accountOption(m.id,m.name)));picker.value=c.activeMapId||'';};
-    const show=c.showMapDialog.bind(c);c.showMapDialog=(rename=false,options={})=>{show(rename,options);accountUI('map-owner-input').replaceChildren(accountOption(this.actor.id,this.actor.name));accountUI('map-owner-input').disabled=true;accountUI('map-person-input').value=this.actor.name;accountUI('map-person-input').required=false;accountUI('map-person-group').hidden=true;accountUI('map-owner-input').hidden=true;document.querySelector('label[for="map-owner-input"]').hidden=true;accountUI('map-visibility').value=rename?(c.activeMap().visibility||'private'):'private';};
+    const show=c.showMapDialog.bind(c);c.showMapDialog=(rename=false,options={})=>{if(this.facilitator?.context&&this.facilitator.pending()){c.message('Review this facilitator contribution before changing maps.');return;}show(rename,options);accountUI('map-owner-input').replaceChildren(accountOption(this.actor.id,this.actor.name));accountUI('map-owner-input').disabled=true;accountUI('map-person-input').value=this.actor.name;accountUI('map-person-input').required=false;accountUI('map-person-group').hidden=true;accountUI('map-owner-input').hidden=true;document.querySelector('label[for="map-owner-input"]').hidden=true;accountUI('map-visibility').value=rename?(c.activeMap().visibility||'private'):'private';};
     const submit=accountUI('map-dialog-form').onsubmit;accountUI('map-dialog-form').onsubmit=e=>{const visibility=accountUI('map-visibility').value;submit(e);if(!accountUI('map-dialog').open){c.activeMap().visibility=visibility;c.loadMap(c.activeMapId);c.markDirty();}};
     const action=c.participation.refreshAction.bind(c.participation);c.participation.refreshAction=()=>{action();if(c.participation.pending?.mode!=='copy')accountUI('adoption-meaning').textContent+=' Your display name and co-sign are visible to beta participants who can view this source. A private destination map stays private.';};
     const record=c.record.bind(c);c.record=async()=>{await record();if(accountUI('comparison-error').dataset.state==='success')accountUI('comparison-error').textContent='Judgment recorded. Saving to your account…';};
   }
   async request(path,body,method='POST'){
-    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1, interaction-grammar-v4, counterpart-integrity-v1, argument-categories-v1, argument-replies-v1, argument-dialogue-v1, argument-standstill-v1',...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
+    const epoch=this.facilitator?.epoch,context=this.facilitator?.context,delegated=context&&(path==='/api/workspace'||path==='/api/comparisons');
+    if(context&&path==='/api/workspace'&&body!==undefined)throw Error('Review this contribution before publishing it for the participant.');
+    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1, interaction-grammar-v4, counterpart-integrity-v1, argument-categories-v1, argument-replies-v1, argument-dialogue-v1, argument-standstill-v1, facilitation-v1',...(delegated?{'X-Harmonious-Participant':context.participantId,'X-Harmonious-Grant-Version':String(context.version)}:{}),...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
     let data;try{data=await response.json();}catch{throw Error('The service could not be reached. Your work is still on this page.');}
+    if(delegated&&epoch!==this.facilitator.epoch)throw Error('Participant context changed.');
     if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;error.code=data.code;if(error.code==='CLIENT_UPDATE_REQUIRED'){this.blocked=true;this.controller.message(error.message);this.status('Update needed · Your work is still on this page');}throw error;}return data;
   }
   async startComparison(aMapId,bMapId){
@@ -60,7 +64,7 @@ export class AccountWorkspace{
     if(this.loading||this.saving||this.blocked||this.controller.workspaceDirty)throw Error('Your maps need to finish saving or refreshing before starting the comparison.');
     this.loading=true;
     try{
-      const result=await this.request('/api/comparisons',{aMapId,bMapId}),thread=result.comparisonThread,key=accountKey('comparison_thread',thread.id);
+      const result=await this.request('/api/comparisons',{aMapId,bMapId,...(this.facilitator?.context?{operationId:crypto.randomUUID()}: {})}),thread=result.comparisonThread,key=accountKey('comparison_thread',thread.id);
       const threads=this.controller.workspace.comparisonThreads??=[];
       if(!threads.some(item=>item.id===thread.id))threads.push(thread);
       this.baseline.set(key,accountClone(thread));this.revisions[key]=result.revision;
@@ -97,14 +101,14 @@ export class AccountWorkspace{
   async initialize(){
     const c=this.controller,previousReady=c.ready;clearTimeout(this.timer);this.loading=true;c.ready=false;
     try{
-      const session=await this.request('/api/session');this.signup=session.signup;this.testAccounts.session(session);
+      const session=await this.request('/api/session');this.signup=session.signup;this.testAccounts.session(session);this.facilitator?.session(session);
       const publicSignup=this.signup?.mode==='public';
       accountUI('account-signup-help').textContent=publicSignup?'Anyone can create an account with their email. Personal maps start private.':'Invited participants can create an account with their email. Personal maps start private.';
       if(!session.actor&&this.signup?.turnstile)await this.challenge.mount(this.signup.turnstile);
       accountUI('account-send').disabled=!!this.signup?.turnstile&&!this.challenge.token;
       if(!session.actor){document.body.classList.add('account-locked');accountUI('account-feedback').textContent=publicSignup?'Enter your email address and a display name to begin.':'Enter your invited email address to begin.';this.status('Sign in to open your maps');return;}
       const data=await this.request('/api/workspace');if(this.accept(data,true)===false){c.ready=previousReady;return;}this.blocked=false;
-      document.body.classList.remove('account-locked');accountUI('account-display').textContent=this.actor.name;accountUI('account-feedback').textContent='';c.message();this.status();
+      document.body.classList.remove('account-locked');accountUI('account-display').textContent=this.actor.name;accountUI('account-feedback').textContent='';this.facilitator?.render();c.message();this.status();
     }catch(error){accountUI('account-feedback').textContent=error.message;c.message(error.message);this.status('Account unavailable');}
     finally{this.loading=false;}
   }
@@ -118,7 +122,7 @@ export class AccountWorkspace{
     if(reset)c.argument?.reset();
     if(d&&(reset||!d.dirty&&(lostConversation||!available(d.target)||!available(d.groupTarget)||d.viewId&&!visibleEntries.has(d.viewId)))){d.dirty=false;d.viewId=null;d.target=null;d.groupTarget=null;d.reasoning?.reset();if(d.host){d.host.hidden=true;d.host.replaceChildren();}}
     c.workspace=workspace;this.revisions=data.revisions;this.ownedKeys=data.ownedKeys;this.actor=data.actor;
-    this.renderAccountName();
+    this.renderAccountName();this.facilitator?.render();
     this.baseline=new Map(ownedAccountRecords(workspace,this.actor.id,this.ownedKeys).map(r=>[accountKey(r.kind,r.id),r.value]));
     c.ready=true;c.cloudLoaded=true;c.workspaceDirty=false;document.body.classList.remove('account-locked');
     if(reset){c.activeComparisonPair=null;c.activeMapId=null;c.editor.discardDraft();c.clearComparison();c.sides={a:{mapId:null,nodeId:null},b:{mapId:null,nodeId:null}};c.mode='library';c.updateNavigation?.();}
@@ -133,16 +137,17 @@ export class AccountWorkspace{
     const c=this.controller;accountUI('save-workspace').textContent=this.blocked?'Retry save':'Save now';accountUI('storage-status').dataset.state=c.workspaceDirty?'dirty':'saved';
     accountUI('storage-status').textContent=message||(!this.actor?'Sign in to open your maps':this.saving?'Saving…':this.blocked?'Save needs attention':c.workspaceDirty?'Changes waiting to save':c.editor.hasChildDraft?.()?'Child node draft · Add child node to save':c.editor.hasDraft()?'Node changes waiting to save':c.discussion?.dirty?'Conversation draft · Add to map to save':c.argument?.dirty?'Argument draft - Save the form':c.comparisonDirty?'Comparison draft · Record to save':'All changes saved');
   }
-  schedule(){clearTimeout(this.timer);if(this.actor&&!this.blocked&&!this.loading)this.timer=setTimeout(()=>this.save(false),900);}
+  schedule(){if(this.facilitator?.context){this.status('Facilitator changes waiting for review');return;}clearTimeout(this.timer);if(this.actor&&!this.blocked&&!this.loading)this.timer=setTimeout(()=>this.save(false),900);}
   scheduleDraft(){this.status();clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>{if(this.controller.ready&&!this.controller.editor.hasChildDraft?.()&&accountUI('edit-form').checkValidity()&&accountUI('connection-form').hidden){this.controller.editor.flushDraft();this.controller.captureActive();this.status();}},1100);}
   async save(flush=true){
+    if(this.facilitator?.context)return this.facilitator.save(flush);
     const c=this.controller;if(!this.actor||!c.ready||this.loading)return;if(this.saving){this.schedule();return;}
     clearTimeout(this.timer);if(flush&&!c.editor.flushDraft())return;c.captureActive();
     const records=ownedAccountRecords(c.workspace,this.actor.id,this.ownedKeys),changes=accountChanges(records,this.baseline,this.revisions);
     if(!changes.length){c.workspaceDirty=false;this.status();return;}
     this.saving=true;accountUI('save-workspace').disabled=true;this.status();
     try{
-      validateWorkspace(c.workspace);const result=await this.request('/api/workspace',{changes},'PUT');this.revisions={...this.revisions,...result.revisions};
+      validateWorkspace(c.workspace);const result=await this.request('/api/workspace',{changes},'PUT');this.revisions={...this.revisions,...result.revisions};if(result.facilitationHistory)c.workspace.facilitationHistory=result.facilitationHistory;
       for(const r of changes){const key=accountKey(r.kind,r.id);this.baseline.set(key,accountClone(r.value));if(!this.ownedKeys.includes(key))this.ownedKeys.push(key);}
       this.blocked=false;c.workspaceDirty=accountChanges(ownedAccountRecords(c.workspace,this.actor.id,this.ownedKeys),this.baseline,this.revisions).length>0;c.message();
     }catch(error){this.blocked=true;c.workspaceDirty=true;c.message(`${error.message} Download a backup to keep your current work.${error.status===401?' Sign in again in a new tab, then retry this save.':''}`);}
@@ -152,6 +157,7 @@ export class AccountWorkspace{
   // callback can reuse its exact batch after a lost response; it first sees the
   // latest account, so an already-saved fulfillment is found before retrying.
   async commitCandidate(prepare){
+    if(this.facilitator?.context)return this.facilitator.commit(prepare);
     const c=this.controller;await this.save();
     if(!this.actor||this.loading||this.saving||this.blocked||c.workspaceDirty)throw Error('Finish saving your earlier changes before saving this choice.');
     const actor=this.actor.id,wasInert=document.body.inert;this.loading=true;this.saving=true;document.body.inert=true;this.status('Checking and saving your choice…');
@@ -167,6 +173,7 @@ export class AccountWorkspace{
       // Merge only acknowledged records into the fresh read, retaining newer
       // foreign records even when this was an exact retry of an earlier batch.
       const workspace=accountClone(c.workspace),collections={profile:'participants',map:'maps',idea:'ideas',endorsement:'endorsements',comparison_thread:'comparisonThreads',comparison:'comparisons',argument_node:'argumentNodes',argument_edge:'argumentEdges',discussion:'discussions',definition:'definitions'};
+      if(result.facilitationHistory)workspace.facilitationHistory=result.facilitationHistory;
       const ownedKeys=new Set(this.ownedKeys);
       for(const change of changes){const records=workspace[collections[change.kind]],index=records.findIndex(r=>r.id===change.id);if(index<0)records.push(accountClone(change.value));else records[index]=accountClone(change.value);ownedKeys.add(accountKey(change.kind,change.id));}
       this.accept({actor:current.actor,workspace,revisions:{...this.revisions,...result.revisions},ownedKeys:[...ownedKeys]});c.message();return prepared;
@@ -181,7 +188,7 @@ export class AccountWorkspace{
     try{await this.request('/api/auth/logout',{});c.ready=false;c.workspaceDirty=false;c.comparisonDirty=false;c.editor.discardDraft();location.reload();}catch(error){c.message(error.message);}
   }
   async importFile(file){
-    const c=this.controller;if(!file)return;
+    const c=this.controller;if(this.facilitator?.context){c.message('Exit facilitation before importing maps.');return;}if(!file)return;
     try{
       if(file.size>2_000_000)throw Error('This file exceeds the 2 MB import limit.');const source=validateWorkspace(JSON.parse(await file.text()));
       if(!confirm(`Import ${source.maps.length} maps as private copies owned by you? The original file keeps its participant identities and co-signs; those will not be recorded as authenticated choices.`))return;

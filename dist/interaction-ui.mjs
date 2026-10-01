@@ -176,6 +176,7 @@ export class InteractionUI{
           const record=makeDiscussion(candidate,input,d.actor(),old);candidate.discussions=candidate.discussions.filter(r=>r.id!==record.id);candidate.discussions.push(record);validateWorkspace(candidate);if(old)stagedEdit=structuredClone(record);stagedDraft=draft;return {workspace:candidate,record};
         };
         const result=this.c.account?await this.c.account.commitCandidate(prepare):prepare(this.c.workspace);
+        if(result.facilitatorDraft){d.dirty=false;d.saving=false;d.close();return;}
         if(!this.c.account){this.c.workspace=result.workspace;this.c.markDirty();if(this.c.activeMapId)this.c.loadMap(this.c.activeMapId);}
         d.dirty=false;d.saving=false;this.c.library.render();this.c.renderComparison();this.open(result.record.id);if(d.dialogue?.active){d.dialogue.refresh();d.dialogue.reveal(result.record.id);}
       }catch(error){this.error(form,error.message);}finally{d.saving=false;d.host.inert=false;this.c.status();d.positionPopover();}
