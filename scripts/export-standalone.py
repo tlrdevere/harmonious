@@ -29,7 +29,7 @@ for name in ['account-model.mjs','facilitation.mjs','facilitation-presentation.m
     if name=='reasoning-layout.mjs':
         code='const {routeReasoningConnection,routeStraightConnection}=(()=>{\n'+code+'\nreturn {routeReasoningConnection,routeStraightConnection};})();'
     if name=='comparison-routing.mjs':
-        names='routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute'
+        names='routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute,crossFrameAttachments'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     if name=='reasoning-view.mjs':
         names='buildReasoningIndex,projectReasoning,searchReasoning,reasoningTargetKey,ReasoningViewState'
