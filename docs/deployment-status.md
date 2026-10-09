@@ -1,6 +1,12 @@
 # Deployment status
 
-Updated October 1, 2026 (UTC).
+Updated October 9, 2026 (UTC).
+
+## Prepared update — awaiting Cloudflare sign-in
+
+The [compact Create header and supplied logo](create-header-and-logo.md) are implemented and pushed at `c4aaf859622548d26d3ed11985762cdb4ac4a3a8` on `redesign/node-interactions`. **64/64 local checks passed** in `build/verification/2026-10-09T00-15-10-738Z-132988/summary.json`; **64/64 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/37863810971). Desktop and narrow previews were reviewed. The built Worker SHA-256 is `82a1cf5d09aee80d1a4fc863ffde845a88d8ac52f8fc77cd572b69a7c1ee52ef`.
+
+This update is **not deployed**: the previous Cloudflare connector is unavailable and Wrangler reported that it is not authenticated. A device sign-in was prepared for the owner. Once authentication is restored, verify the live baseline, publish this exact bundle with existing bindings and runtime settings preserved, and run the live asset/access checks. No database migration is needed. Worker 65 remains the last verified deployment.
 
 ## Current release
 

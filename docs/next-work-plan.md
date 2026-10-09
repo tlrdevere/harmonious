@@ -1,5 +1,7 @@
 # Harmonious next-work plan
 
+The [compact Create header and supplied logo](create-header-and-logo.md) are implemented and pushed, with **64/64 local and hosted checks passed**. Publication is waiting for Cloudflare sign-in. Resume from the prepared update in [deployment status](deployment-status.md); preserve the existing runtime and bindings and verify the live assets after publishing. The technology stack and deferrals are unchanged.
+
 [Owner-only map deletion](map-deletion.md) is **live in Worker 65**, after **64/64 local and 64/64 hosted checks**, the additive database safeguards and exact live verification. Refresh, open My maps, and use Delete map on a disposable map. Existing copies/history remain; comparisons using a deleted source become unavailable. The empty library supports creating another map. Follow the deletion section of [the checklist](user-testing-checklist.md), then continue user testing. The technology stack and existing deferrals are unchanged.
 
 
