@@ -94,6 +94,9 @@
 /* Branch focus changes emphasis, never visibility, geometry or permissions. */
 .topic-focus-controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px}
 .topic-focus-controls [hidden]{display:none}
+.topic-focus-reset{position:absolute;top:12px;right:12px;z-index:12;max-width:calc(100% - 24px);padding:8px 12px;border:1px solid #bfd0df;border-radius:8px;background:#fff;color:#173f49;box-shadow:0 2px 8px #173f4914}
+.topic-focus-reset[hidden]{display:none}
+.comparison-canvas.topic-focus-active .comparison-canvas-hint{max-width:calc(100% - 140px)}
 .topic-focus-dialog{width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 48px);box-sizing:border-box;overflow:auto;border:1px solid #bfd0df;border-radius:14px;padding:20px;color:#1c3049;background:#fff}
 .topic-focus-dialog::backdrop{background:#142e4555}
 .topic-focus-dialog h2{margin-top:0;font-size:20px}

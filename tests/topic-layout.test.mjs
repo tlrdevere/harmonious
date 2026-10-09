@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {layoutForest,CARD_W,CARD_H} from '../dist/layout.mjs';
-import {mapTopicSectors,topicFocusMembers} from '../dist/topic-layout.mjs';
+import {mapTopicSectors,topicFocusMembers,connectedTopicBranches} from '../dist/topic-layout.mjs';
 import {layoutComparison,comparisonNodeKey,comparisonDisplayRects} from '../dist/comparison-layout.mjs';
 const roots=['status','action','goal'];
 const nodes=roots.map(id=>({id,parent:null,title:id}));
@@ -29,5 +29,9 @@ for(const id of ['status0','action0','goal0'])assert.equal(foldedPair.positions.
 const swapped=layoutComparison({a:states.b,b:states.a},roots,{links});for(const id of ['status0','action0','goal0'])assert.equal(swapped.positions.get(comparisonNodeKey('b',id)).angle,paired.positions.get(comparisonNodeKey('a',id)).angle,'Swapping sides preserves source topic orientation');
 const focus=topicFocusMembers(nodes,new Set(['status0','goal2','missing','status0-0']));assert.equal(focus.topics.size,2);assert(focus.members.has('status0-6'));assert(!focus.members.has('action0'));assert(!focus.members.has('status'));
 const added=topicFocusMembers([...nodes,{id:'new-descendant',parent:'status0-0'}],focus.topics);assert(added.members.has('new-descendant'));
+const connected=connectedTopicBranches(nodes,[...many,{from:'goal0',to:'status0'},{from:'status0',to:'status5'},{from:'goal0',to:'action2-0'},{from:'goal0',to:'missing'}],'goal0');
+assert.deepEqual([...connected].sort(),['status0','action0','action1','goal0'].sort(),'Follow cross-frame links backwards, through chains, branches and cycles, but not same-frame/deeper/missing endpoints');
+const connectedFocus=topicFocusMembers(nodes,connected);for(const id of ['status0-6','action0-1','action1-0','goal0-1'])assert(connectedFocus.members.has(id),'Every connected topic includes its descendants');
+assert.deepEqual([...connectedTopicBranches(nodes,[],'status2')],['status2']);assert.equal(connectedTopicBranches(nodes,relations,'status').size,0);
 assert.equal(JSON.stringify({nodes,relations}),before,'Layout and focus do not mutate saved content');
 console.log('PASS: cross-frame radial alignment, chains, crowded one-to-many groups, stable expansion, source/paired layouts, complete descendant focus and immutable map data.');

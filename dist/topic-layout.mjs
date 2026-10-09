@@ -32,3 +32,18 @@ export function topicFocusMembers(nodes,selection){
   for(const n of nodes){let p=n;const seen=new Set();while(p&&!seen.has(p.id)){if(topics.has(p.id)){members.add(n.id);break;}seen.add(p.id);p=byId.get(p.parent);}}
   return {topics,members};
 }
+
+// Topic focus follows cross-frame links in either direction, including chains.
+// Same-frame links and links to deeper descendants do not extend the topic set.
+export function connectedTopicBranches(nodes,relations,nodeId){
+  const byId=new Map(nodes.map(n=>[n.id,n])),topics=new Set(nodes.filter(n=>byId.get(n.parent)?.parent===null).map(n=>n.id));
+  if(!topics.has(nodeId))return new Set();
+  const neighbors=new Map([...topics].map(id=>[id,[]]));
+  for(const edge of relations||[]){
+    if(!topics.has(edge.from)||!topics.has(edge.to)||byId.get(edge.from).parent===byId.get(edge.to).parent)continue;
+    neighbors.get(edge.from).push(edge.to);neighbors.get(edge.to).push(edge.from);
+  }
+  const result=new Set([nodeId]),queue=[nodeId];
+  for(let i=0;i<queue.length;i++)for(const id of neighbors.get(queue[i]))if(!result.has(id)){result.add(id);queue.push(id);}
+  return result;
+}

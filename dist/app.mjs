@@ -396,7 +396,7 @@ const connectionMenu=new MapConnectionsUI(viewport,{
   close:closeConnection,edit:editConnection,remove:removeConnection,
   reveal:(from,to)=>{if(!allowLeave())return;expanded=revealPath(nodes,to,revealPath(nodes,from,expanded));update({instant:true});requestAnimationFrame(()=>{const a=positions.get(from),b=positions.get(to);if(a&&b){camera.x=viewport.clientWidth/2-((a.x+b.x+CARD_W)/2)*camera.z;camera.y=viewport.clientHeight/2-((a.y+b.y+CARD_H)/2)*camera.z;draw();}});}
 });
-const topicFocus=new TopicFocusUI(document.querySelector('.map-view-options>div'),{maps:()=>[{...workspaceController.activeMap(),id:workspaceController.activeMapId,nodes:renderNodes()}],world:()=>world,beforeOpen:allowLeave});
+const topicFocus=new TopicFocusUI(document.querySelector('.map-view-options>div'),{maps:()=>[{...workspaceController.activeMap(),id:workspaceController.activeMapId,nodes:renderNodes(),relations}],world:()=>world,resetHost:()=>viewport,beforeOpen:allowLeave});
 const nodeActions=new NodeActions(viewport,{
   canEdit:()=>workspaceController.canEditMap(workspaceController.activeMap()),
   canSetConfidence:()=>workspaceController.canEditMap(workspaceController.activeMap()),confidence:showConfidence,

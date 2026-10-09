@@ -1,13 +1,14 @@
-import {topicFocusMembers} from './topic-layout.mjs';
+import {topicFocusMembers,connectedTopicBranches} from './topic-layout.mjs';
 
 export const topicNodeKey=(mapId,nodeId)=>JSON.stringify([mapId,nodeId]);
 export function markTopicElement(element,keys){if(element)element.dataset.topicKeys=JSON.stringify(keys);}
 
 export class TopicFocusUI{
-  constructor(host,{maps,world,mapLabel=map=>map.name,scope='map',beforeOpen=()=>true}){
+  constructor(host,{maps,world,resetHost=world,mapLabel=map=>map.name,scope='map',beforeOpen=()=>true}){
     this.maps=maps;this.world=world;this.mapLabel=mapLabel;this.scope=scope;this.beforeOpen=beforeOpen;this.selection=new Set();this.context=null;
     this.controls=document.createElement('span');this.controls.className='topic-focus-controls';
     this.choose=this.button('Focus selection',()=>this.open());this.clear=this.button('Clear focus',()=>this.set([]));this.clear.hidden=true;this.status=document.createElement('span');this.status.setAttribute('role','status');this.controls.append(this.choose,this.clear,this.status);host.append(this.controls);
+    this.reset=this.button('Clear focus',()=>{this.set([]);resetHost()?.focus({preventScroll:true});});this.reset.className='topic-focus-reset';this.reset.hidden=true;resetHost()?.append(this.reset);
     this.dialog=document.createElement('dialog');this.dialog.className='topic-focus-dialog';this.dialog.setAttribute('aria-label','Choose topic branches');document.body.append(this.dialog);
     this.dialog.addEventListener('close',()=>{const details=this.choose.closest('details');(details&&!details.open?details.querySelector('summary'):this.choose).focus({preventScroll:true});});
   }
@@ -18,12 +19,12 @@ export class TopicFocusUI{
     const valid=new Set();this.members=new Set();this.frames=new Set();
     for(const map of maps){const chosen=new Set(map.nodes.filter(n=>this.selection.has(topicNodeKey(map.id,n.id))).map(n=>n.id)),focus=topicFocusMembers(map.nodes,chosen);
       for(const id of focus.topics)valid.add(topicNodeKey(map.id,id));for(const id of focus.members)this.members.add(topicNodeKey(map.id,id));for(const n of map.nodes)if(n.parent===null)this.frames.add(topicNodeKey(map.id,n.id));}
-    this.selection=valid;this.active=valid.size>0;this.choose.textContent=this.active?'Change selection':'Focus selection';this.clear.hidden=!this.active;this.status.textContent=this.active?`${valid.size} topic ${valid.size===1?'branch':'branches'} focused`:'';
+    this.selection=valid;this.active=valid.size>0;this.choose.textContent=this.active?'Change selection':'Focus selection';this.clear.hidden=!this.active;this.reset.hidden=!this.active;this.status.textContent=this.active?`${valid.size} topic ${valid.size===1?'branch':'branches'} focused`:'';
     const summary=this.choose.closest('details')?.querySelector(':scope>summary');if(summary){summary.dataset.topicOriginal||=summary.textContent;summary.textContent=summary.dataset.topicOriginal+(this.active?` · ${valid.size} focused`:'');}
     try{sessionStorage.setItem('harmonious-topic-focus:'+context,JSON.stringify([...valid]));}catch{}
   }
   set(keys){this.selection=new Set(keys);this.apply();}
-  focus(mapId,nodeId){this.sync();this.set([topicNodeKey(mapId,nodeId)]);}
+  focus(mapId,nodeId){this.sync();const map=this.maps().find(m=>m?.id===mapId&&!m.unavailable);this.set(map?[...connectedTopicBranches(map.nodes,map.relations,nodeId)].map(id=>topicNodeKey(mapId,id)):[]);}
   apply(){
     this.sync();const world=this.world();if(!world)return;world.classList.toggle('topic-focus-active',this.active);
     for(const el of world.querySelectorAll('[data-topic-keys]')){let keys;try{keys=JSON.parse(el.dataset.topicKeys);}catch{keys=[];}

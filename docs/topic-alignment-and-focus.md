@@ -14,9 +14,11 @@ The canvas grows to accommodate content. Existing card-avoiding routing handles 
 
 ## Focus selection
 
-Use **View options → Focus selection** to choose first-tier topics, grouped by map and frame. **Apply focus** keeps those topics, descendants and internal connections prominent. Other nodes and connections fade, including links with an endpoint outside the selection. Frame headings remain readable. Connected topics and opposite-map counterparts are not automatically selected.
+Use **View options → Focus selection** to choose first-tier topics, grouped by map and frame. **Apply focus** keeps those topics, descendants and internal connections prominent. Other nodes and connections fade, including links with an endpoint outside the selection. Frame headings remain readable. The checkbox chooser keeps exactly the branches selected by the user.
 
-Create and outer comparison node menus offer **Focus this branch** for first-tier topics. **Change selection** edits the set, and **Clear focus** restores normal emphasis. View options shows the number of focused branches while closed. Cancel and Escape discard chooser changes. Keyboard focus temporarily restores faded content's contrast for inspection.
+Create and outer comparison node menus offer **Focus this branch** for first-tier topics. This shortcut selects the connected topic group across frames in that map, following saved first-tier cross-frame connections in either direction, including chains and one-to-many links. All selected topics' descendants are emphasized. Same-frame links, deeper endpoints and counterparts belonging to another map do not extend this set. **Change selection** can then adjust it explicitly.
+
+**Clear focus** is visible at the top-right of the canvas whenever focus is active, including after a reload, and remains in View options as well. Clearing preserves layout and zoom and returns keyboard focus to the canvas. View options shows the number of focused branches while closed. Cancel and Escape discard chooser changes. Keyboard focus temporarily restores faded content's contrast for inspection. See deployment status for the cross-frame shortcut and visible reset follow-up's publication.
 
 Focusing preserves positions, zoom, folds, assessments and map content. New descendants inherit their branch's treatment. Ghosts follow their source branch. A shared agreement display remains identifiable when either half is focused, while each counterpart half follows its own explicit selection.
 

@@ -17,9 +17,9 @@ for(const actor of [alice,bob]){
   await seedActor(store,actor);ids[actor.name]={};
   await edit(store,actor,ws=>{
     const map=ws.maps.find(m=>m.ownerId===actor.id);map.visibility='shared';map.name=actor.name+' source routes';
-    for(const title of ['DSA','State','Low union density','Socialists','Dems','Evidence','Membership survey','Deep evidence','Housing action','Housing goal']){
+    for(const title of ['DSA','State','Low union density','Socialists','Dems','Evidence','Membership survey','Deep evidence','Housing action','Housing goal','Action detail','Goal detail']){
       const n=addNode(ws,actor,title);n.parent=title==='Evidence'?ids[actor.name]['Low union density']:title==='Membership survey'?ids[actor.name].Socialists:title==='Deep evidence'?ids[actor.name].Evidence:'status';
-      if(title==='Housing action')n.parent='action';if(title==='Housing goal')n.parent='goal';n.kind='position';n.summary='Saved source wording: '+title;ids[actor.name][title]=n.id;
+      if(title==='Housing action')n.parent='action';if(title==='Housing goal')n.parent='goal';if(title==='Action detail')n.parent=ids[actor.name]['Housing action'];if(title==='Goal detail')n.parent=ids[actor.name]['Housing goal'];n.kind='position';n.summary='Saved source wording: '+title;ids[actor.name][title]=n.id;
     }
     const own=ids[actor.name];map.relations=[{id:actor.name+'-cross-a',from:own['Low union density'],to:own['Housing action'],type:'addresses'},{id:actor.name+'-cross-g',from:own['Housing action'],to:own['Housing goal'],type:'enables'},
       {id:actor.name+'-a-reason',from:own.Evidence,to:own['Low union density'],type:'reason',note:'The evidence supports the parent.'},
@@ -80,7 +80,12 @@ try{
   await page.locator('#collapse').click();await page.locator('#all').click();assert((await card('DSA').getAttribute('class')).includes('topic-faded'),'Focus survives folds');
   await page.reload();await page.locator('#all').click();assert((await card('DSA').getAttribute('class')).includes('topic-faded'),'Focus survives reload in this browser tab');
   await editorOptions.locator('summary').click();await editorOptions.getByRole('button',{name:'Clear focus',exact:true}).click();assert.equal(await editor.locator('.topic-faded').count(),0);
-  await editorOptions.locator('summary').click();await enter(card('Housing goal').locator('.node-main'));await page.getByRole('button',{name:'Focus this branch',exact:true}).click();assert(!(await card('Housing goal').getAttribute('class')).includes('topic-faded'));assert((await card('Low union density').getAttribute('class')).includes('topic-faded'));
+  await editorOptions.locator('summary').click();await enter(card('Housing goal').locator('.node-main'));await page.getByRole('button',{name:'Focus this branch',exact:true}).click();
+  for(const title of ['Housing goal','Housing action','Low union density','Evidence','Action detail','Goal detail'])assert(!(await card(title).getAttribute('class')).includes('topic-faded'),title+' belongs to the connected topic');
+  assert((await card('DSA').getAttribute('class')).includes('topic-faded'));
+  const reset=page.locator('#viewport>.topic-focus-reset');assert(await reset.isVisible(),'Clear focus is visible with View options closed');
+  await page.screenshot({path:'build/design-review/topic-focus-connected-desktop.png',fullPage:true});
+  const focusedGeometry=await geometry(editor);await reset.click();assert.deepEqual(await geometry(editor),focusedGeometry);assert.equal(await editor.locator('.topic-faded').count(),0);assert(!(await reset.isVisible()));
   await page.goto(origin+'/#source='+bMap.id);await page.locator('#reference-all').click();
   const source=page.locator('#reference-canvas'),sourceOptions=page.locator('.topic-source-options').filter({visible:true});
   await sourceOptions.locator('summary').click();await sourceOptions.getByRole('button',{name:'Focus selection',exact:true}).click();await dialog.getByRole('checkbox',{name:'Low union density',exact:true}).check();await dialog.getByRole('button',{name:'Apply focus'}).click();
@@ -94,9 +99,13 @@ try{
   assert(await canvas.locator('.counterpart-placeholder.topic-faded').count()>0,'Ghosts follow their own topic');
   assert(await canvas.locator('.discussion-source-edge.topic-faded').count()>0,'Outside connections fade');
   await canvas.getByRole('button',{name:'Fit both maps',exact:true}).click();await page.screenshot({path:'build/design-review/topic-focus-comparison-desktop.png',fullPage:true});
+  await enter(canvas.locator('.node[data-map-id="'+aMap.id+'"][data-node-id="'+ids.Alice['Housing goal']+'"] .node-main'));await page.locator('.discussion-popover').getByRole('button',{name:'Focus this branch',exact:true}).click();
+  for(const title of ['Low union density','Housing action','Housing goal','Action detail','Goal detail'])assert.equal(await canvas.locator('.node[data-node-id="'+ids.Alice[title]+'"].topic-faded').count(),0);
+  assert(await canvas.locator('.node[data-map-id="'+bMap.id+'"].topic-faded').count()>0,'Cross-frame shortcut does not implicitly select a different person’s map');
   await page.locator('#reasoning-argument-mode').click();assert(await canvas.locator('.node.topic-faded').count()>0,'Outer Argument preserves focus');
   await page.setViewportSize({width:390,height:844});await opts.locator(':scope>summary').click();await opts.getByRole('button',{name:'Change selection',exact:true}).click();const box=await dialog.boundingBox();assert(box.x>=0&&box.x+box.width<=391);await page.screenshot({path:'build/design-review/topic-focus-mobile-chooser.png',fullPage:true});await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
-  await opts.locator(':scope>summary').click();await opts.getByRole('button',{name:'Clear focus',exact:true}).click();assert.equal(await canvas.locator('.topic-faded').count(),0);
+  const sharedReset=canvas.locator('.topic-focus-reset');assert(await sharedReset.isVisible());const resetBox=await sharedReset.boundingBox();assert(resetBox.x>=0&&resetBox.x+resetBox.width<=390);
+  await page.screenshot({path:'build/design-review/topic-focus-clear-mobile.png',fullPage:true});await sharedReset.click();assert.equal(await canvas.locator('.topic-faded').count(),0);
   assert.deepEqual(errors,[]);await context.close();
   console.log('PASS: Create and shared branch focus, explicit selections, descendants, ghosts, connections, reload, folds, unchanged geometry, Argument mode and narrow chooser.');
 }finally{await browser.close();server.close();}
