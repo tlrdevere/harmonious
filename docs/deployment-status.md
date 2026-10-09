@@ -2,7 +2,20 @@
 
 Updated October 9, 2026 (UTC).
 
-## Current release — Worker 67
+## Current release — Worker 68
+
+Connected branch focus and visible Clear focus deployed **2026-10-09T18:10:50.865539Z**. Release source: `4bc0995a7fcda6b47e69754bc579690c12156b84` on `redesign/node-interactions`, committed and pushed before hosted verification and publication.
+
+- Worker version **68**: `a5d454af-a106-4ec6-8a03-508419a7fe28`, serving **100%** of traffic. Deployment: `3bdd5b1f-da89-4292-9473-b4e73ba266c5`.
+- **Focus this branch** follows saved first-tier cross-frame connections within the selected map, in either direction and through chains or one-to-many links, and emphasizes every selected topic's descendants. The manual checkbox chooser still uses exactly the chosen topics.
+- **Clear focus** stays visible at the top-right of the canvas while focus is active, including with View options closed and on narrow screens. Clearing preserves geometry and zoom. Create and outer comparison/Argument views share this behavior.
+- **66/66 local checks passed**: `build/verification/2026-10-09T18-04-30-856Z-143940/summary.json`. **66/66 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/37970744424), completed **18:09:31 UTC**. Evidence: `build/focus-fix-hosted-verification-evidence.json`. Desktop and narrow captures were reviewed.
+- Live verification confirms all **64 client files** and the homepage match the tested checkout, configured sign-in, account access restrictions, private configuration protection and security headers. Worker SHA-256: `15035842ab3bf7dbb45688eebe9c8b4912f94741382cbcc37448aa4d7dc9696f`. Evidence: `build/focus-fix-release-evidence.json`.
+- Runtime settings and all nine bindings were inherited unchanged. No database migration or production content changes were needed.
+
+**Refresh Harmonious, choose Focus this branch on a connected first-tier topic, then use Clear focus at the top-right of the canvas.** See [the behavior](topic-alignment-and-focus.md) and [testing checklist](user-testing-checklist.md). Later documentation-only commits do not change this deployed bundle.
+
+## Previous release — Worker 67
 
 Cross-frame topic alignment and branch focus deployed **2026-10-09T17:51:46.18761Z**. Release source: `f52d50182f06b357abe9f347ee3ffbd5a9301d4b` on `redesign/node-interactions`, committed and pushed before hosted verification and publication.
 

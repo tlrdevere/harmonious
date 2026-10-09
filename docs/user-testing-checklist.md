@@ -1,6 +1,6 @@
 # Harmonious: what to check on your next visit
 
-## Cross-frame topic alignment and focus — Worker 67
+## Cross-frame topic alignment and focus — Workers 67–68
 
 - Connect first-tier topics across SQ, TA and GS through Inspect details → Connections. Check matching angles and room for descendants. Connect several topics in one frame; they should occupy adjacent positions.
 - Expand/collapse, hide connection lines, reload, and remove a connection. Placement should follow saved links while folds preserve topic angles. Editing connections should preserve zoom.

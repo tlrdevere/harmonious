@@ -1,6 +1,6 @@
 # Cross-frame topic alignment and branch focus
 
-Implemented and published as **Worker 67** on October 9, 2026, after **66/66 local and hosted checks** and live verification. See [deployment status](deployment-status.md) for release identifiers and evidence.
+Initially published as **Worker 67**, with the connected branch-focus shortcut and visible Clear focus follow-up published as **Worker 68** on October 9, 2026. Both releases passed **66/66 local and hosted checks** and live verification. See [deployment status](deployment-status.md) for release identifiers and evidence.
 
 ## Cross-frame positioning
 
