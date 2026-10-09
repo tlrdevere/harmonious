@@ -1,3 +1,4 @@
+import {nodeWording} from '../dist/adoption.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
@@ -6,7 +7,7 @@ import {AccountError} from '../worker/account-policy.mjs';
 import {exerciseComparisonThreads} from './comparison-threads.test.mjs';
 import {exerciseElicitation} from './elicitation.test.mjs';
 import {exerciseDiscussions} from './discussion.test.mjs';
-import {exerciseDefinitions} from './definitions.test.mjs';
+import {exerciseDefinitions,exercisePhilosophy} from './definitions.test.mjs';
 import {exerciseArguments} from './argument.test.mjs';
 import {exerciseReasoning} from './reasoning.test.mjs';
 import {exerciseReasoningDatabaseBoundary} from './reasoning-api.test.mjs';
@@ -29,6 +30,7 @@ await db.exec(await readFile('supabase/migrations/20260919060236_existing_node_r
 await db.exec(await readFile('supabase/migrations/20260919062604_comparison_reflections.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260923002452_interaction_grammar_v4.sql','utf8'));
 await db.exec(await readFile('supabase/migrations/20260929005321_counterpart_integrity.sql','utf8'));
+await db.exec(await readFile('supabase/migrations/20261009192043_philosophy_bank.sql','utf8'));
 assert((await db.query("select prosecdef from pg_proc where proname in ('harmonious_snapshot','harmonious_commit')")).rows.every(row=>!row.prosecdef),'Application RPCs must not elevate the caller\'s privileges');
 await db.exec('set role service_role');
 const store={
@@ -73,6 +75,13 @@ for(const role of ['anon','authenticated']){
   await assert.rejects(()=>db.query('select public.harmonious_commit($1::uuid,0,\'[]\'::jsonb)',[alice.id]),e=>e.code==='42501');
   await db.exec('reset role');
 }
-await db.exec('set role service_role');assert((await store.snapshot()).records.length>0);await exerciseCounterpartIntegrity(store);await db.exec('reset role');
+await db.exec('set role service_role');assert((await store.snapshot()).records.length>0);await exerciseCounterpartIntegrity(store);await exercisePhilosophy(store);
+const philosophySnapshot=await store.snapshot(),philosophyDefinition=philosophySnapshot.records.find(r=>r.kind==='definition'&&r.value.type==='principle');
+await assert.rejects(()=>store.commit(alice.id,philosophySnapshot.revision,[{kind:'definition',id:'bad-philosophy-type',expectedRevision:0,value:{...philosophyDefinition.value,id:'bad-philosophy-type',type:'unsupported'}}]),/Invalid definition/);
+const philosophyUse=philosophySnapshot.records.find(r=>r.kind==='discussion'&&r.value.history?.some(h=>h.definitionRefs?.some(ref=>ref.type==='principle'))).value,priorUse=philosophyUse.history[0],philosophyMap=philosophySnapshot.records.find(r=>r.kind==='map'&&r.id===philosophyUse.target.mapId).value,philosophyNode=philosophyMap.nodes.find(n=>n.id===philosophyUse.target.nodeId);
+const philosophyPremise={mapId:philosophyMap.id,nodeId:philosophyNode.id,ideaId:philosophyNode.ideaId,ideaVersion:philosophyNode.ideaVersion,wording:nodeWording(philosophyMap,philosophyNode),contexts:[{id:philosophyUse.id,authorId:alice.id,version:priorUse.version,body:priorUse.body,definitionRefs:structuredClone(priorUse.definitionRefs)}]};
+assert.equal((await db.query('select public.harmonious_valid_premise($1::jsonb,$2) as valid',[JSON.stringify(philosophyPremise),alice.id])).rows[0].valid,true);
+philosophyPremise.contexts[0].definitionRefs[0].type='unsupported';assert.equal((await db.query('select public.harmonious_valid_premise($1::jsonb,$2) as valid',[JSON.stringify(philosophyPremise),alice.id])).rows[0].valid,false);
+assert.deepEqual(await store.snapshot(),philosophySnapshot,'Rejected philosophy writes leave all records unchanged');await db.exec('reset role');
 await db.close();console.log('PostgreSQL migration, two-account persistence, atomic rollback, revision conflicts, and database access boundaries passed.');
 import {exerciseCounterparts} from './counterparts.test.mjs';

@@ -46,7 +46,7 @@ export function premiseHealth(ws,r){
 }
 
 function validDefinition(ref,actor){
-  return exactKeys(ref,['definitionId','authorId','type','version','title','body'])&&text(ref.definitionId)&&ref.authorId===actor&&['definition','standard'].includes(ref.type)&&Number.isSafeInteger(ref.version)&&ref.version>0&&text(ref.title)&&text(ref.body,10000);
+  return exactKeys(ref,['definitionId','authorId','type','version','title','body'])&&text(ref.definitionId)&&ref.authorId===actor&&['definition','standard','principle','belief','other'].includes(ref.type)&&Number.isSafeInteger(ref.version)&&ref.version>0&&text(ref.title)&&text(ref.body,10000);
 }
 function validPinned(p,actor){
   if(!exactKeys(p,['mapId','nodeId','ideaId','ideaVersion','wording','contexts'])||![p.mapId,p.nodeId,p.ideaId].every(v=>text(v))||!Number.isSafeInteger(p.ideaVersion)||p.ideaVersion<1)return false;

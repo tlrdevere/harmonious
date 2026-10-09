@@ -1,3 +1,4 @@
+import {philosophyTypeLabel} from './definitions.mjs';
 import {topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {ArgumentDialogueUI} from './argument-dialogue-ui.mjs';
 import {StandstillUI} from './standstill-ui.mjs';
@@ -170,7 +171,7 @@ export class DiscussionUI{
     if(old?.premise){this.premises.review(old);return;}
     if(!this.canLeave())return;this.groupTarget=null;const target=old?.target||this.target,{title,...saveExtra}=extra;this.target=target;this.activateMode(this.entryMode({...old,...saveExtra,kind,action,target}));this.editingContributionId=old?.id||null;this.shell(old?'Edit contribution':title||contributionLabel({kind,action}));
     const reasoning=kind==='argument'&&action==='reason',argumentReply=kind==='reply'&&(old?.layer||saveExtra.layer)==='arguments';
-    const form=discussEl('form'),fieldLabel=kind==='context'?'Author’s definitions and standards':kind==='inquiry'?'Your question':reasoning?'Your reason':kind==='argument'?'Your challenge':['counterpart','adoption'].includes(kind)?'Optional note':'Description';const label=discussEl('label',fieldLabel);label.htmlFor='discussion-body';
+    const form=discussEl('form'),fieldLabel=kind==='context'?'Author’s philosophical foundations':kind==='inquiry'?'Your question':reasoning?'Your reason':kind==='argument'?'Your challenge':['counterpart','adoption'].includes(kind)?'Optional note':'Description';const label=discussEl('label',fieldLabel);label.htmlFor='discussion-body';
     let options=kind==='inquiry'?['question','explain','example','evidence','change_mind']:kind==='argument'&&!reasoning?['challenge','inference','counterexample','fallacy']:kind==='relationship'?['agreement','disagreement']:null;
     if(reasoning||kind==='argument'||argumentReply)form.append(discussEl('p',target.type==='inference'?'Addresses the reasoning connection, not the node itself.':`Addresses: ${discussionTargetLabel(this.c.workspace,target)}`,'discussion-target-note'));
     if(old&&options&&!options.includes(action))options=[...options,action];
@@ -223,7 +224,7 @@ export class DiscussionUI{
     if(r.status==='withdrawn')this.host.append(discussEl('p','Withdrawn','discussion-state'));this.host.append(discussEl('p',byline,'discussion-byline'));if(!r.premise)this.host.append(discussEl('p',r.body|| (r.kind==='relationship'?'Relationship recorded.':r.kind==='adoption'?'Please consider adopting this node.':'Please add a corresponding node.'),'discussion-body'));
     if(r.premise)this.premises.render(r);
     if(r.referenceUrl){const link=discussEl('a','Open evidence / reference');link.href=r.referenceUrl;link.target='_blank';link.rel='noopener noreferrer';this.host.append(link);}
-    if(this.reasoning.hasDefinitions(r))this.host.append(discussButton('View invoked definitions & standards',()=>this.reasoning.showDefinitions(r)));
+    if(this.reasoning.hasDefinitions(r))this.host.append(discussButton('View philosophy',()=>this.reasoning.showDefinitions(r)));
     if(discussionLayer(r)==='arguments'){this.host.append(discussButton('Follow argument',()=>this.reasoning.follow({type:'entry',entryId:r.id})),discussButton('Back to source',()=>{this.reasoning.anchor=anchor;this.reasoning.back();}));}
     const health=discussionHealth(this.c.workspace,r);
     if(['changed','unavailable'].includes(health.state))this.host.append(discussEl('p',health.label,'review-warning'));
@@ -257,10 +258,10 @@ export class DiscussionUI{
     this.host.append(details);
   }
   openContexts(target){
-    if(!this.canLeave())return;this.target=target;this.shell('Definitions & standards');
+    if(!this.canLeave())return;this.target=target;this.shell('Philosophy');
     const records=this.c.workspace.discussions.filter(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));
     for(const r of records){
-      if(r.definitionRefs)for(const ref of r.definitionRefs){this.host.append(discussEl('h3',ref.title),discussEl('p',`${ref.type==='standard'?'Standard':'Definition'} · ${this.name(ref.authorId)} · Version ${ref.version}`,'discussion-byline'),discussEl('p',ref.body,'discussion-body'));}
+      if(r.definitionRefs)for(const ref of r.definitionRefs){this.host.append(discussEl('h3',ref.title),discussEl('p',`${philosophyTypeLabel(ref.type)} · ${this.name(ref.authorId)} · Version ${ref.version}`,'discussion-byline'),discussEl('p',ref.body,'discussion-body'));}
         else {this.host.append(discussEl('p',r.body,'discussion-body'));if(r.authorId===this.actor())this.host.append(discussButton('Edit earlier definition',()=>this.compose(r.kind,r.action,r)));}
     }
     if(discussionSource(this.c.workspace,target)?.map.ownerId===this.actor())this.host.append(discussButton('Choose library references',()=>this.c.library.definitions.choose(target)));
@@ -374,10 +375,10 @@ export class DiscussionUI{
         const select=()=>{if(!this.selectTarget(target))return;if(edges.length>1){const details=discussEl('details');details.append(discussEl('summary','Connection details'));for(const e of edges){const t={type:'edge',mapId:map.id,edgeId:e.id};details.append(discussButton((e.structural?STRUCTURAL_TYPES[e.type]:RELATION_TYPES[e.type])?.label||e.type,()=>this.selectTarget(t)));}this.host.append(details);this.positionPopover();}};
         hit.onclick=select;hit.onpointerdown=e=>e.stopPropagation();hit.onkeydown=e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();select();}};
         if(!branch)svg.append(path);svg.append(hit);canvas.sourceHighlights.bind(key,path,hit,[edge.from,edge.to].map(id=>canvas.cards.get(comparisonNodeKey(side,id))));this.items.push({type:'edge',target,targets,a,b,path,hit,branch,sourceKey:key});
-        if(targets.some(t=>this.c.workspace.discussions.some(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(t))))this.badge('▤',target,()=>this.openEdgeContexts(targets),'Definitions and standards for '+discussionTargetLabel(this.c.workspace,target));
+        if(targets.some(t=>this.c.workspace.discussions.some(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(t))))this.badge('▤',target,()=>this.openEdgeContexts(targets),'Philosophy for '+discussionTargetLabel(this.c.workspace,target));
       }
     }
-    for(const r of this.c.workspace.discussions||[])if(r.kind==='context'&&r.status==='active'&&r.target.type==='node'&&this.layers.map){const side=['a','b'].find(s=>canvas.states[s].map?.id===r.target.mapId),card=side&&canvas.cards.get(comparisonNodeKey(side,r.target.nodeId));if(card&&!card.querySelector('.discussion-context-icon')){const b=discussButton('▤',()=>this.openContexts(r.target),'discussion-context-icon');b.setAttribute('aria-label','Definitions and standards for '+r.targetLabel);card.querySelector('.node-bottom').append(b);}}
+    for(const r of this.c.workspace.discussions||[])if(r.kind==='context'&&r.status==='active'&&r.target.type==='node'&&this.layers.map){const side=['a','b'].find(s=>canvas.states[s].map?.id===r.target.mapId),card=side&&canvas.cards.get(comparisonNodeKey(side,r.target.nodeId));if(card&&!card.querySelector('.discussion-context-icon')){const b=discussButton('▤',()=>this.openContexts(r.target),'discussion-context-icon');b.setAttribute('aria-label','Philosophy for '+r.targetLabel);card.querySelector('.node-bottom').append(b);}}
     const groups=conversationGroups(this.allEntries());
     const connections=this.projectConnections(),foldedRecords=new Set(connections.groups.filter(g=>g.status==='collapsed').flatMap(g=>g.records.filter(r=>!r.legacy).map(r=>r.id)));
     for(const connection of connections.visible){

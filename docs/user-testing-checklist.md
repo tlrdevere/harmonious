@@ -1,5 +1,14 @@
 # Harmonious: what to check on your next visit
 
+## Philosophy bank
+
+- Select a node → Philosophy → Create a new idea. Try Definition, Standard, Principle, Belief and Other. Save once; the idea should appear on that node and in Map Library → Philosophy.
+- Attach an existing idea to a second node. Search the bank and confirm previously checked items remain selected when hidden by the search.
+- Edit the idea in the bank. Both node uses should keep the old wording until you choose the newer version individually.
+- Uncheck an idea and save. Its node attachment should disappear while the bank entry remains reusable.
+- Read another user's node in source browsing and in a comparison. Philosophy should show their invoked wording and attribution, with no editing controls or unused private bank entries.
+- Check existing definitions and standards, cancellation of an unfinished idea, reload, and a narrow screen. The map still has three visual frames.
+
 ## Cross-frame topic alignment, focus and connections — Workers 67–69
 
 - Connect first-tier topics across SQ, TA and GS through Inspect details → Connections. Check matching angles and room for descendants. Connect several topics in one frame; they should occupy adjacent positions.

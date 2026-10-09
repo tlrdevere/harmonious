@@ -35,7 +35,7 @@ export class InteractionUI{
     }
     if(target.type==='node'&&source?.map.nodes.find(n=>n.id===source.item.parent)?.parent===null)d.actionGroup('View',[interactionButton('Focus this branch',()=>{if(d.canLeave())d.canvas.topicFocus.focus(source.map.id,source.item.id);})]);
     const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));
-    const definitions=[];if(context)definitions.push(interactionButton('View definitions & standards',()=>d.openContexts(target)));if(own&&ordinary)definitions.push(interactionButton('Use definitions & standards',()=>this.c.library.definitions.choose(target)));d.actionGroup('Meaning',definitions);
+    const definitions=[];if(own&&ordinary)definitions.push(interactionButton('Philosophy',()=>{if(d.canLeave())this.c.library.definitions.choose(target);}));else if(context)definitions.push(interactionButton('Philosophy',()=>d.openContexts(target)));d.actionGroup('Foundations',definitions);
     if(d.mode()==='compare'&&target.type==='node'&&ordinary){
       d.host.append(interactionEl('p',d.counterparts.state(target).label,'field-help counterpart-state'));
       d.actionGroup('Counterparts',d.counterparts.actions(target));

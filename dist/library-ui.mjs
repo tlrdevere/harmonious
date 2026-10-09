@@ -12,7 +12,7 @@ export class LibraryUI{
     const section=libEl('section','','library-workspace');section.id='library-workspace';section.hidden=true;
     section.innerHTML='<div class="library-heading"><div><div class="eyebrow">YOUR WORKSPACE</div><h1>Map Library</h1><p>Choose where to begin, or return to a conversation.</p></div><div id="library-create" class="library-actions"></div></div><nav id="library-sections" class="library-sections" aria-label="Library sections"></nav><label for="library-search">Find in this section</label><input id="library-search" type="search" placeholder="Search by map name or person"><div id="library-results" class="library-grid"></div>';
     libUI('editor-main').before(section);
-    for(const [key,label]of [['maps','My maps'],['comparisons','Comparisons & arguments'],['pods','Pods'],['definitions','Definitions & standards']])libUI('library-sections').append(libButton(label,()=>this.open(key),`library-section-${key}`));
+    for(const [key,label]of [['maps','My maps'],['comparisons','Comparisons & arguments'],['pods','Pods'],['definitions','Philosophy']])libUI('library-sections').append(libButton(label,()=>this.open(key),`library-section-${key}`));
     libUI('library-search').oninput=()=>{this.query=libUI('library-search').value.trim().toLowerCase();this.render();};
     libUI('library-create').append(libButton('Create map',()=>this.c.showMapDialog(), 'primary'),libButton('Create comparison',()=>this.createComparison()));
     const tabs=document.querySelector('.mode-tabs');tabs.prepend(libUI('discover-mode'));libUI('comparison-mode').textContent='Comparisons';

@@ -49,6 +49,7 @@
 .definition-choice{display:grid;grid-template-columns:22px 1fr;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid #dce5e9}
 .definition-choice input[type=checkbox]{width:18px}.definition-choice label{margin:0}.definition-choice select,.definition-choice p{grid-column:2}
 .definitions-dialog [role=alert]{color:#a12d3a}
+.philosophy-create{margin:18px 0;padding:12px;border:1px solid #dce5e9;border-radius:8px}.philosophy-create>summary{cursor:pointer;font-weight:650}.definitions-dialog form>.primary{position:sticky;bottom:0;z-index:1;box-shadow:0 -5px 12px #fff}
 .discussion-actions button,.discussion-popover button{min-height:32px}
 .discussion-action-group{padding:10px 0;border-top:1px solid #e3eaee}
 .discussion-action-group:first-of-type{border-top:0}

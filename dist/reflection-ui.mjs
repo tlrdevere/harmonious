@@ -25,7 +25,7 @@ export class ReflectionUI{
     appendWording(w);for(const endpoint of [w.from,w.to].filter(Boolean))appendWording(endpoint);
     if(w.premise)section.append(this.d.premises.wording(w.premise,'Used position'));
     if(w.reflection?.category)section.append(reflectionEl('p',REFLECTION_CATEGORIES[w.reflection.category]));
-    for(const def of snapshot.definitions||[])section.append(reflectionEl('p',`Definitions / standards: ${def.title||''} ${def.body}`,'discussion-body'));return section;
+    for(const def of snapshot.definitions||[])section.append(reflectionEl('p',`Philosophy: ${def.title||''} ${def.body}`,'discussion-body'));return section;
   }
   group(record){
     const section=reflectionEl('section','','reflection-conversation');section.dataset.point=record.id;section.append(this.row(record));

@@ -1,3 +1,4 @@
+import {philosophyTypeLabel} from './definitions.mjs';
 import {TopicFocusUI,topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {WorkspaceController} from './workspace-ui.mjs';
 import {NodeActions} from './node-actions.mjs';
@@ -164,7 +165,7 @@ function renderNodeReading(n){
   const map=workspaceController.activeMap(),owner=workspaceController.workspace.participants.find(person=>person.id===map?.ownerId)?.name||map?.person||'Author',badge=confidenceBadge(n,owner);if(badge)host.append(badge);
   const definitions=$('node-definition-list');definitions.replaceChildren();
   const refs=(workspaceController.workspace.discussions||[]).filter(r=>r.kind==='context'&&r.status==='active'&&r.target?.type==='node'&&r.target.mapId===workspaceController.activeMapId&&r.target.nodeId===n.id).flatMap(r=>r.definitionRefs||[]);
-  for(const ref of refs){const entry=document.createElement('div'),title=document.createElement('h3'),byline=document.createElement('p'),body=document.createElement('p');title.textContent=ref.title;byline.className='field-help';const author=workspaceController.workspace.participants.find(p=>p.id===ref.authorId)?.name||'Author';byline.textContent=`${ref.type==='standard'?'Standard':'Definition'} · ${author} · Version ${ref.version}`;body.textContent=ref.body;entry.append(title,byline,body);definitions.append(entry);}
+  for(const ref of refs){const entry=document.createElement('div'),title=document.createElement('h3'),byline=document.createElement('p'),body=document.createElement('p');title.textContent=ref.title;byline.className='field-help';const author=workspaceController.workspace.participants.find(p=>p.id===ref.authorId)?.name||'Author';byline.textContent=`${philosophyTypeLabel(ref.type)} · ${author} · Version ${ref.version}`;body.textContent=ref.body;entry.append(title,byline,body);definitions.append(entry);}
   if(!refs.length){const p=document.createElement('p');p.className='field-help';p.textContent='No definitions or standards attached.';definitions.append(p);}
   $('node-definitions').hidden=!workspaceController.canEditMap(workspaceController.activeMap());
 }
@@ -405,6 +406,7 @@ const nodeActions=new NodeActions(viewport,{
   saveConfidence:value=>{$('confidence').value=value===null?'':String(value);$('confidence').setCustomValidity('');confidenceScale.sync();dirty=true;$('edit-form').requestSubmit();if(dirty)throw Error('Resolve the node fields before saving confidence.');},
   focusConfidence:()=>elements.get(selected)?.confidence.querySelector('button')?.focus({preventScroll:true}),
   focusBranch:()=>{topicFocus.focus(workspaceController.activeMapId,selected);nodeActions.hide();},canFocusBranch:()=>roots.includes(nodeById(selected)?.parent),
+  philosophy:()=>workspaceController.library.definitions.choose({type:'node',mapId:workspaceController.activeMapId,nodeId:selected}),
   addChild,edit:()=>openNodeInspector('edit'),inspect:()=>openNodeInspector('inspect'),remove:()=>{$('remove').click();},
   contributions:id=>workspaceController.library.openSource(workspaceController.activeMapId,id),
   canArgue:id=>{const p=workspaceController.workspace.comparisons.find(p=>p.id===workspaceController.editingRecord);return !!p&&['a','b'].some(s=>p[`${s}MapId`]===workspaceController.activeMapId&&p[`${s}NodeId`]===id);},

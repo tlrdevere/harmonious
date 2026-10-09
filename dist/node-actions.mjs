@@ -22,6 +22,7 @@ export class NodeActions{
     }
     const main=this.group('Add or inspect');if(canEdit){const add=this.button('Add child node',()=>this.actions.addChild());add.className='primary';main.append(add);}main.append(this.button('Inspect details',()=>this.actions.inspect()));
     if(this.actions.canFocusBranch?.())main.append(this.button('Focus this branch',()=>this.actions.focusBranch()));
+    if(n.parent!==null&&this.actions.philosophy)this.group('Foundations').append(this.button('Philosophy',()=>this.actions.philosophy()));
     const secondary=this.group('Other actions');
     if(canEdit&&n.parent!==null){const more=this.button(this.detail==='more'?'Fewer actions':'More actions',()=>{this.show(n,this.detail==='more'?null:'more');this.host.querySelector('.node-action-disclosure')?.focus();});more.className='node-action-disclosure';more.setAttribute('aria-expanded',String(this.detail==='more'));secondary.append(more);if(this.detail==='more'){const remove=this.button('Delete branch',()=>this.actions.remove());remove.className='danger';secondary.append(remove);}}
     const close=this.button('Close',()=>{this.hide();this.actions.focusNode?.();});close.className='text-button';secondary.append(close);

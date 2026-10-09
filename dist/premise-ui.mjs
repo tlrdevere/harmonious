@@ -13,7 +13,7 @@ export class PremiseUI{
     if(!snapshot){section.append(premiseEl('p','This node is no longer available.'));return section;}
     const wording=snapshot.wording;section.append(premiseEl('strong',wording.title),premiseEl('p',[wording.summary,wording.details].filter(Boolean).join('\n'),'discussion-body'),premiseEl('small',`Reviewed node version ${snapshot.ideaVersion}`));
     if(wording.sourceTitle||wording.sourceUrl){const source=premiseEl('p');let url;try{const candidate=new URL(wording.sourceUrl);if(['http:','https:'].includes(candidate.protocol))url=candidate.href;}catch{}if(url){const link=premiseEl('a',wording.sourceTitle||'Open source reference');link.href=url;link.target='_blank';link.rel='noopener noreferrer';source.append(link);}else source.textContent=wording.sourceTitle;section.append(source);}
-    const definitions=premiseEl('details');definitions.append(premiseEl('summary','Definitions & standards used by this node'));
+    const definitions=premiseEl('details');definitions.append(premiseEl('summary','Philosophy used by this node'));
     for(const context of snapshot.contexts||[]){if(context.body&&!context.definitionRefs?.length)definitions.append(premiseEl('p',context.body,'discussion-body'));for(const ref of context.definitionRefs||[])definitions.append(premiseEl('h4',ref.title),premiseEl('p',ref.body,'discussion-body'),premiseEl('small',`${this.d.name(ref.authorId)} · Version ${ref.version}`));}
     if(definitions.children.length>1)section.append(definitions);return section;
   }

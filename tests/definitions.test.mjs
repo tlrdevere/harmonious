@@ -1,9 +1,10 @@
+import {synchronizeIdeas} from '../dist/adoption.mjs';
 import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
 import {alice,bob,memoryStore,seedActor,edit,view,addNode} from './accounts.test.mjs';
 import {makeDefinition,definitionReference,definitionReferenceText} from '../dist/definitions.mjs';
 import {makeDiscussion,discussionHealth} from '../dist/discussion.mjs';
-import {startAccountComparison} from '../worker/account-api.mjs';
+import {startAccountComparison,accountWorkspace,saveAccountChanges,requiresPhilosophyCapability} from '../worker/account-api.mjs';
 import {challengeState,conversationGroups} from '../dist/conversation-tree.mjs';
 import {validateAccountChanges} from '../worker/account-policy.mjs';
 export async function exerciseDefinitions(store){
@@ -34,4 +35,21 @@ export async function exerciseDefinitions(store){
   await edit(store,alice,w=>{w.maps.find(m=>m.id===target.mapId).visibility='shared';});
   console.log('Definitions privacy, reuse, pinned versions, immutable history, invocation validation and authored challenge outcomes passed.');
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){const store=memoryStore();for(const actor of [alice,bob])await seedActor(store,actor);await exerciseDefinitions(store);}
+export async function exercisePhilosophy(store){
+  for(const type of ['standard','principle','belief','other']){
+    let idea,use;
+    await edit(store,alice,w=>{const node=addNode(w,alice,'Foundation '+type),map=w.maps.find(m=>m.ownerId===alice.id);node.kind='position';synchronizeIdeas(w,map);idea=makeDefinition(w,{type,title:'Idea '+type,body:'Exact foundation '+type},alice.id);w.definitions.push(idea);const refs=[definitionReference(idea)];use=makeDiscussion(w,{kind:'context',action:'context',target:{type:'node',mapId:map.id,nodeId:node.id},definitionRefs:refs,body:definitionReferenceText(refs)},alice.id);w.discussions.push(use);});
+    const seen=(await view(store,bob)).workspace;assert.equal(seen.discussions.find(r=>r.id===use.id).definitionRefs[0].type,type);assert(!seen.definitions.some(d=>d.id===idea.id),'Readers see the invoked version, not the private bank');
+    await edit(store,alice,w=>{w.definitions=w.definitions.map(d=>d.id===idea.id?makeDefinition(w,{title:idea.versions[0].title,body:'PRIVATE revised '+type},alice.id,d):d);});
+    assert.equal((await view(store,bob)).workspace.discussions.find(r=>r.id===use.id).definitionRefs[0].version,1);
+    await edit(store,alice,w=>{const old=w.discussions.find(r=>r.id===use.id);w.discussions=w.discussions.map(r=>r.id===use.id?makeDiscussion(w,{...old,definitionRefs:[],body:'',status:'withdrawn'},alice.id,old):r);});
+    assert((await view(store,alice)).workspace.definitions.some(d=>d.id===idea.id),'Removing a node use keeps the banked idea');
+  }
+  const newWorkspace=(await view(store,alice)).workspace;assert(requiresPhilosophyCapability(newWorkspace));
+  await assert.rejects(()=>accountWorkspace(store,alice,{philosophyCapable:false}),e=>e.code==='CLIENT_UPDATE_REQUIRED');
+  await assert.rejects(()=>saveAccountChanges(store,alice.id,[],{philosophyCapable:false}),e=>e.code==='CLIENT_UPDATE_REQUIRED');
+  const belief=newWorkspace.definitions.find(d=>d.type==='belief');assert.throws(()=>makeDefinition(newWorkspace,{type:'unsupported',title:'Invalid',body:'Invalid'},alice.id),/Invalid library/);
+  assert.throws(()=>makeDefinition(newWorkspace,{title:'Someone else',body:'Changed'},bob.id,belief),/author|attribution/);
+  assert(requiresPhilosophyCapability({discussions:[{history:[{definitionRefs:[definitionReference(belief,1)]}]}]}),'Historical philosophy references also require a compatible client');
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){const store=memoryStore();for(const actor of [alice,bob])await seedActor(store,actor);await exerciseDefinitions(store);await exercisePhilosophy(store);}

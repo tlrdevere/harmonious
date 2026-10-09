@@ -1,11 +1,14 @@
 import {stableJSON} from './account-model.mjs';
 
+export const PHILOSOPHY_TYPES={definition:'Definition',standard:'Standard',principle:'Principle',belief:'Belief',other:'Other'};
+export const philosophyTypeLabel=type=>PHILOSOPHY_TYPES[type]||'Other';
+
 export function validateDefinitions(ws){
   ws.definitions??=[];
   if(!Array.isArray(ws.definitions)||ws.definitions.length>2000)throw Error('Invalid definitions library.');
   const ids=new Set();
   for(const d of ws.definitions){
-    if(!d||typeof d.id!=='string'||!d.id||d.id.length>200||ids.has(d.id)||!ws.participants.some(p=>p.id===d.authorId)||!['definition','standard'].includes(d.type)||!['active','archived'].includes(d.status)||!Array.isArray(d.versions)||!d.versions.length||d.versions.length>1000)throw Error('Invalid library entry.');
+    if(!d||typeof d.id!=='string'||!d.id||d.id.length>200||ids.has(d.id)||!ws.participants.some(p=>p.id===d.authorId)||!['definition','standard','principle','belief','other'].includes(d.type)||!['active','archived'].includes(d.status)||!Array.isArray(d.versions)||!d.versions.length||d.versions.length>1000)throw Error('Invalid library entry.');
     ids.add(d.id);
     for(const [i,v]of d.versions.entries())if(v.version!==i+1||typeof v.title!=='string'||!v.title.trim()||v.title.length>200||typeof v.body!=='string'||!v.body.trim()||v.body.length>10000||!Number.isFinite(Date.parse(v.createdAt)))throw Error('Invalid definition version.');
     if(d.copiedFrom!==undefined&&!validDefinitionOrigin(d.copiedFrom,d.authorId))throw Error('Invalid definition attribution.');
@@ -25,12 +28,12 @@ export function makeDefinition(ws,input,actor,old=null){
   if(old?.copiedFrom||input.copiedFrom)d.copiedFrom=structuredClone(old?.copiedFrom||input.copiedFrom);
   validateDefinitions({...ws,definitions:[...(ws.definitions||[]).filter(e=>e.id!==d.id),d]});validateDefinitionEdit(old,d,actor);return d;
 }
-export function validDefinitionOrigin(ref,actor){return ref&&typeof ref.definitionId==='string'&&ref.definitionId.length>0&&ref.definitionId.length<=200&&typeof ref.authorId==='string'&&ref.authorId!==actor&&['definition','standard'].includes(ref.type)&&Number.isSafeInteger(ref.version)&&ref.version>0&&typeof ref.title==='string'&&ref.title.trim().length>0&&ref.title.length<=200&&typeof ref.body==='string'&&ref.body.trim().length>0&&ref.body.length<=10000;}
+export function validDefinitionOrigin(ref,actor){return ref&&typeof ref.definitionId==='string'&&ref.definitionId.length>0&&ref.definitionId.length<=200&&typeof ref.authorId==='string'&&ref.authorId!==actor&&['definition','standard','principle','belief','other'].includes(ref.type)&&Number.isSafeInteger(ref.version)&&ref.version>0&&typeof ref.title==='string'&&ref.title.trim().length>0&&ref.title.length<=200&&typeof ref.body==='string'&&ref.body.trim().length>0&&ref.body.length<=10000;}
 export function definitionReference(d,version=d.versions.length){
   const v=d.versions.find(v=>v.version===version);if(!v)throw Error('Definition version unavailable.');
   return {definitionId:d.id,authorId:d.authorId,type:d.type,version:v.version,title:v.title,body:v.body};
 }
-export const definitionReferenceText=refs=>refs.map(r=>`${r.type==='standard'?'Standard':'Definition'}: ${r.title}\n${r.body}`).join('\n\n');
+export const definitionReferenceText=refs=>refs.map(r=>`${philosophyTypeLabel(r.type)}: ${r.title}\n${r.body}`).join('\n\n');
 export const canInvokeDefinitions=r=>r.kind==='context'||r.kind==='argument'||r.kind==='reply'&&r.layer==='arguments';
 export function validateDefinitionReferences(ws,old,r,actor){
   if(r.definitionRefs===undefined){if(old?.definitionRefs)throw Error('Keep the referenced definitions when editing.');return;}
