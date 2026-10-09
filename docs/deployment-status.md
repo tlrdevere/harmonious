@@ -2,7 +2,20 @@
 
 Updated October 9, 2026 (UTC).
 
-## Current release — Worker 68
+## Current release — Worker 69
+
+Consistent cross-frame connection attachments deployed **2026-10-09T18:27:32.230354Z**. Release source: `b6ff86f19fc537ff59c2ed9128fa1b888a523365` on `redesign/node-interactions`, committed and pushed before hosted verification and publication.
+
+- Worker version **69**: `b254e83e-3a60-4988-b9ef-4cc05ae1d510`, serving **100%** of traffic. Deployment: `fc458325-209b-4b60-800b-e28e90643827`.
+- Cross-frame source lines attach right SQ → left TA and right TA → left GS, including vertically offset nodes. Direct SQ–GS links follow the same frame-order rule; reverse meanings retain their arrow direction. Obstacle avoidance and peer routing preserve these sides. Within-frame parent–child routing is unchanged.
+- Create, source browsing, outer comparison/Argument views and the standalone export share the policy. Regression coverage checks exact side attachment, reverse directions, obstacles, cache invalidation and real SVG paths across views. Desktop previews were reviewed.
+- **66/66 local checks passed**: `build/verification/2026-10-09T18-21-33-799Z-121504/summary.json`. **66/66 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/37972744232), completed **18:26:44 UTC**. Evidence: `build/ports-hosted-verification-evidence.json`.
+- Worker SHA-256: `1a8d056b1728ee7e803d9e0255355f9760b0ab8074fdbb0f6a3f0e4872c9d4b0`. Deployment evidence: `build/ports-release-evidence.json`. Runtime settings and all nine bindings were inherited unchanged. No database migration or production content changes were needed.
+- Live verification confirms all **64 client files** and the homepage match the tested checkout, configured sign-in, account access restrictions, private configuration protection and security headers.
+
+**Refresh Harmonious to apply the connection-side correction.** See [the behavior](topic-alignment-and-focus.md) and [testing checklist](user-testing-checklist.md). Later documentation-only commits do not change this deployed bundle.
+
+## Previous release — Worker 68
 
 Connected branch focus and visible Clear focus deployed **2026-10-09T18:10:50.865539Z**. Release source: `4bc0995a7fcda6b47e69754bc579690c12156b84` on `redesign/node-interactions`, committed and pushed before hosted verification and publication.
 

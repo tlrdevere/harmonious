@@ -2,6 +2,8 @@
 
 Initially published as **Worker 67**, with the connected branch-focus shortcut and visible Clear focus follow-up published as **Worker 68** on October 9, 2026. Both releases passed **66/66 local and hosted checks** and live verification. See [deployment status](deployment-status.md) for release identifiers and evidence.
 
+Consistent cross-frame side attachments followed in **Worker 69** the same day, after **66/66 local and hosted checks** and exact live verification.
+
 ## Cross-frame positioning
 
 Existing saved connections between ordinary nodes directly beneath different frame headings now determine shared radial sectors. An SQ → TA → GS chain occupies a matching angle around the three headings. Distances can differ to make room for branches. Descendants retain their real parents and occupy their topic's sector. Several topics in one frame use neighboring positions within the connected group's sector rather than overlapping cards.
