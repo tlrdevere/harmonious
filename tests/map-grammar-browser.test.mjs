@@ -62,7 +62,8 @@ try{
   await page.screenshot({path:'build/design-review/node-face-mobile.png',fullPage:true});await page.locator('#details').scrollIntoViewIfNeeded();await page.screenshot({path:'build/design-review/node-face-details-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1000});await face.locator('details>summary').click();await done.click();await choose(claim.id);
   assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:'Add child node',exact:true}).count(),1);
   assert.equal(await page.locator('.on-map-actions').getByRole('button',{name:/^(Create reason|Connect|Definitions & standards|Compare|My confidence)$/}).count(),0);
-  assert.equal(await page.locator('.on-map-actions .node-action-group').count(),3);
+  assert.equal(await page.locator('.on-map-actions .node-action-group').count(),4);
+  assert.equal(await page.locator('.on-map-actions .node-action-group').filter({hasText:'Foundations'}).getByRole('button',{name:'Philosophy',exact:true}).count(),1);
   await page.locator(`#cards .node[data-id="${claim.id}"] .node-confidence`).click();
   assert(await page.locator('.on-map-actions .confidence-form input[type="range"]').evaluate(el=>el===document.activeElement),'Opening Confidence focuses its scale for immediate keyboard entry');
   await page.keyboard.press('Escape');assert.equal(await page.locator('.on-map-actions').isVisible(),false);assert(await page.locator(`#cards .node[data-id="${claim.id}"] .node-confidence`).evaluate(el=>el===document.activeElement),'Confidence Escape returns focus to the node value');
