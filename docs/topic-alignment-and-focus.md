@@ -1,6 +1,6 @@
 # Cross-frame topic alignment and branch focus
 
-Implemented October 9, 2026. See [deployment status](deployment-status.md) for verification and publication.
+Implemented and published as **Worker 67** on October 9, 2026, after **66/66 local and hosted checks** and live verification. See [deployment status](deployment-status.md) for release identifiers and evidence.
 
 ## Cross-frame positioning
 

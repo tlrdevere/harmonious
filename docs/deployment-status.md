@@ -2,7 +2,20 @@
 
 Updated October 9, 2026 (UTC).
 
-## Current release — Worker 66
+## Current release — Worker 67
+
+Cross-frame topic alignment and branch focus deployed **2026-10-09T17:51:46.18761Z**. Release source: `f52d50182f06b357abe9f347ee3ffbd5a9301d4b` on `redesign/node-interactions`, committed and pushed before hosted verification and publication.
+
+- Worker version **67**: `ddcfce57-167e-40bc-b2e1-60b6e3fa3bb3`, serving **100%** of traffic. Deployment: `c3bcf873-5bdc-45b9-97d8-0b8dd16f386a`.
+- Existing cross-frame connections between first-tier topics align their radial sectors, with adjacent positions for one-to-many groups. Create connection edits recalculate placement while preserving zoom and the selected node's screen position. Counterpart adjacency takes priority where constraints conflict.
+- **View options → Focus selection**, **Focus this branch**, **Change selection** and **Clear focus** emphasize explicit topic branches and their descendants. Other nodes, ghosts and connections fade. Shared agreement halves retain independent focus treatment. This personal, same-tab preference preserves saved data, folds and geometry. See [the implemented behavior](topic-alignment-and-focus.md).
+- **66/66 local checks passed**: `build/verification/2026-10-09T17-45-43-419Z-74700/summary.json`. **66/66 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/37968539514), completed **17:50:41 UTC**. Evidence: `build/topic-hosted-verification-evidence.json`. Desktop and narrow captures were reviewed.
+- Live verification confirms all **64 client files** and the homepage match the tested checkout, configured sign-in, account access restrictions, private configuration protection and security headers. Worker SHA-256: `ed828ddaece150c7effe4165467336afa29cb0bfe32a26446d0a5a9b82d73546`. Evidence: `build/topic-release-evidence.json`.
+- Runtime settings and all nine bindings were inherited unchanged. No database migration or production content changes were needed. The inner Argument dialogue layout, technology stack and deferrals are unchanged.
+
+**Refresh Harmonious, connect first-tier topics through Inspect details → Connections, and try View options → Focus selection.** Follow the [testing checklist](user-testing-checklist.md). Later documentation-only commits do not change this deployed bundle.
+
+## Previous release — Worker 66
 
 The [compact Create header and supplied logo](create-header-and-logo.md) are implemented and pushed at `c4aaf859622548d26d3ed11985762cdb4ac4a3a8` on `redesign/node-interactions`. **64/64 local checks passed** in `build/verification/2026-10-09T00-15-10-738Z-132988/summary.json`; **64/64 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/37863810971). Desktop and narrow previews were reviewed. The built Worker SHA-256 is `82a1cf5d09aee80d1a4fc863ffde845a88d8ac52f8fc77cd572b69a7c1ee52ef`.
 
