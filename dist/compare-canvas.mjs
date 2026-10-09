@@ -1,3 +1,4 @@
+import {TopicFocusUI,topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {CARD_W,CARD_H} from './layout.mjs';
 import {createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from './comparison-routing.mjs';
 import {roots} from './data.mjs';
@@ -24,13 +25,14 @@ export class ComparisonCanvas{
       const button=document.createElement('button');button.type='button';button.textContent=label;button.setAttribute('aria-label',aria);button.onclick=action;controls.append(button);if(label==='Focus pair')this.focusButton=button;
     }
     this.zoomLabel=document.createElement('span');this.zoomLabel.className='comparison-zoom';controls.prepend(this.zoomLabel);this.surface.append(controls);host.append(this.surface);
+    this.topicFocus=new TopicFocusUI(controls,{maps:()=>['a','b'].map(side=>this.states[side].map),mapLabel:map=>map.name+' · '+this.ownerName(map),world:()=>this.surface,scope:options.single?'source':'comparison'});
     if(!options.single){
       this.layerControls=document.createElement('div');this.layerControls.className='comparison-layer-controls';this.layerControls.setAttribute('role','group');this.layerControls.setAttribute('aria-label','Emphasize a map');
       this.layerButtons=new Map();for(const [value,label]of [['both','Both maps'],['a','First map'],['b','Second map']]){const button=document.createElement('button');button.type='button';button.textContent=label;button.dataset.layer=value;button.setAttribute('aria-pressed',String(value==='both'));button.onclick=()=>{this.surface.dataset.layer=value;for(const b of this.layerControls.children)b.setAttribute('aria-pressed',String(b===button));};this.layerControls.append(button);this.layerButtons.set(value,button);}
       host.before(this.layerControls);
     }
     if(options.single){this.surface.classList.add('single-map-canvas');this.surface.setAttribute('aria-label','Radial map. Select a node for its wording and co-signs. Drag to pan and scroll to zoom.');controls.children[3].textContent='Fit map';controls.children[3].setAttribute('aria-label','Fit map');this.focusButton.textContent='Focus node';this.focusButton.setAttribute('aria-label','Focus selected node');}
-    if(options.single)this.sourceConnections=new SourceConnectionsUI(this);
+    if(options.single){this.sourceConnections=new SourceConnectionsUI(this);const view=document.createElement('details'),summary=document.createElement('summary');view.className='topic-source-options';summary.textContent='View options';view.append(summary,this.topicFocus.controls);host.before(view);}
     const pointers=new Map();let drag=null,pinch=null,blankPress=null;
     const isBlankTarget=target=>target instanceof Element&&this.surface.contains(target)&&!target.closest('button,a,input,textarea,select,summary,[contenteditable]:not([contenteditable="false"]),[role="button"],.node,.counterpart-placeholder,.reasoning-card,.reasoning-inference-wrap,.comparison-map-controls,.comparison-layer-controls,.comparison-link-hit,.discussion-edge-hit,.discussion-popover,.map-connection-menu,.reasoning-tools,.interaction-search');
     this.surface.addEventListener('wheel',e=>{if(e.target.closest('button'))return;e.preventDefault();const r=this.surface.getBoundingClientRect();this.zoom(Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
@@ -137,10 +139,10 @@ export class ComparisonCanvas{
         const edges=[...grouped].sort((a,b)=>Number(a.structural)-Number(b.structural)||a.id.localeCompare(b.id)),edge=edges[0];if(!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;
         const fromKey=comparisonNodeKey(side,edge.from),toKey=comparisonNodeKey(side,edge.to),key=visibleNodePairKey(fromKey,toKey),routeKey=actualNodePairKey({mapId:state.map.id,nodeId:edge.from},{mapId:state.map.id,nodeId:edge.to});this.sourcePairs.set(key,{key,routeKey,fromKey,toKey,side,edge,edges});
       }
-      for(const edge of view.layout.edges){if(edge.kind==='spine'&&!this.options.single||!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;const path=this.svgElement('path',{stroke:'#8396a1',fill:'none','stroke-width':1.6,'aria-hidden':'true','data-side':side,'data-identity':this.identity(side)});path.classList.add('comparison-tree-edge');if(edge.kind!=='spine')path.classList.add('source-connection-path');svg.append(path);this.branches.push({path,edge,side,key:visibleNodePairKey(comparisonNodeKey(side,edge.from),comparisonNodeKey(side,edge.to))});}
+      for(const edge of view.layout.edges){if(edge.kind==='spine'&&!this.options.single||!view.positions.has(edge.from)||!view.positions.has(edge.to))continue;const path=this.svgElement('path',{stroke:'#8396a1',fill:'none','stroke-width':1.6,'aria-hidden':'true','data-side':side,'data-identity':this.identity(side)});markTopicElement(path,[edge.from,edge.to].map(id=>topicNodeKey(state.map.id,id)));path.classList.add('comparison-tree-edge');if(edge.kind!=='spine')path.classList.add('source-connection-path');svg.append(path);this.branches.push({path,edge,side,key:visibleNodePairKey(comparisonNodeKey(side,edge.from),comparisonNodeKey(side,edge.to))});}
       const byId=new Map(state.map.nodes.map(n=>[n.id,n]));
       for(const [id,p]of view.positions){
-        const node=byId.get(id),kids=view.layout.children.get(id),owner=this.ownerName(state.map),card=document.createElement('article');card.className=`node${node.parent===null?' root':''}${state.selected===id?' selected':''}`;card.dataset.frame=p.frame;card.dataset.side=side;card.dataset.nodeId=id;card.dataset.mapId=state.map.id;card.dataset.identity=this.identity(side);
+        const node=byId.get(id),kids=view.layout.children.get(id),owner=this.ownerName(state.map),card=document.createElement('article');card.className=`node${node.parent===null?' root':''}${state.selected===id?' selected':''}`;card.dataset.frame=p.frame;card.dataset.side=side;card.dataset.nodeId=id;card.dataset.mapId=state.map.id;markTopicElement(card,[topicNodeKey(state.map.id,id)]);card.dataset.identity=this.identity(side);
         const main=document.createElement('button');main.type='button';main.className='node-main';main.setAttribute('aria-label',`Select ${node.title} from ${state.map.name} by ${owner}`);main.setAttribute('aria-pressed',String(state.selected===id));
         const title=document.createElement('div');title.className='node-title';title.textContent=node.title;const summary=document.createElement('div');summary.className='node-summary';summary.textContent=node.summary;main.append(title,summary);main.onclick=()=>this.onSelect(side,id);
         const bottom=document.createElement('div');bottom.className='node-bottom';const meta=document.createElement('span');meta.className='node-meta';meta.textContent=owner;meta.title=`${state.map.name} by ${owner}`;bottom.append(meta);
@@ -169,7 +171,7 @@ export class ComparisonCanvas{
     this.linkStatus.textContent=relevant?`${drawn} of ${relevant} recorded links shown${collapsed?` · ${collapsed} inside collapsed branches`:''}`:'Recorded comparisons will connect these maps.';
     this.focusButton.disabled=!a&&!b;
     if(this.options.single){this.hint.textContent=this.options.hint||'Choose a node to read, co-sign, or copy it.';this.linkStatus.hidden=true;}
-    this.sourceConnections?.build();this.options.afterBuild?.();
+    this.sourceConnections?.build();this.options.afterBuild?.();this.topicFocus.apply();
   }
   addLink(svg,a,b,item){
     const proxy=a.proxy||b.proxy,path=this.svgElement('path',{fill:'none',class:`comparison-link ${item.status}${item.active?' active':''}${proxy?' proxy':''}`});svg.append(path);
@@ -178,7 +180,7 @@ export class ComparisonCanvas{
     if(item.id){const hit=this.svgElement('path',{fill:'none',class:'comparison-link-hit','aria-hidden':'true'});hit.onclick=()=>this.onRecord(item.id);svg.append(hit);item.hit=hit;}
     if(item.active){badge=document.createElement('button');badge.type='button';badge.className=`comparison-link-label ${item.status}`;badge.textContent=item.label+suffix;badge.title=item.question||'Choose a question relationship, then record this comparison.';badge.onclick=()=>item.id?this.onRecord(item.id):document.getElementById('question-status').focus();this.world.append(badge);}
     if(proxy)for(const end of [a,b])if(end.proxy)this.cards.get(end.key)?.classList.add('has-hidden-comparison');
-    this.links.push({a,b,path,badge,...item});
+    for(const el of [path,badge,item.hit])markTopicElement(el,[a,b].map(end=>topicNodeKey(this.states[end.side].map.id,end.nodeId)));this.links.push({a,b,path,badge,...item});
   }
   drawGeometry(lanes=this.layout.lanes){
     for(const [key,card]of this.cards){const p=this.positions.get(key);card.style.transform=`translate(${p.x}px,${p.y}px)`;}

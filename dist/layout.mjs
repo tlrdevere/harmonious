@@ -1,3 +1,5 @@
+import {mapTopicSectors} from './topic-layout.mjs';
+
 export const CARD_W=252, CARD_H=166, SIBLING_GAP=28, LEVEL_GAP=74, FRAME_GAP=104;
 
 export function validateForest(nodes, roots) {
@@ -16,11 +18,11 @@ export function validateForest(nodes, roots) {
 
 // Each frame is a radial tree. The horizontal gaps between the upper and
 // lower sectors reserve a clear corridor for the non-parent frame spine.
-export function layoutForest(nodes, roots, expanded){
+export function layoutForest(nodes, roots, expanded, relations=[]){
   validateForest(nodes,roots);
   const children=new Map(nodes.map(n=>[n.id,[]]));
   for(const n of nodes)if(n.parent!==null)children.get(n.parent).push(n.id);
-  const positions=new Map(),edges=[],clusters=[];
+  const positions=new Map(),edges=[],clusters=[],sectors=mapTopicSectors(nodes,roots,relations);
   const clearance=Math.hypot(CARD_W,CARD_H)+36, corridor=Math.PI/10;
   for(let frame=0;frame<roots.length;frame++){
     const root=roots[frame],weights=new Map(),polar=new Map(),levels=new Map();
@@ -35,7 +37,8 @@ export function layoutForest(nodes, roots, expanded){
       }
     }
     const kids=expanded.has(root)?children.get(root):[],split=Math.floor(kids.length/2);
-    if(kids.length===1)distribute(kids,-Math.PI*.75,-Math.PI*.25,1);
+    if(sectors.size){for(const id of kids){const sector=sectors.get(id);distribute([id],sector.start,sector.end,1);}}
+    else if(kids.length===1)distribute(kids,-Math.PI*.75,-Math.PI*.25,1);
     else {distribute(kids.slice(0,split),-Math.PI+corridor,-corridor,1);distribute(kids.slice(split),corridor,Math.PI-corridor,1);}
     const radii=new Map();let previous=0;
     for(const [depth,angles] of levels){

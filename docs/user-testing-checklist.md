@@ -1,5 +1,13 @@
 # Harmonious: what to check on your next visit
 
+## Cross-frame topic alignment and focus
+
+- Connect first-tier topics across SQ, TA and GS through Inspect details → Connections. Check matching angles and room for descendants. Connect several topics in one frame; they should occupy adjacent positions.
+- Expand/collapse, hide connection lines, reload, and remove a connection. Placement should follow saved links while folds preserve topic angles. Editing connections should preserve zoom.
+- Use View options → Focus selection. Chosen topics, descendants and internal links should remain prominent; other content should fade. Connected topics must not be selected automatically.
+- Try Focus this branch, Change selection, Cancel/Escape, Clear focus, and a same-tab reload. Focusing should preserve layout and folds.
+- Repeat in source browsing and the outer comparison/Argument canvas. Select one counterpart's branch: the other half should fade without changing recorded assessments. Check ghosts, keyboard use and the narrow-screen chooser.
+
 ## Compact Create header and new logo — Worker 66
 
 - Refresh Harmonious. Check that the supplied logo appears beside the name across modes.

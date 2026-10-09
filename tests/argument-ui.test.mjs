@@ -14,14 +14,14 @@ class Element{
   append(...items){for(const item of items){item.parent=this;this.children.push(item);}}
   prepend(...items){this.children.unshift(...items);}
   replaceChildren(...items){this.children=[];this.append(...items);}
-  after(){} before(){} addEventListener(event,listener){(this.listeners??={})[event]=listener;} contains(){return false;} querySelector(){return null;} querySelectorAll(){return [];}
+  after(){} before(){} addEventListener(event,listener){(this.listeners??={})[event]=listener;} contains(){return false;} closest(){return null;} querySelector(){return null;} querySelectorAll(){return [];}
   remove(){if(this.parent)this.parent.children=this.parent.children.filter(c=>c!==this);}
   cloneNode(){const clone=new Element();clone.value=this.value;clone.textContent=this.textContent;return clone;}
   reset(){this.value='';} focus(){}
 }
 const element=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
 globalThis.window=new EventTarget();
-globalThis.document=Object.assign(new EventTarget(),{getElementById:element,createElement:()=>new Element(),createElementNS:()=>new Element(),querySelector:element});
+globalThis.document=Object.assign(new EventTarget(),{body:new Element(),getElementById:element,createElement:()=>new Element(),createElementNS:()=>new Element(),querySelector:element});
 globalThis.ResizeObserver=class{observe(){}};
 globalThis.matchMedia=()=>({matches:true});
 globalThis.location={pathname:'/',search:'',hash:''};

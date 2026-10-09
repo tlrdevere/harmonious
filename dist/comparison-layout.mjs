@@ -1,3 +1,4 @@
+import {topicSectors} from './topic-layout.mjs';
 import {CARD_W,CARD_H,FRAME_GAP,layoutForest} from './layout.mjs';
 
 export const COUNTERPART_W=CARD_W,COUNTERPART_H=CARD_H;
@@ -11,7 +12,7 @@ export function layoutComparison(states,roots,context={}){
   const maps={},columns=new Map();
   for(const side of ['a','b']){
     const state=states[side];if(!state.map)continue;
-    const layout=layoutForest(state.map.nodes,roots,state.expanded);
+    const layout=layoutForest(state.map.nodes,roots,state.expanded,state.map.relations);
     const visible=new Map([...layout.positions].filter(([,p])=>state.frame==='all'||roots[p.frame]===state.frame));
     maps[side]={map:state.map,layout,positions:visible};
     for(let frame=0;frame<roots.length;frame++){
@@ -44,7 +45,7 @@ function layoutOverlay(states,roots,{links=[]}={}){
   const compare=(a,b)=>String(a).localeCompare(String(b));
   const memberOrder=(a,b)=>compare(a.mapId,b.mapId)||a.order-b.order||compare(a.nodeId,b.nodeId);
   for(const side of ['a','b']){
-    const state=states[side],layout=layoutForest(state.map.nodes,roots,state.expanded);
+    const state=states[side],layout=layoutForest(state.map.nodes,roots,state.expanded,state.map.relations);
     const byId=new Map(state.map.nodes.map(n=>[n.id,n]));
     maps[side]={map:state.map,layout,positions:new Map()};
     let order=0;
@@ -106,7 +107,26 @@ function layoutOverlay(states,roots,{links=[]}={}){
     const key=JSON.stringify([from.key,to.key].sort());if(additionalPairs.has(key))continue;
     additionalPairs.set(key,{fromKey:from.key,toKey:to.key});if(from.frame!==to.frame)crossFrameRelations++;
   }
-  const straightSource=placeGroups(groups,[...additionalPairs.values()]);straightSource.additional.crossFrame=crossFrameRelations;
+  // Full first-tier topology keeps slots stable even when a counterpart's frame
+  // is collapsed or filtered out of the visible display forest.
+  const topicItems=[],topicIds=new Map(),topicEdges=[],allTopics=new Map(),usedTopics=new Set();
+  for(const side of ['a','b'].sort((a,b)=>compare(states[a].map.id,states[b].map.id))){
+    const map=states[side].map,children=new Map(map.nodes.map(n=>[n.id,[]]));for(const n of map.nodes)children.get(n.parent)?.push(n.id);
+    const weight=id=>children.get(id).length?children.get(id).reduce((s,k)=>s+weight(k),0):1;
+    for(const root of roots)for(const n of map.nodes.filter(n=>n.parent===root)){const key=comparisonNodeKey(side,n.id);allTopics.set(key,{id:JSON.stringify(['topic',map.id,n.id]),key,frame:root,weight:weight(n.id)});}
+  }
+  for(const record of [...links].sort(priority)){
+    if(record.status!=='active'||!['correspondence','relationship'].includes(record.kind))continue;
+    const a=sideOf(record.target),b=sideOf(record.other);if(!a||!b||a===b)continue;
+    const ak=comparisonNodeKey(a,record.target.nodeId),bk=comparisonNodeKey(b,record.other.nodeId),x=allTopics.get(ak),y=allTopics.get(bk);
+    if(!x||!y||x.frame!==y.frame||usedTopics.has(ak)||usedTopics.has(bk))continue;
+    const id=JSON.stringify(['topic-pair',...[x.id,y.id].sort()]);topicIds.set(ak,id);topicIds.set(bk,id);usedTopics.add(ak);usedTopics.add(bk);
+  }
+  for(const [key,t]of allTopics){const id=topicIds.get(key)||t.id;topicIds.set(key,id);const old=topicItems.find(item=>item.id===id);if(old)old.weight=Math.max(old.weight,t.weight);else topicItems.push({...t,id});}
+  for(const side of ['a','b'])for(const edge of states[side].map.relations||[])topicEdges.push({from:topicIds.get(comparisonNodeKey(side,edge.from)),to:topicIds.get(comparisonNodeKey(side,edge.to))});
+  const topicAngles=topicSectors(topicItems,topicEdges),sectors=new Map();
+  for(const group of groups.values())if(group.kind!=='frame'&&group.members.every(m=>roots.includes(m.parentId))){const sector=topicAngles.get(topicIds.get(group.anchor.key));if(sector)sectors.set(group.id,sector);}
+  const straightSource=placeGroups(groups,[...additionalPairs.values()],sectors);straightSource.additional.crossFrame=crossFrameRelations;
   const positions=new Map(),placeholders=[];
   for(const group of groups.values()){
     for(const m of group.members){
@@ -169,7 +189,7 @@ function directSourceState(items,reverse=false,additionalPairs=[]){
   }
   return {total,clear:total-blocked.length,blocked,length,additional};
 }
-function placeGroups(groups,additionalPairs){
+function placeGroups(groups,additionalPairs,sectors=new Map()){
   const frames=[...groups.values()].filter(g=>g.kind==='frame').sort((a,b)=>a.frame-b.frame),clusters=[];
   for(const root of frames){
     let best=null;
@@ -178,7 +198,7 @@ function placeGroups(groups,additionalPairs){
     // Candidate count and growth are bounded; exceptional blocked edges remain
     // explicit so the renderer can retain its honest fallback.
     for(const corridor of [Math.PI/5,Math.PI/4,Math.PI/6])for(const depthGrowth of [.6,1,1.6,2.4])for(const compact of [true,false]){
-      const cluster=solveGroupFrame(root,groups,{corridor,depthGrowth,compact}),state=directSourceState(cluster.items,false,additionalPairs),reversed=directSourceState(cluster.items,true,additionalPairs);
+      const cluster=solveGroupFrame(root,groups,{corridor,depthGrowth,compact,sectors}),state=directSourceState(cluster.items,false,additionalPairs),reversed=directSourceState(cluster.items,true,additionalPairs);
       // The same actual identities choose the same world after swapping A/B.
       const scoreBlocked=state.blocked.length+reversed.blocked.length,scoreAdditional=state.additional.blocked.length+reversed.additional.blocked.length,scoreLength=state.length+reversed.length+state.additional.length+reversed.additional.length;
       if(!best||scoreBlocked<best.scoreBlocked||scoreBlocked===best.scoreBlocked&&(scoreAdditional<best.scoreAdditional||scoreAdditional===best.scoreAdditional&&scoreLength<best.scoreLength-.001))best={...cluster,state,scoreBlocked,scoreAdditional,scoreLength};
@@ -193,7 +213,7 @@ function placeGroups(groups,additionalPairs){
   const blocked=clusters.flatMap(c=>c.state.blocked),total=clusters.reduce((sum,c)=>sum+c.state.total,0),additionalBlocked=clusters.flatMap(c=>c.state.additional.blocked),additionalTotal=clusters.reduce((sum,c)=>sum+c.state.additional.total,0);
   return {total,clear:total-blocked.length,blocked,additional:{total:additionalTotal,clear:additionalTotal-additionalBlocked.length,blocked:additionalBlocked}};
 }
-function solveGroupFrame(root,groups,{corridor,depthGrowth,compact}){
+function solveGroupFrame(root,groups,{corridor,depthGrowth,compact,sectors}){
     const weights=new Map(),levels=new Map(),items=[];
     function measure(id){const g=groups.get(id),weight=g.children.length?g.children.reduce((sum,child)=>sum+measure(child),0):1;weights.set(id,weight);return weight;}
     measure(root.id);
@@ -208,7 +228,8 @@ function solveGroupFrame(root,groups,{corridor,depthGrowth,compact}){
     Object.assign(root,{depth:0,angle:0,radius:0,cx:0,cy:0});items.push(root);
     const owners=[...new Set(root.children.map(id=>groups.get(id).anchor.mapId))];
     const split=owners.length===2?root.children.filter(id=>groups.get(id).anchor.mapId===owners[0]).length:Math.floor(root.children.length/2);
-    if(root.children.length===1)distribute(root.children,-Math.PI*.75,-Math.PI*.25,1);
+    if(sectors.size&&root.children.every(id=>sectors.has(id))){for(const id of root.children){const s=sectors.get(id);distribute([id],s.start,s.end,1);}}
+    else if(root.children.length===1)distribute(root.children,-Math.PI*.75,-Math.PI*.25,1);
     else{distribute(root.children.slice(0,split),-Math.PI+corridor,-corridor,1);distribute(root.children.slice(split),corridor,Math.PI-corridor,1);}
     let previous=0,firstRadius=0;
     for(const depth of [...levels.keys()].sort((a,b)=>a-b)){

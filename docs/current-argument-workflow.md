@@ -1,5 +1,7 @@
 # Working in a shared Comparison
 
+The [topic alignment and branch-focus increment](topic-alignment-and-focus.md) aligns connected first-tier topics across frames where compatible with counterpart placement. View options → Focus selection emphasizes explicitly chosen topic branches in the outer canvas; other nodes and connections fade. This is a personal viewing preference and leaves the inner dialogue canvas unchanged. See [deployment status](deployment-status.md) for publication.
+
 [Owner-only map deletion](map-deletion.md) is live in **Worker 65**. Deleting a source makes its comparisons unavailable for new contributions. Independent copies and recorded history are retained; current source contents are no longer browsable. My maps offers Delete map with confirmation. See [deployment status](deployment-status.md).
 
 Top navigation highlighting is corrected in **Worker 64**. Maps, Comparisons and Pods remain highlighted while browsing their library sections; choosing Map Library explicitly highlights Map Library. Reloads preserve the selected destination. Definitions & standards remains under Map Library.

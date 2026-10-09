@@ -1,3 +1,4 @@
+import {topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {ArgumentDialogueUI} from './argument-dialogue-ui.mjs';
 import {StandstillUI} from './standstill-ui.mjs';
 import {InteractionUI} from './interaction-ui.mjs';
@@ -75,6 +76,7 @@ export class DiscussionUI{
     document.querySelector('.comparison-canvas-footer').textContent='Select nodes or connections to relate, ask, or challenge · Drag empty space to pan · Scroll to zoom';
     discussUI('compare-view-mode').textContent='Map & conversation';discussUI('argument-mode').textContent='Earlier reasoning';
     for(const b of controls.querySelectorAll(':scope > [data-layer]'))if(b.dataset.layer!=='inquiries'){options.append(b);if(b.dataset.layer==='arguments')b.hidden=true;}
+    options.append(this.canvas.topicFocus.controls);this.canvas.topicFocus.beforeOpen=()=>{if(!this.canLeave())return false;this.viewOptions.open=false;return true;};
     this.reasoning=new ReasoningUI(this);
     this.search=new InteractionSearchUI(this);this.dialogue=new ArgumentDialogueUI(this);this.standstills=new StandstillUI(this);
   }
@@ -436,6 +438,20 @@ export class DiscussionUI{
     const threadKey=this.thread()?.id||null;if(this.viewThreadKey!==threadKey){this.viewOptions.open=false;this.viewThreadKey=threadKey;}
     discussUI('comparison-view-modes').hidden=discussUI('argument-mode').hidden;
     this.agreementView.draw();
+    const keys=(target,seen=new Set())=>{
+      if(!target)return [];
+      if(target.type==='node')return [topicNodeKey(target.mapId,target.nodeId)];
+      if(target.type==='connection')return [...keys(target.a,seen),...keys(target.b,seen)];
+      if(target.type==='edge'){const source=discussionSource(this.c.workspace,target);return source?[source.item.from,source.item.to].map(id=>topicNodeKey(target.mapId,id)):[];}
+      if(target.entryId&&!seen.has(target.entryId)){seen.add(target.entryId);return keys(this.c.workspace.discussions.find(r=>r.id===target.entryId)?.target,seen);}return [];
+    };
+    for(const item of this.items){const ends=item.type==='edge'?[...keys(item.a),...keys(item.b)]:keys(item.target);for(const el of item.type==='edge'?[item.path,item.hit]:[item.b])markTopicElement(el,ends);}
+    for(const {box,p} of this.counterparts.markers||[])markTopicElement(box,keys(p.target));
+    for(const el of canvas.world.querySelectorAll('.reasoning-drawing[data-entry],.reasoning-edge[data-entry]'))markTopicElement(el,keys({type:'entry',entryId:el.dataset.entry}));
+    for(const link of this.reasoning.links||[])markTopicElement(link.marker,keys({type:'entry',entryId:link.r.id}));
+    for(const entry of this.agreementView.entries||[]){const ends=entry.members.map(m=>topicNodeKey(m.mapId,m.nodeId));for(const el of [entry.el,entry.marker]){markTopicElement(el,ends);el.dataset.topicAny='true';}
+      entry.buttons.forEach((el,i)=>markTopicElement(el,[ends[i]]));entry.el.querySelectorAll('.agreement-silhouette>span').forEach((el,i)=>markTopicElement(el,[ends[i]]));}
+    canvas.topicFocus.apply();
     this.position();
   }
   drawAssessments(){

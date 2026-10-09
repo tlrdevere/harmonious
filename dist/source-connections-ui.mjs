@@ -1,3 +1,4 @@
+import {topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {MapConnectionsUI} from './map-connections-ui.mjs';
 import {groupSourceConnections,visibleNodePairKey} from './conversation-tree.mjs';
 import {graphEdges,RELATION_TYPES,STRUCTURAL_TYPES} from './model.mjs';
@@ -56,7 +57,7 @@ export class SourceConnectionsUI{
         const item={key,side,map,edges,edge,group,path,hit,label,width};
         const inspect=()=>{for(const other of this.items)other.group.classList.toggle('active',other===item);canvas.sourceHighlights.select(key);this.menu.show(key,edges,map.nodes,false);this.positionMenu();};
         hit.onclick=inspect;hit.onpointerdown=event=>event.stopPropagation();hit.onkeydown=event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();event.stopPropagation();inspect();}};
-        group.append(path,hit,label);svg.append(group);this.items.push(item);canvas.sourceHighlights.bind(key,path,hit,[edge.from,edge.to].map(id=>canvas.cards.get(comparisonNodeKey(side,id))));
+        markTopicElement(group,[edge.from,edge.to].map(id=>topicNodeKey(map.id,id)));delete path.dataset.topicKeys;group.append(path,hit,label);svg.append(group);this.items.push(item);canvas.sourceHighlights.bind(key,path,hit,[edge.from,edge.to].map(id=>canvas.cards.get(comparisonNodeKey(side,id))));
       }
     }
   }

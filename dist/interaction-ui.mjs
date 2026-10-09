@@ -33,6 +33,7 @@ export class InteractionUI{
       const actions=[interactionButton('Edit in my map',()=>{if(d.canLeave())this.c.library.openMap(source.map.id,source.item.id);})];
       d.actionGroup('Your node',actions);
     }
+    if(target.type==='node'&&source?.map.nodes.find(n=>n.id===source.item.parent)?.parent===null)d.actionGroup('View',[interactionButton('Focus this branch',()=>{if(d.canLeave())d.canvas.topicFocus.focus(source.map.id,source.item.id);})]);
     const context=(ws.discussions||[]).find(r=>r.kind==='context'&&r.status==='active'&&stableJSON(r.target)===stableJSON(target));
     const definitions=[];if(context)definitions.push(interactionButton('View definitions & standards',()=>d.openContexts(target)));if(own&&ordinary)definitions.push(interactionButton('Use definitions & standards',()=>this.c.library.definitions.choose(target)));d.actionGroup('Meaning',definitions);
     if(d.mode()==='compare'&&target.type==='node'&&ordinary){
