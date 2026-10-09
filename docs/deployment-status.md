@@ -2,7 +2,20 @@
 
 Updated October 9, 2026 (UTC).
 
-## Current release — Worker 69
+## Current release — Worker 70
+
+The reusable Philosophy bank deployed **2026-10-09T19:43:24.735128Z**. Release source: `632ca28cb7861c307ec361bacd8d21fa34be4b1f` on `redesign/node-interactions`, committed and pushed before publication.
+
+- Worker version **70**: `51b657cc-f884-4878-80df-2acb200de6f6`, serving **100%** of traffic. Deployment: `4b4ea319-7261-42db-871c-0ccd293ef924`.
+- Node → **Philosophy** supports **Definition, Standard, Principle, Belief and Other**, creating and attaching an idea together or selecting existing bank entries. Map Library contains the Philosophy bank. Shared readers see invoked versions; unused entries stay private. Existing definitions, standards and attachments remain intact. See [the behavior](philosophy-bank.md).
+- **67/67 local checks passed**: `build/verification/2026-10-09T19-37-16-973Z-97840/summary.json`. **67/67 hosted checks passed** on the same source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/37981485286), completed **19:42:44 UTC**. Desktop and narrow layouts reviewed. Evidence: `build/philosophy-hosted-verification-evidence.json`.
+- Applied `supabase/migrations/20261009192043_philosophy_bank.sql` as remote migration `20261009193740_philosophy_bank`. Both validator function bodies and service-only execution privileges verified; all five types accepted and an unsupported type rejected. Existing production content remained identical: generation **219**, **158** records, fingerprint `e334ed42c651e30f7fd5c28b12018844`. Security/performance advisors were unchanged. Evidence: `build/philosophy-database-evidence.json`.
+- Live verification confirms all **64 client files** and the homepage match the tested checkout, configured sign-in, account restrictions, private configuration protection and security headers. Worker SHA-256: `c5016920e74adbb37c2ce80f0047db54704a612ca58830bf100fec75ba21978b`. Evidence: `build/philosophy-release-evidence.json`.
+- Runtime and all nine bindings inherited unchanged. New-type compatibility requires `philosophy-v1`; older tabs are asked to refresh when necessary. No separate Philosophy mapping mode was added. Existing deferrals remain unchanged.
+
+**Refresh Harmonious, select a node → Philosophy, then create an idea or choose from your bank and Save philosophy.** Follow [the testing checklist](user-testing-checklist.md). Later documentation-only commits do not change the deployed bundle.
+
+## Previous release — Worker 69
 
 Consistent cross-frame connection attachments deployed **2026-10-09T18:27:32.230354Z**. Release source: `b6ff86f19fc537ff59c2ed9128fa1b888a523365` on `redesign/node-interactions`, committed and pushed before hosted verification and publication.
 
