@@ -21,6 +21,7 @@ export class AccountWorkspace{
     topbar.after(panel);
     const controls=document.createElement('details');controls.className='account-controls account-menu';controls.innerHTML='<summary><span id="account-display">Account</span></summary><div class="account-menu-content"><button id="account-signout" type="button">Sign out</button></div>';document.querySelector('.topbar').append(controls);controls.querySelector('.account-menu-content').prepend(document.querySelector('.workspace-files'));controls.querySelector('.account-menu-content').addEventListener('click',event=>{if(event.target.closest('button'))controls.open=false;});
     accountUI('reset').hidden=true;accountUI('open-workspace').textContent='Import maps';accountUI('reload-workspace').hidden=false;accountUI('reload-workspace').textContent='Refresh maps';
+    document.querySelector('#editor-main .workspace-header').append(document.querySelector('.map-switcher'));
     document.querySelector('.prototype').textContent='Beta';document.querySelector('.participant-control').hidden=true;
     document.querySelector('.participation-subnav > span').textContent='Your co-signs are recorded under your account';
     accountUI('map-settings').textContent='Map settings';accountUI('map-settings').setAttribute('aria-label','Map name and sharing');

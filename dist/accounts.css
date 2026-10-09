@@ -1,4 +1,26 @@
 .accounts .topbar{height:auto;min-height:68px;flex-wrap:wrap;gap:10px 16px;padding:8px 22px}
+.accounts #workspace-nav:empty{display:none}
+.accounts #editor-main .workspace-header{padding:8px 16px;gap:8px 20px;flex-wrap:wrap}
+.accounts #editor-main .workspace-header>div:first-child{min-width:0;flex:1 1 200px}
+.accounts #editor-main .workspace-header .eyebrow,.accounts #editor-main .map-header-actions{display:none}
+.accounts #map-heading{font-size:18px;line-height:1.25;margin:0 0 3px;overflow-wrap:anywhere}
+.accounts #map-person{font-size:12px;line-height:1.4;overflow-wrap:anywhere}
+.accounts #editor-main .map-switcher{min-width:0;gap:6px}
+.accounts #editor-main .map-switcher select{width:180px;min-width:80px;max-width:100%}
+.accounts #editor-main .map-switcher button,.accounts #editor-main .map-switcher select{font-size:13px;min-height:36px;padding:6px 10px}
+.accounts #editor-main .toolbar{margin:0 16px;padding:6px 0;gap:6px 12px}
+.accounts #editor-main .toolbar-group{width:auto;gap:6px;flex-wrap:wrap}
+.accounts #editor-main .toolbar-group button{font-size:13px;min-height:36px;padding:6px 10px}
+@media(max-width:760px){
+ .accounts #editor-main .workspace-header{padding:8px 12px;gap:6px}
+ .accounts #editor-main .workspace-header>div:first-child{flex-basis:100%}
+ .accounts #editor-main .map-switcher{width:100%;flex-wrap:nowrap}
+ .accounts #editor-main .map-switcher label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .accounts #editor-main .map-switcher select{width:auto;flex:1;min-width:0}
+ .accounts #editor-main .map-switcher button,.accounts #editor-main .map-switcher select{font-size:12px;min-height:40px;padding:6px 8px}
+ .accounts #editor-main .toolbar{margin:0 12px;gap:4px 8px}
+ .accounts #editor-main .toolbar-group button{font-size:12px;min-height:40px;padding:6px 8px}
+}
 .accounts .topbar-primary-nav{flex:0 1 auto}.accounts .topbar-tabs{flex:0 1 auto}
 .accounts .topbar-tabs button{font-size:13px;padding:7px 11px}
 .accounts .topbar .session-note{margin-left:auto}
