@@ -1,5 +1,11 @@
 # Harmonious: what to check on your next visit
 
+## Compact Create header and new logo — Worker 66
+
+- Refresh Harmonious. Check that the supplied logo appears beside the name across modes.
+- Open a map in Create. The map name, picker and settings should use a compact header, leaving more room for the canvas.
+- Try map selection, Map settings, expansion/collapse and switching away and back. Repeat on a narrow screen; controls should wrap without clipping.
+
 ## Delete your own map
 
 - Refresh, open My maps and select Delete map. Check the map name and explanation. Cancel or Escape should leave it unchanged.

@@ -2,13 +2,15 @@
 
 Updated October 9, 2026 (UTC).
 
-## Prepared update — awaiting Cloudflare sign-in
+## Current release — Worker 66
 
 The [compact Create header and supplied logo](create-header-and-logo.md) are implemented and pushed at `c4aaf859622548d26d3ed11985762cdb4ac4a3a8` on `redesign/node-interactions`. **64/64 local checks passed** in `build/verification/2026-10-09T00-15-10-738Z-132988/summary.json`; **64/64 hosted checks passed** on the exact source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/37863810971). Desktop and narrow previews were reviewed. The built Worker SHA-256 is `82a1cf5d09aee80d1a4fc863ffde845a88d8ac52f8fc77cd572b69a7c1ee52ef`.
 
-This update is **not deployed**: the previous Cloudflare connector is unavailable and Wrangler reported that it is not authenticated. A device sign-in was prepared for the owner. Once authentication is restored, verify the live baseline, publish this exact bundle with existing bindings and runtime settings preserved, and run the live asset/access checks. No database migration is needed. Worker 65 remains the last verified deployment.
+Deployed **2026-10-09T17:03:59.365688Z** as Worker **66**, version `6b95c60f-10e9-4050-91b6-ab86d2688e3d`, serving **100%** of traffic. Deployment: `0ee84ccd-5c67-4807-9262-415b87e230fc`. Existing runtime settings and all nine bindings were inherited unchanged. No database migration was needed.
 
-## Current release
+Live verification confirmed all **62 client files** and the homepage match the tested checkout, configured sign-in, account access restrictions, private configuration protection and security headers. Evidence: `build/header-release-evidence.json`. Refresh Harmonious to see the supplied logo and compact Create header: desktop previews gained approximately 141 pixels of canvas height, and the 390-pixel-wide preview gained 79 pixels. Later documentation-only commits do not change this deployed bundle.
+
+## Previous release — Worker 65
 
 Owner-only map deletion deployed **2026-10-01T17:56:49.963872Z**. Release source: `b009e46929d0128700a08c1b0a07e28a7f42edc6` on `redesign/node-interactions`, committed and pushed before hosted verification and deployment.
 
