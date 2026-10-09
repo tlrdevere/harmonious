@@ -63,7 +63,12 @@ export function labelSourceRoute(route,size={w:0,h:0},obstacles=[]){
   return route&&!route.blocked?labelOnRoute(route,{w:size.w||0,h:size.h||0},obstacles):null;
 }
 
-const SOURCE_ROUTE_POLICY=1,SOURCE_ALTERNATIVE_LIMIT=128,SOURCE_PEER_LIMIT=384,SOURCE_EPS=1e-7;
+// Frame order is SQ, TA, GS. Attachment sides describe geometry, not arrow direction.
+export function crossFrameAttachments(fromFrame,toFrame){
+  if(![0,1,2].includes(fromFrame)||![0,1,2].includes(toFrame)||fromFrame===toFrame)return {};
+  return fromFrame<toFrame?{fromSide:'right',toSide:'left'}:{fromSide:'left',toSide:'right'};
+}
+const SOURCE_ROUTE_POLICY=2,SOURCE_ALTERNATIVE_LIMIT=128,SOURCE_PEER_LIMIT=384,SOURCE_EPS=1e-7;
 const sourceRectKey=r=>JSON.stringify([r.x,r.y,r.w,r.h]);
 const sourceOrder=(a,b)=>a<b?-1:a>b?1:0;
 function sourceRect(value){
@@ -78,13 +83,13 @@ function sourceScene(requests,obstacles){
   for(const request of requests){
     if(typeof request.key!=='string'||!request.key)throw Error('Source connections need a stable actual-pair key.');
     const a=card(request.from),b=card(request.to),reversed=sourceOrder(a.key,b.key)>0;
-    const edge={key:request.key,from:reversed?b.r:a.r,to:reversed?a.r:b.r,fromKey:reversed?b.key:a.key,toKey:reversed?a.key:b.key,reversed};
+    const edge={key:request.key,from:reversed?b.r:a.r,to:reversed?a.r:b.r,fromKey:reversed?b.key:a.key,toKey:reversed?a.key:b.key,fromSide:reversed?request.toSide:request.fromSide,toSide:reversed?request.fromSide:request.toSide,reversed};
     const previous=pairs.get(edge.key);
     if(previous&&(previous.fromKey!==edge.fromKey||previous.toKey!==edge.toKey||previous.reversed!==edge.reversed))throw Error('Group each source pair once before routing it.');
     pairs.set(edge.key,edge);
   }
   const edges=[...pairs.values()].sort((a,b)=>sourceOrder(a.key,b.key)),rects=[...cards].sort(([a],[b])=>sourceOrder(a,b)).map(([,r])=>r);
-  return {edges,rects,key:JSON.stringify([SOURCE_ROUTE_POLICY,edges.map(e=>[e.key,e.fromKey,e.toKey,e.reversed]),rects])};
+  return {edges,rects,key:JSON.stringify([SOURCE_ROUTE_POLICY,edges.map(e=>[e.key,e.fromKey,e.toKey,e.reversed,e.fromSide,e.toSide]),rects])};
 }
 function sourceSegments(route){return route.points.slice(1).map((to,index)=>({from:route.points[index],to}));}
 function sourceBox(points,pad=0){return {left:Math.min(...points.map(p=>p.x))-pad,right:Math.max(...points.map(p=>p.x))+pad,top:Math.min(...points.map(p=>p.y))-pad,bottom:Math.max(...points.map(p=>p.y))+pad};}
@@ -127,7 +132,7 @@ function sourcePorts(edges){
     for(const side of ['top','right','bottom','left']){
       const horizontal=side==='top'||side==='bottom',axis=horizontal?'x':'y',available=Math.max(0,(horizontal?rect.w:rect.h)-32),spacing=entries.length>1?Math.min(18,available/(entries.length-1)):0;
       const ordered=[...entries].sort((a,b)=>a.other[axis]-b.other[axis]||sourceOrder(a.edge.key,b.edge.key));
-      ordered.forEach(({edge},index)=>result.get(edge.key).push({side,offset:(index-(entries.length-1)/2)*spacing}));
+      ordered.forEach(({edge},index)=>{const required=edge.fromKey===key?edge.fromSide:edge.toSide;if(!required||required===side)result.get(edge.key).push({side,offset:(index-(entries.length-1)/2)*spacing});});
     }
     ports.set(key,result);
   }
@@ -141,6 +146,11 @@ function reverseSourceRoute(route){
 }
 function sourceBatch({edges,rects},preferStraight){
   const chosen=new Map(edges.map(edge=>{
+    if(edge.fromSide||edge.toSide){
+      const direct=routeStraightConnection(edge.from,edge.to,rects),onSide=(p,r,side)=>!side||side==='right'&&Math.abs(p.x-r.x-r.w/2)<SOURCE_EPS||side==='left'&&Math.abs(p.x-r.x+r.w/2)<SOURCE_EPS;
+      const route=!direct.blocked&&onSide(direct.points[0],edge.from,edge.fromSide)&&onSide(direct.points.at(-1),edge.to,edge.toSide)?direct:routeReasoningConnection(edge.from,edge.to,rects,{direct:false,fromPorts:edge.fromSide?[{side:edge.fromSide}]:undefined,toPorts:edge.toSide?[{side:edge.toSide}]:undefined});
+      return [edge.key,{...route,label:route.midpoint?{...route.midpoint,w:0,h:0}:null}];
+    }
     const direct=preferStraight&&routeStraightConnection(edge.from,edge.to,rects);
     return [edge.key,direct&&!direct.blocked?{...direct,label:{...direct.midpoint,w:0,h:0}}:routeComparisonConnection(edge.from,edge.to,rects)];
   })),ports=sourcePorts(edges);
@@ -161,7 +171,8 @@ function sourceBatch({edges,rects},preferStraight){
 }
 
 /** Deterministic source routes for grouped actual pairs. Requests contain
- * {key,from,to}, with center-coordinate rectangles. Returned paths follow each
+ * {key,from,to,fromSide?,toSide?}, with center-coordinate rectangles and optional
+ * required attachment sides for cross-frame connections. Returned paths follow each
  * request's from→to direction. Reordering inputs, selection and camera changes
  * cannot alter geometry. The complete peer set participates in cache identity.
  */

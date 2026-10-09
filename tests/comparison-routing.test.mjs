@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from '../dist/comparison-routing.mjs';
+import {routeComparisonConnection,createConnectionRouter,createSourceConnectionRouter,labelSourceRoute,crossFrameAttachments} from '../dist/comparison-routing.mjs';
 import {ComparisonCanvas} from '../dist/compare-canvas.mjs';
 import {ReasoningUI} from '../dist/reasoning-ui.mjs';
 import {routeStraightConnection} from '../dist/reasoning-layout.mjs';
@@ -144,6 +144,20 @@ for(const request of longRequests){const route=directLong.get(request.key);asser
 assert.equal(directLongRouter(longRequests.slice().reverse(),longCards.slice().reverse()),directLong,'Straight routing remains cached and order independent');
 const obstructedStraight=createSourceConnectionRouter({preferStraight:true})([{key:'obstructed',from:diagonalA,to:diagonalB}],[diagonalObstacle]).get('obstructed');
 assert(obstructedStraight.points.length>2,'Exceptional obstructed geometry retains a visible safe route rather than crossing a card or disappearing');verifySourcePath({from:diagonalA,to:diagonalB},obstructedStraight,[diagonalObstacle]);
+
+// An offset SQ topic used to choose its bottom edge. Frame connections must
+// retain side attachments even after obstacle/peer avoidance and direction reversal.
+const sq={x:0,y:0,w:252,h:166},ta={x:420,y:420,w:252,h:166},gs={x:900,y:420,w:252,h:166},crossObstacle={x:270,y:260,w:90,h:120};
+assert.deepEqual(crossFrameAttachments(1,1),{});
+assert.deepEqual(crossFrameAttachments(undefined,1),{});
+for(const preferStraight of [false,true]){
+  const router=createSourceConnectionRouter({preferStraight}),crossRequests=[{key:'sq-ta',from:sq,to:ta,...crossFrameAttachments(0,1)},{key:'ta-gs',from:ta,to:gs,...crossFrameAttachments(1,2)}],cards=[sq,ta,gs,crossObstacle];
+  const free=router(crossRequests.map(({fromSide,toSide,...rest})=>rest),cards),fixed=router(crossRequests,cards);
+  assert.notEqual(free,fixed,'Attachment policy participates in cache identity');
+  for(const request of crossRequests){const route=fixed.get(request.key);verifySourcePath(request,route,cards);assert.equal(route.points[0].x,request.from.x+request.from.w/2);assert.equal(route.points.at(-1).x,request.to.x-request.to.w/2);}
+  const reversed=router(crossRequests.map(r=>({...r,from:r.to,to:r.from,fromSide:r.toSide,toSide:r.fromSide})),cards);
+  for(const request of crossRequests)assert.deepEqual(reversed.get(request.key).points,fixed.get(request.key).points.slice().reverse(),'Reverse meanings keep the same attachments and reverse only path direction');
+}
 
 // A busy grid bounds the additional peer-avoidance work while keeping every
 // unobstructed endpoint pair visible and preserving the original node geometry.

@@ -3,6 +3,7 @@
 ## Cross-frame topic alignment and focus — Workers 67–68
 
 - Connect first-tier topics across SQ, TA and GS through Inspect details → Connections. Check matching angles and room for descendants. Connect several topics in one frame; they should occupy adjacent positions.
+- Check that cross-frame connections attach right SQ → left TA and right TA → left GS, including vertically offset topics and reverse relationship directions. Repeat in source browsing and outer comparisons. Parent–child connections within a frame should keep their existing routing.
 - Expand/collapse, hide connection lines, reload, and remove a connection. Placement should follow saved links while folds preserve topic angles. Editing connections should preserve zoom.
 - Use View options → Focus selection. Chosen topics, descendants and internal links should remain prominent; other content should fade. Connected topics must not be selected automatically.
 - Try Focus this branch from SQ, TA or GS. Its connected first-tier topics in the other frames, including chained links, and all their descendants should remain prominent. Unrelated branches should fade.

@@ -2,7 +2,7 @@ import {TopicFocusUI,topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {WorkspaceController} from './workspace-ui.mjs';
 import {NodeActions} from './node-actions.mjs';
 import {MapConnectionsUI} from './map-connections-ui.mjs';
-import {createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from './comparison-routing.mjs';
+import {createConnectionRouter,createSourceConnectionRouter,labelSourceRoute,crossFrameAttachments} from './comparison-routing.mjs';
 import {createSourceConnectionHighlights} from './source-connections-ui.mjs';
 import {groupSourceConnections,visibleNodePairKey} from './conversation-tree.mjs';
 import {NodeFaceEditor} from './node-face-editor.mjs';
@@ -116,7 +116,7 @@ function draw(){
   const boxes=new Map([...positions].map(([id,p])=>[id,{x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H}])),obstacles=[...boxes.values()];connectionRoutes.clear();
   const requests=groupSourceConnections(graphEdges(renderNodes(),relations)).map(grouped=>{
     const edge=[...grouped].sort((a,b)=>Number(a.structural)-Number(b.structural)||a.id.localeCompare(b.id))[0];
-    return {key:visibleNodePairKey(edge.from,edge.to),from:boxes.get(edge.from),to:boxes.get(edge.to)};
+    return {key:visibleNodePairKey(edge.from,edge.to),from:boxes.get(edge.from),to:boxes.get(edge.to),...crossFrameAttachments(positions.get(edge.from)?.frame,positions.get(edge.to)?.frame)};
   }).filter(request=>request.from&&request.to),routes=sourceRoutes(requests,obstacles);
   const routeEdge=(edge,path,hit,label,key)=>{const a=boxes.get(edge.from),b=boxes.get(edge.to);if(!a||!b||!path)return;const route=edge.kind==='spine'?mapRoute(a,b,obstacles):routes.get(visibleNodePairKey(edge.from,edge.to));if(!route)return;path.setAttribute('d',route.d);hit?.setAttribute('d',route.d);if(hit){hit.style.display=route.blocked?'none':'';hit.setAttribute('tabindex',route.blocked?'-1':'0');}if(key)connectionRoutes.set(key,route);if(label){const point=labelSourceRoute(route,{w:Number(label.dataset.width),h:24},obstacles);label.style.display=point?'':'none';if(point)label.setAttribute('transform',`translate(${point.x},${point.y})`);}};
   for(const edge of result.edges)routeEdge(edge,edge.element,edge.hit,edge.label,edge.key);

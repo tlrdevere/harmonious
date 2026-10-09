@@ -1,6 +1,6 @@
 import {TopicFocusUI,topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {CARD_W,CARD_H} from './layout.mjs';
-import {createConnectionRouter,createSourceConnectionRouter,labelSourceRoute} from './comparison-routing.mjs';
+import {createConnectionRouter,createSourceConnectionRouter,labelSourceRoute,crossFrameAttachments} from './comparison-routing.mjs';
 import {roots} from './data.mjs';
 import {FRAME_COLORS,installFramePalette} from './frame-palette.mjs';
 import {NODE_KINDS,revealPath,graphEdges} from './model.mjs';
@@ -199,7 +199,7 @@ export class ComparisonCanvas{
   ensureSourceRoutes(){
     if(this.sourceRoutedPositions===this.positions)return;
     const center=p=>p&&({x:p.x+CARD_W/2,y:p.y+CARD_H/2,w:CARD_W,h:CARD_H});this.sourceObstacles=comparisonDisplayRects(this.layout,this.positions).map(p=>({x:p.x+p.w/2,y:p.y+p.h/2,w:p.w,h:p.h}));
-    const requests=[];for(const pair of this.sourcePairs?.values()||[]){const from=center(this.positions.get(pair.fromKey)),to=center(this.positions.get(pair.toKey));if(from&&to)requests.push({key:pair.routeKey,from,to});}
+    const requests=[];for(const pair of this.sourcePairs?.values()||[]){const a=this.positions.get(pair.fromKey),b=this.positions.get(pair.toKey),from=center(a),to=center(b);if(from&&to)requests.push({key:pair.routeKey,from,to,...crossFrameAttachments(a.frame,b.frame)});}
     const routes=this.routeSources(requests,this.sourceObstacles);this.sourceRoutes=new Map([...this.sourcePairs?.values()||[]].map(pair=>[pair.key,routes.get(pair.routeKey)]).filter(([,route])=>route));this.sourceRoutedPositions=this.positions;
   }
   sourceRouteLabel(key,size){this.ensureSourceRoutes();return labelSourceRoute(this.sourceRoutes.get(key),size,this.sourceObstacles);}

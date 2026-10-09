@@ -12,6 +12,8 @@ Create and ordinary source browsing share this layout. Outer comparison, Inquiry
 
 The canvas grows to accommodate content. Existing card-avoiding routing handles exceptional obstructed connections; arbitrary cross-frame graphs are not guaranteed to be crossing-free or entirely straight. Fit remains an explicit overview action.
 
+Cross-frame source connections use consistent side attachments in frame order: right side of SQ to left side of TA, and right side of TA to left side of GS (also right SQ to left GS for direct links). Reverse meanings reuse those attachments with the saved arrow direction. Clear straight paths remain straight; obstacle detours retain the same attachment sides. This applies in Create, source browsing and outer comparison/Argument views. Within-frame parent–child routing is unchanged.
+
 ## Focus selection
 
 Use **View options → Focus selection** to choose first-tier topics, grouped by map and frame. **Apply focus** keeps those topics, descendants and internal connections prominent. Other nodes and connections fade, including links with an endpoint outside the selection. Frame headings remain readable. The checkbox chooser keeps exactly the branches selected by the user.

@@ -58,7 +58,18 @@ try{
   await page.goto(origin+'/#map='+aMap.id);await page.locator('#all').click();
   const editor=page.locator('#world'),editorOptions=page.locator('.map-view-options');
   const settle=()=>page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+  const checkAttachments=async(host,own)=>{await settle();const failures=await host.evaluate((host,own)=>{
+    const failures=[];
+    for(const [from,to]of [[own['Low union density'],own['Housing action']],[own['Housing action'],own['Housing goal']]]){
+      const card=id=>[...host.querySelectorAll('.node')].find(n=>(n.dataset.id||n.dataset.nodeId)===id),a=card(from),b=card(to);
+      const path=[...host.querySelectorAll('.source-connection-path')].find(p=>p.dataset.nodePair?.includes(from)&&p.dataset.nodePair?.includes(to));
+      if(!path?.getAttribute('d')){failures.push('Missing cross-frame path');continue;}
+      const start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength()),am=new DOMMatrix(a.style.transform),bm=new DOMMatrix(b.style.transform);
+      if(Math.abs(start.x-am.e-a.offsetWidth)>.1||Math.abs(end.x-bm.e)>.1)failures.push('Cross-frame path must leave the right edge and enter the left edge');
+    }return failures;
+  },own);assert.deepEqual(failures,[]);};
   await settle();
+  await checkAttachments(editor,ids.Alice);
   const angles=()=>editor.locator('.node').evaluateAll((cards,ids)=>{const point=id=>{const el=cards.find(c=>c.dataset.id===id),m=new DOMMatrix(el.style.transform);return {x:m.e,y:m.f};};return [['status',ids['Low union density']],['action',ids['Housing action']],['goal',ids['Housing goal']]].map(([root,id])=>{const a=point(root),b=point(id);return Math.atan2(b.y-a.y,b.x-a.x);});},ids.Alice);
   let aligned=await angles();assert(Math.abs(aligned[0]-aligned[1])<.0001,JSON.stringify(aligned));
   await enter(editor.locator('[data-id="'+ids.Alice['Low union density']+'"] .node-main'));await page.getByRole('button',{name:'Inspect details',exact:true}).click();
@@ -88,10 +99,12 @@ try{
   const focusedGeometry=await geometry(editor);await reset.click();assert.deepEqual(await geometry(editor),focusedGeometry);assert.equal(await editor.locator('.topic-faded').count(),0);assert(!(await reset.isVisible()));
   await page.goto(origin+'/#source='+bMap.id);await page.locator('#reference-all').click();
   const source=page.locator('#reference-canvas'),sourceOptions=page.locator('.topic-source-options').filter({visible:true});
+  await checkAttachments(source,ids.Bob);
   await sourceOptions.locator('summary').click();await sourceOptions.getByRole('button',{name:'Focus selection',exact:true}).click();await dialog.getByRole('checkbox',{name:'Low union density',exact:true}).check();await dialog.getByRole('button',{name:'Apply focus'}).click();
   assert(await source.locator('.node.topic-faded').count()>0,'Read-only source browsing supports focus');assert.equal(await source.locator('.node[data-node-id="'+ids.Bob.Evidence+'"].topic-faded').count(),0);
   await page.goto(origin+'/#comparison='+thread.id);const canvas=page.locator('#compare-canvas');await canvas.locator('.node').first().waitFor();
   const opts=page.locator('.comparison-view-options');await opts.locator(':scope>summary').click();for(const side of ['a','b'])await page.locator('#compare-all-'+side).click();
+  await checkAttachments(canvas,ids.Alice);await checkAttachments(canvas,ids.Bob);
   const combined=await geometry(canvas);await opts.getByRole('button',{name:'Focus selection',exact:true}).click();
   await dialog.getByRole('checkbox',{name:'Low union density',exact:true}).first().check();await dialog.getByRole('checkbox',{name:'Housing action',exact:true}).first().check();await dialog.getByRole('button',{name:'Apply focus'}).click();
   assert.deepEqual(await geometry(canvas),combined);assert(await canvas.locator('.node[data-side="b"].topic-faded').count()>0,'Other map is not implicitly selected');
