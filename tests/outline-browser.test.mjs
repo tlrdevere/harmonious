@@ -76,6 +76,7 @@ try{
   await choose(phone,'canvas');await phone.setViewportSize({width:1440,height:1000});await phone.reload();await phone.locator('#editor-main').waitFor();assert.equal(await body(phone).getAttribute('data-presentation'),'canvas','An explicit Canvas choice wins over later device sizing.');
 
   // One existing form survives a presentation switch; only Save writes it.
+  const branchToggle=mapCard(a,at.nodeId).locator('[data-outline-action="children"]');await branchToggle.focus();await branchToggle.press('Enter');assert(await branchToggle.evaluate(el=>el===document.activeElement),'Keyboard focus follows the same branch control after expansion.');await branchToggle.press('Enter');assert(await branchToggle.evaluate(el=>el===document.activeElement),'Keyboard focus survives collapsing the branch.');
   await openNode(a,at.nodeId);await a.locator('#outline-map-detail').getByRole('button',{name:'Edit',exact:true}).click();
   await a.locator('#title').fill('Alice edited from Outline');await a.locator('#confidence').fill('100');await a.locator('#title').focus();await a.locator('#title').evaluate(el=>el.setSelectionRange(6,12));
   const draftWrites=writes.length;await choose(a,'canvas');assert.equal(await a.locator('#title').inputValue(),'Alice edited from Outline');

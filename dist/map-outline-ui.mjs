@@ -32,7 +32,7 @@ export class MapOutlineUI{
   if(this.key!==key){this.key=key;this.state=this.sessions.get(key)||{expanded:new Set(['status','action','goal']),query:'',branch:null,limit:120};this.sessions.set(key,this.state);this.search.value=this.state.query;this.signature=null;this.lastSelected=null;}
   const signature=JSON.stringify([map,this.c.workspace.participants,this.c.workspace.facilitationHistory,selected,topic?.active,[...topic?.members||[]],this.state.query,this.state.branch,[...this.state.expanded],this.state.limit]);
   if(!force&&signature===this.signature)return;this.signature=signature;
-  const active=document.activeElement,focusId=active?.closest('[data-outline-node]')?.dataset.outlineNode,focusLabel=active?.textContent;
+  const active=document.activeElement,focusId=active?.closest('[data-outline-node]')?.dataset.outlineNode,focusLabel=active?.textContent,focusAction=active?.dataset.outlineAction;
   const projection=this.projection=outlineMap(map);this.list.replaceChildren();
   if(!projection.available){this.status.textContent='This map is unavailable.';this.detailHost.hidden=true;return;}this.detailHost.hidden=false;
   const rows=projection.rows,byId=projection.byId,chosen=byId.get(selected),query=this.state.query.trim().toLocaleLowerCase();
@@ -71,13 +71,13 @@ export class MapOutlineUI{
    const badge=confidenceBadge(n,owner,this.kind==='map'&&this.c.canEditMap(map)?()=>this.open(n.id,'confidence'):null);if(badge)card.append(badge);
    const actions=mapOutlineEl('div','','outline-actions');actions.append(mapOutlineButton('Open node',()=>this.open(n.id)));
    if(this.kind==='map'&&this.c.canEditMap(map))actions.append(mapOutlineButton(n.parent===null?'Edit frame details':'Edit',()=>this.open(n.id,'edit')),mapOutlineButton('Add child node',()=>this.open(n.id,'add')));
-   if(row.children.length){const expanded=this.state.expanded.has(n.id),toggle=mapOutlineButton(`${expanded?'Collapse':'Expand'} children (${row.children.length})`,()=>{expanded?this.state.expanded.delete(n.id):this.state.expanded.add(n.id);this.render(true);});toggle.setAttribute('aria-expanded',String(expanded));actions.append(toggle,mapOutlineButton('Open this branch',()=>{this.state.branch=n.id;this.state.expanded.add(n.id);this.render(true);}));}
+   if(row.children.length){const expanded=this.state.expanded.has(n.id),toggle=mapOutlineButton(`${expanded?'Collapse':'Expand'} children (${row.children.length})`,()=>{expanded?this.state.expanded.delete(n.id):this.state.expanded.add(n.id);this.render(true);});toggle.dataset.outlineAction='children';toggle.setAttribute('aria-expanded',String(expanded));actions.append(toggle,mapOutlineButton('Open this branch',()=>{this.state.branch=n.id;this.state.expanded.add(n.id);this.render(true);}));}
    card.append(actions);this.list.append(card);
   }
   if(visible.length>limit)this.list.append(mapOutlineButton(`Show more nodes (${visible.length-limit} remaining)`,()=>{this.state.limit=limit+120;this.render(true);}));
   if(!visible.length)this.list.append(mapOutlineEl('p','No nodes match this selection.'));
   if(this.kind!=='map')this.renderConnections(map);
-  if(focusId){const card=[...this.list.querySelectorAll('[data-outline-node]')].find(e=>e.dataset.outlineNode===focusId);[...card?.querySelectorAll('button')||[]].find(b=>b.textContent===focusLabel)?.focus({preventScroll:true});}
+  if(focusId){const card=[...this.list.querySelectorAll('[data-outline-node]')].find(e=>e.dataset.outlineNode===focusId);[...card?.querySelectorAll('button')||[]].find(b=>focusAction?b.dataset.outlineAction===focusAction:b.textContent===focusLabel)?.focus({preventScroll:true});}
  }
  renderConnections(map){
   const connections=outlineConnections(map);if(!connections.length)return;
