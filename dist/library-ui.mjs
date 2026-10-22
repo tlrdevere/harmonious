@@ -94,11 +94,11 @@ export class LibraryUI{
     }));host.append(card);}
     if(!maps.length)host.append(libEl('p',this.query?'No shared maps match. Try another map name or person.':'No other shared maps are available yet.','library-empty'));
   }
-  openMap(id,nodeId=null){
+  openMap(id,nodeId=null,{edit=true}={}){
     const map=this.c.workspace.maps.find(m=>m.id===id&&!m.unavailable);if(!map){this.open('maps');this.c.message('This map is unavailable.');return false;}
     if(!this.c.canEditMap(map))return this.openSource(id,nodeId);
     if(!this.c.editor.beforeLeave()||!this.c.showMode('individual'))return false;
-    this.c.captureActive();this.c.loadMap(id);this.c.showMode('individual');this.c.populateMaps();this.c.updateNavigation();if(nodeId&&map.nodes.some(n=>n.id===nodeId))this.c.editor.focusNode(nodeId);this.route({map:id,...(nodeId?{node:nodeId}:{})});return true;
+    this.c.captureActive();this.c.loadMap(id);this.c.showMode('individual');this.c.populateMaps();this.c.updateNavigation();if(nodeId&&map.nodes.some(n=>n.id===nodeId)){if(edit)this.c.editor.focusNode(nodeId);else this.c.editor.outlineAction(nodeId,'select');}this.route({map:id,...(nodeId?{node:nodeId}:{})});return true;
   }
   openSource(id,nodeId=null){if(!this.c.showMode('discover'))return false;this.c.participation.openMap(id,nodeId);this.route({source:id,...(nodeId?{node:nodeId}:{})});return true;}
   createComparison(mapId=null,nodeId=null,otherMapId=null){
@@ -132,7 +132,8 @@ export class LibraryUI{
   openRoute(){
     const route=new URLSearchParams(location.hash.slice(1));
     if(route.has('comparison'))return false;
-    if(route.has('map'))this.openMap(route.get('map'),route.get('node'));
+    // A saved selection restores reading; explicit editing commands still open the form.
+    if(route.has('map'))this.openMap(route.get('map'),route.get('node'),{edit:false});
     else if(route.has('source')){const id=route.get('source');if(this.c.workspace.maps.some(m=>m.id===id&&!m.unavailable))this.openSource(id,route.get('node'));else{this.open('comparisons');this.c.message('This source map is unavailable.');}}
     else if(route.has('pod')){const id=route.get('pod');if(this.c.workspace.maps.some(m=>m.id===id&&!m.unavailable)){this.c.participation.podMapId=id;this.c.showMode('pods');}else this.open('pods');}
     else this.open(['maps','comparisons','pods','definitions'].includes(route.get('library'))?route.get('library'):'maps',{home:!route.has('library')||route.get('home')==='1'});
