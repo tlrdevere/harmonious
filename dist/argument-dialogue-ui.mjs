@@ -1,3 +1,4 @@
+import {presentationRoute} from './presentation-route.mjs';
 import {frameOf} from './model.mjs';
 import {comparisonNodeKey} from './comparison-layout.mjs';
 import {ComparisonCanvas} from './compare-canvas.mjs';
@@ -21,7 +22,7 @@ export class ArgumentDialogueUI{
   this.canvas=new DialogueCanvas(this.canvasHost,{onBlankClick:()=>d.host.hidden||d.close({focus:false}),afterCamera:()=>this.positionPopover()});
  }
  key(target=this.target){return JSON.stringify([this.d.actor(),this.d.thread()?.id,target?.mapId,target?.nodeId]);}
- url(entry=null){const p=new URLSearchParams({comparison:this.d.thread().id,view:'dialogue',map:this.target.mapId,node:this.target.nodeId});if(entry&&entry!=='claim')p.set('entry',entry);return location.pathname+location.search+'#'+p;}
+ url(entry=null){const p=presentationRoute({comparison:this.d.thread().id,view:'dialogue',map:this.target.mapId,node:this.target.nodeId});if(entry&&entry!=='claim')p.set('entry',entry);return location.pathname+location.search+'#'+p;}
  async open(target,{entry=null,route=true}={}){
   const requestedProposal=entry&&this.d.standstills?.proposal(entry);if(requestedProposal){if(JSON.stringify(requestedProposal.target)!==JSON.stringify(target)){this.c.message('This standstill belongs to another source.');return false;}entry=requestedProposal.standstill.anchor.entryId;}
   const source=interactionSource(this.c.workspace,target);let thread=this.d.thread();
@@ -43,7 +44,7 @@ export class ArgumentDialogueUI{
  close({route=true}={}){
   if(!this.active)return true;if(!this.d.canLeave())return false;
   const target=this.target;this.detach();this.c.canvas.camera={...this.comparisonCamera};this.c.canvas.drawCamera();
-  if(route)history.replaceState(null,'',location.pathname+location.search+'#'+new URLSearchParams({comparison:this.d.thread()?.id||'',view:'argument'}));
+  if(route)history.replaceState(null,'',location.pathname+location.search+'#'+presentationRoute({comparison:this.d.thread()?.id||'',view:'argument'}));
   this.d.selectTarget(target);const side=['a','b'].find(side=>this.c.sides[side].mapId===target.mapId);this.d.returnFocus=this.c.canvas.cards.get(comparisonNodeKey(side,target.nodeId))?.querySelector('.node-main');this.d.host.querySelector('header button')?.focus({preventScroll:true});return true;
  }
  root(r){return r.action==='dispute'?r:this.c.workspace.discussions.find(e=>e.id===r.target.entryId);}
@@ -104,6 +105,7 @@ export class ArgumentDialogueUI{
   if(focusId&&this.cards.has(focusId)){[...this.cards.get(focusId).querySelectorAll('button')].find(b=>b.textContent===focusLabel)?.focus({preventScroll:true});}
  }
  positionPopover(){
+  if(this.c.presentation?.outline){this.c.presentation.mountPanels();this.c.presentation.schedule();return;}
   if(!this.active||this.d.host.hidden)return;
   const canvas=this.canvas,p=canvas.layout?.positions.get(this.selected),w=Math.min(350,canvas.surface.clientWidth-24);this.d.host.style.width=w+'px';this.d.host.style.maxHeight=Math.max(100,canvas.surface.clientHeight-28)+'px';
   let x=p?canvas.camera.x+(p.x+p.w)*canvas.camera.z+12:12,y=p?canvas.camera.y+p.y*canvas.camera.z:12;

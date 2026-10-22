@@ -1,3 +1,5 @@
+import {presentationRoute} from './presentation-route.mjs';
+import {graphEdges} from './model.mjs';
 import {FacilitationPresentation} from './facilitation-presentation.mjs';
 import {initialWorkspace,validateWorkspace,startComparisonThread,comparisonHealth,comparisonJudgments,comparisonJudgmentFor,comparisonConsensus,comparisonPairKey,comparisonProposalVersions,comparisonElicitation,comparisonResponseSet,QUESTION_STATUSES,ANSWER_STATUSES} from './workspace.mjs';
 import {stableJSON} from './account-model.mjs';
@@ -131,25 +133,36 @@ export class WorkspaceController{
     for(const record of [...records].reverse()){const health=comparisonHealth(this.workspace,record),button=document.createElement('button');button.type='button';button.className=`comparison-record${this.editingRecord===record.id?' active':''}`;const a=this.workspace.maps.find(map=>map.id===record.aMapId)?.nodes.find(node=>node.id===record.aNodeId)?.title||record.aSnapshot?.node?.title||'No response',b=this.workspace.maps.find(map=>map.id===record.bMapId)?.nodes.find(node=>node.id===record.bNodeId)?.title||record.bSnapshot?.node?.title||'No response';const people=document.createElement('span');people.className='record-people';people.textContent=`${a} / ${b}`;const consensus=comparisonConsensus(this.workspace,record),question=document.createElement('strong');question.textContent=record.question;const status=document.createElement('span');status.className=`record-status consensus-${consensus.state}`;status.textContent=QUESTION_STATUSES[record.questionStatus]+(record.answerStatus?` · ${ANSWER_STATUSES[record.answerStatus]}`:'')+` · ${consensus.label}`;button.append(people,question,status);if(health.needsReview){const review=document.createElement('span');review.className='record-review';review.textContent=health.missing.length?'Source deleted · Needs review':'Source changed · Needs review';button.append(review);}button.onclick=()=>this.openRecord(record.id);host.append(button);}
   }
   openComparisonPair(key){
-    if(!this.canLeaveComparison()||!this.argument.canLeave())return;const record=this.workspace.comparisonThreads?.find(item=>comparisonPairKey(item)===key);if(!record)return;this.argument.reset();this.activeComparisonPair=key;this.clearComparison();this.discussion?.setRecordsOpen(false,{focus:false});this.sides={a:{mapId:record.aMapId,nodeId:null},b:{mapId:record.bMapId,nodeId:null}};this.populateMaps();for(const side of ['a','b'])ui(`compare-frame-${side}`).value='all';this.renderComparison(true);this.setComparisonRoute(record.id);
+    if(!this.canLeaveComparison()||!this.argument.canLeave())return false;const record=this.workspace.comparisonThreads?.find(item=>comparisonPairKey(item)===key);if(!record)return false;this.argument.reset();this.activeComparisonPair=key;this.clearComparison();if(this.discussion)this.discussion.target=null;this.discussion?.setRecordsOpen(false,{focus:false});this.sides={a:{mapId:record.aMapId,nodeId:null},b:{mapId:record.bMapId,nodeId:null}};this.populateMaps();for(const side of ['a','b'])ui(`compare-frame-${side}`).value='all';this.renderComparison(true);this.setComparisonRoute(record.id);return true;
   }
   setComparisonRoute(id=null,proposalId=null){
-    const route=new URLSearchParams();if(id)route.set('comparison',id);if(proposalId)route.set('proposal',proposalId);
-    history.replaceState(null,'',`${location.pathname}${location.search}${id?'#'+route:''}`);
+    if(this.restoringComparisonRoute)return;
+    const route=presentationRoute();if(id)route.set('comparison',id);if(proposalId)route.set('proposal',proposalId);else if(id&&this.discussion)route.set('view',this.discussion.mode());
+    history.replaceState(null,'',`${location.pathname}${location.search}${route.size?'#'+route:''}`);
   }
   openComparisonRoute(){
     if(!this.ready)return;
+    const route=new URLSearchParams(location.hash.slice(1));this.restoringComparisonRoute=true;
+    try{
     const dialogue=this.discussion?.dialogue;if(dialogue?.active&&!dialogue.close({route:false})){history.replaceState(null,'',dialogue.url(dialogue.selected));return;}
     if(this.library?.openRoute())return;
-    const route=new URLSearchParams(location.hash.slice(1)),id=route.get('comparison');if(!id)return;
+    const id=route.get('comparison');if(!id)return;
     const thread=this.workspace.comparisonThreads?.find(item=>item.id===id),legacy=this.workspace.comparisons.find(item=>item.id===id);
     if(!thread&&!legacy){this.library?.open('comparisons');this.message('This comparison is unavailable to this account. Its source maps may no longer be shared.');return;}
     if(!this.showMode('compare'))return;
     const proposal=this.workspace.comparisons.find(item=>item.id===route.get('proposal')&&item.comparisonId===id)||(!thread?legacy:null);
-    if(proposal)this.openRecord(proposal.id);else this.openComparisonPair(comparisonPairKey(thread));
+    if(proposal)this.openRecord(proposal.id);else if(this.openComparisonPair(comparisonPairKey(thread))===false)return;
     if(route.get('view')==='dialogue'){this.discussion.dialogue.open({type:'node',mapId:route.get('map'),nodeId:route.get('node')},{entry:route.get('entry'),route:false});}
-    else if(!proposal&&route.get('view')==='argument')this.discussion.reasoning.setFocus('argument');
+    else if(!proposal){
+      const mode=route.get('view');if(['compare','inquiry','argument'].includes(mode))this.discussion.reasoning.setFocus(mode);
+      const entry=route.get('entry'),inference=route.get('inference'),map=this.workspace.maps.find(m=>m.id===route.get('map')&&!m.unavailable&&[thread.aMapId,thread.bMapId].includes(m.id));
+      if(entry&&this.discussion.allEntries().some(r=>r.id===entry))this.discussion.revealInteraction(entry);
+      else if(inference&&this.discussion.allEntries().some(r=>r.id===inference))this.discussion.reasoning.openInference(inference);
+      else if(map&&route.has('node')&&map.nodes.some(n=>n.id===route.get('node'))){const side=['a','b'].find(s=>this.sides[s].mapId===map.id);this.selectSource(side,route.get('node'),true);}
+      else if(map&&route.has('edge')&&graphEdges(map.nodes,map.relations).some(edge=>edge.id===route.get('edge')))this.discussion.selectTarget({type:'edge',mapId:map.id,edgeId:route.get('edge')});
+    }
     if(proposal&&route.get('view')==='argument')this.argument.open({proposalId:proposal.id,revision:Number(route.get('revision'))});
+    }finally{this.restoringComparisonRoute=false;this.discussion?.syncRoute?.();}
   }
   async ensureComparison(){
     const a=this.sides.a.mapId,b=this.sides.b.mapId;
@@ -252,7 +265,7 @@ export class WorkspaceController{
   bind(){
     ui('elicitation-response').addEventListener('input',()=>{ui('divergence-confirmation').checked=false;});
     ui('shared-question').addEventListener('input',()=>this.renderElicitation(this.workspace.comparisons.find(record=>record.id===this.editingRecord)));
-    ui('start-comparison').onclick=()=>this.startComparison();window.addEventListener('hashchange',()=>this.openComparisonRoute());
+    ui('start-comparison').onclick=()=>this.startComparison();window.addEventListener('hashchange',event=>{const old=new URLSearchParams(new URL(event.oldURL).hash.slice(1)),next=new URLSearchParams(location.hash.slice(1));this.presentation?.routeChanged();old.delete('layout');next.delete('layout');if(old.toString()!==next.toString())this.openComparisonRoute();});
     ui('individual-mode').onclick=()=>this.activeMapId?this.library.openMap(this.activeMapId):this.library.open('maps');ui('comparison-mode').onclick=()=>this.library.open('comparisons');ui('discover-mode').onclick=()=>this.library.open(undefined,{home:true});ui('pods-mode').onclick=()=>this.library.open('pods');ui('explore-current').onclick=()=>this.library.open('maps');
     ui('map-select').onchange=()=>{const id=ui('map-select').value;if(id)this.library.openMap(id);else this.library.open('maps');};
     ui('new-map').onclick=()=>this.showMapDialog();ui('map-settings').onclick=()=>this.showMapDialog(true);ui('close-map-dialog').onclick=()=>ui('map-dialog').close();

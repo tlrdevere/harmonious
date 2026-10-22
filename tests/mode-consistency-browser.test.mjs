@@ -169,12 +169,12 @@ try{
   for(const id of ['compare-map-a','compare-map-b','start-comparison']){const box=await a.locator('#'+id).boundingBox();assert(box.x>=0&&box.x+box.width<=390,`${id} fits a narrow screen`);}
   await a.locator('.comparison-view-options>summary').click();await a.locator('#comparison-identity-a').click();assert(await setup.isVisible(),'Closing View options leaves source choices visible');
   await a.screenshot({path:'build/design-review/comparison-map-setup-mobile.png',fullPage:true});
-  await start.click();await a.waitForURL('**/#comparison='+thread.id);assert.equal(await setup.isVisible(),false);assert(await a.getByRole('button',{name:'Change maps',exact:true}).isVisible());
+  await start.click();await a.waitForURL(url=>new URLSearchParams(url.hash.slice(1)).get('comparison')===thread.id);assert.equal(await setup.isVisible(),false);assert(await a.getByRole('button',{name:'Change maps',exact:true}).isVisible());
   assert.equal((await view(store,alice)).workspace.comparisonThreads.length,pairCount,'Opening the existing pair does not create another comparison');
   await a.reload();await a.getByRole('button',{name:'Change maps',exact:true}).click();assert(await setup.isVisible());assert.deepEqual((await Promise.all(['a','b'].map(side=>a.locator('#compare-map-'+side).inputValue()))).sort(),[aMap.id,bMap.id].sort());
   await a.locator('#comparison-library').click();await a.getByRole('button',{name:'Find a shared map',exact:true}).click();await a.getByRole('button',{name:'Compare with my map',exact:true}).click();
   assert.equal(await a.locator('#compare-map-a').inputValue(),'');assert.equal(await a.locator('#compare-map-b').inputValue(),bMap.id);assert(await start.isDisabled(),'A preselected shared source still requires choosing an owned map');
-  await a.locator('#compare-map-a').selectOption(aMap.id);await start.click();await a.waitForURL('**/#comparison='+thread.id);
+  await a.locator('#compare-map-a').selectOption(aMap.id);await start.click();await a.waitForURL(url=>new URLSearchParams(url.hash.slice(1)).get('comparison')===thread.id);
   assert.deepEqual((await view(store,alice)).workspace.maps.filter(m=>[aMap.id,bMap.id].includes(m.id)).map(m=>m.visibility),['shared','shared'],'Choosing maps never changes their sharing');
   await a.setViewportSize({width:1440,height:1000});
   await load(a);await load(b);

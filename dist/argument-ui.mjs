@@ -1,3 +1,4 @@
+import {presentationRoute} from './presentation-route.mjs';
 import {ArgumentCanvas} from './argument-canvas.mjs';
 import {ARGUMENT_KINDS,ARGUMENT_RELATIONS,argumentGraphMatches,argumentNeedsReview,argumentNodeRef,saveArgumentNode,saveArgumentEdge} from './argument.mjs';
 import {comparisonProposalVersions,comparisonParticipants,validateWorkspace} from './workspace.mjs';
@@ -49,7 +50,7 @@ export class ArgumentUI{
     this.c.library?.context();
     if(this.c.comparisonDirty)this.c.message('Argument uses the last recorded proposal. Your unrecorded Compare draft is still there.');
   }
-  writeRoute(){const proposal=this.proposal();if(!proposal)return;const route=new URLSearchParams({comparison:proposal.comparisonId,proposal:proposal.id,view:'argument',revision:String(this.revision)});history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);}
+  writeRoute(){const proposal=this.proposal();if(!proposal)return;const route=presentationRoute({comparison:proposal.comparisonId,proposal:proposal.id,view:'argument',revision:String(this.revision)});history.replaceState(null,'',`${location.pathname}${location.search}#${route}`);}
   render(){
     const proposal=this.proposal();if(!proposal){this.clearDraft();this.undo=[];this.canvas.context=null;this.canvas.world.replaceChildren();argUI('argument-records').replaceChildren();argUI('argument-history').replaceChildren();argUI('argument-question').textContent='Unavailable comparison';argUI('argument-source-link').hidden=argUI('argument-withdraw').hidden=true;argUI('argument-state').textContent='This proposal is no longer available to this account.';argUI('argument-node-fields').disabled=argUI('argument-edge-fields').disabled=true;return;}
     const versions=comparisonProposalVersions(proposal),version=versions.find(v=>v.revision===this.revision)||versions.at(-1);this.revision=version.revision;

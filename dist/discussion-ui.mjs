@@ -1,4 +1,5 @@
 import {philosophyTypeLabel} from './definitions.mjs';
+import {presentationRoute} from './presentation-route.mjs';
 import {topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {ArgumentDialogueUI} from './argument-dialogue-ui.mjs';
 import {StandstillUI} from './standstill-ui.mjs';
@@ -98,6 +99,16 @@ export class DiscussionUI{
   allEntries(){return (this.c.workspace.discussions||[]).filter(r=>r.comparisonId===this.thread()?.id);}
   name(id){return this.c.workspace.participants.find(p=>p.id===id)?.name||'Participant';}
   mode(){return this.reasoning?.mode||'compare';}
+  syncRoute(){
+    const thread=this.thread();
+    if(!globalThis.location||!this.c.ready||this.c.mode!=='compare'||this.c.restoringComparisonRoute||this.dialogue?.active||this.c.editingRecord||!thread)return;
+    const route=presentationRoute({comparison:thread.id,view:this.mode()}),target=this.target;
+    if(this.viewId&&this.allEntries().some(r=>r.id===this.viewId))route.set('entry',this.viewId);
+    else if(target?.type==='node'||target?.type==='edge'){route.set('map',target.mapId);route.set(target.type==='node'?'node':'edge',target.nodeId||target.edgeId);}
+    else if(target?.type==='entry')route.set('entry',target.entryId);
+    else if(target?.type==='inference')route.set('inference',target.entryId);
+    const url=location.pathname+location.search+'#'+route;if(url!==location.pathname+location.search+location.hash)history.replaceState(null,'',url);
+  }
   entryMode(record){
     return entryMode(this.c.workspace.discussions,record);
   }
@@ -504,6 +515,8 @@ export class DiscussionUI{
     this.counterparts.position();this.reasoning.position();this.positionPopover();this.agreementView.position();
   }
   positionPopover(){
+    this.syncRoute?.();
+    if(this.c.presentation?.outline){this.c.presentation.mountPanels();this.c.presentation.schedule();return;}
     if(this.dialogue?.active){this.dialogue.positionPopover();return;}
     if(this.host.hidden)return;const {surface,camera}=this.canvas,p=this.point(this.target),width=Math.min(350,surface.clientWidth-24);
     this.host.style.width=width+'px';this.host.style.maxHeight=Math.max(150,surface.clientHeight-32)+'px';

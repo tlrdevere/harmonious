@@ -1,0 +1,61 @@
+.presentation-switch{display:flex;justify-content:flex-end;gap:4px;padding:8px 20px;background:#f6f9fa;border-bottom:1px solid #d9e3eb}
+.presentation-switch button{min-height:40px;padding:8px 20px;border-radius:8px}
+.presentation-switch .active{background:#173f49;color:white;border-color:#173f49}
+.outline-workspace{min-width:0;width:100%;max-width:1200px;margin:0 auto;padding:16px;box-sizing:border-box;color:#203449}
+.outline-toolbar,.outline-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.outline-toolbar input{flex:1;min-width:160px;max-width:500px}
+.outline-list{display:grid;gap:12px}
+.outline-card{position:relative;min-width:0;border:1px solid #cfdae6;border-left:4px solid #477aa0;border-radius:12px;background:white;padding:16px;margin-left:calc(var(--outline-depth,0)*12px);overflow-wrap:anywhere}
+.outline-card[data-frame=status]{border-top:3px solid #edaaa6}.outline-card[data-frame=action]{border-top:3px solid #a3c6e9}.outline-card[data-frame=goal]{border-top:3px solid #a6cba1}
+.outline-card.selected,.outline-card[aria-current=true]{outline:2px solid #2d637d;outline-offset:2px}
+.outline-card h2,.outline-card h3,.outline-card h4{margin:0 0 8px;font-size:1.15rem;line-height:1.4}
+.outline-card p{line-height:1.6;margin:8px 0}.outline-card small{display:block;margin:8px 0}
+.outline-breadcrumb{color:#5b7084;font-size:.85rem;overflow-wrap:anywhere}
+.outline-wording,.outline-full-text{white-space:pre-wrap}
+.outline-card .outline-actions{margin-top:12px}
+.outline-context{background:#f0f3f5;border-style:dashed}
+.outline-detail:not(:has(> :not([hidden]))){display:none}
+.outline-detail{min-width:0;margin:18px 0;scroll-margin-top:12px}
+body[data-presentation=outline]{height:auto;min-height:100vh;overflow:auto}
+body[data-presentation=outline] #editor-main{display:block;height:auto;min-height:0;overflow:visible}
+body[data-presentation=outline] #editor-main>.workspace{display:block;height:auto;overflow:visible}
+body[data-presentation=outline] :is(#viewport,#compare-canvas,#reference-canvas,#pod-canvas,.argument-dialogue,.comparison-canvas-footer,#editor-main>.workspace>footer,.comparison-full-toggle){display:none!important}
+body[data-presentation=outline] #editor-main>.workspace>.toolbar>.toolbar-group,body[data-presentation=outline] #count{display:none}
+body[data-presentation=outline] :is(.comparison-layout,.comparison-stage,.participation-workspace,.reference-stage,.discovery-layout,.pod-layout){height:auto;min-height:0;max-height:none;overflow:visible}
+body[data-presentation=outline] .comparison-layout{display:block}
+body[data-presentation=outline] :is(.discovery-layout,.pod-layout){grid-template-columns:minmax(190px,260px) minmax(0,1fr)}
+body[data-presentation=outline] .reference-toolbar>div:first-child{display:none}
+body[data-presentation=outline] :is(.node-face-editor,.on-map-actions,.map-connection-menu,.discussion-popover,.interaction-search,#inspector,.reference-inspector){position:relative!important;inset:auto!important;transform:none!important;width:100%!important;min-width:0;max-width:none;max-height:none!important;height:auto;overflow:visible;box-sizing:border-box;touch-action:auto;user-select:text;z-index:auto;margin:12px 0;box-shadow:none}
+body[data-presentation=outline] .comparison-outline-detail :is(.discussion-popover,.interaction-search){border:2px solid #b4c9d5;border-radius:12px;padding:16px;background:white}
+body[data-presentation=outline] :is(.node-face-editor,.on-map-actions,.map-connection-menu,#inspector){border:2px solid #b4c9d5;border-radius:12px;padding:16px;background:#fff}
+body[data-presentation=outline] :is(.reasoning-tools){position:static;max-width:100%;flex-wrap:wrap}
+body[data-presentation=outline] .reasoning-fit{display:none}
+body[data-presentation=outline] .comparison-panel{position:static;max-height:none;width:auto;margin:16px}
+body[data-presentation=outline] .reference-inspector{padding:16px;border:1px solid #cfdae6;border-radius:12px}
+body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) :is(input,select,textarea){max-width:100%;box-sizing:border-box}
+body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) button{white-space:normal;overflow-wrap:anywhere;max-width:100%;min-height:40px}
+body[data-presentation=outline] .outline-node>.facilitator-node-badge{position:static;display:block;width:auto;margin-top:12px}
+.outline-workspace[hidden],.presentation-switch[hidden],body[data-presentation=outline] [hidden]{display:none!important}
+@media(max-width:700px){
+ body[data-presentation=outline] :is(.topbar,.workspace-nav,.library-header,.workspace-header,.comparison-context,.participation-heading,.reference-heading,.comparison-commandbar){flex-wrap:wrap;min-width:0}
+ body[data-presentation=outline] .topbar{gap:10px;padding:12px;align-items:center}
+ body[data-presentation=outline] .brand{font-size:22px;min-width:0}
+ body[data-presentation=outline] .brand-logo{width:28px;height:28px}
+ body[data-presentation=outline] .topbar .mode-tabs{width:100%;flex-wrap:wrap;gap:4px}
+ body[data-presentation=outline] .mode-tabs button{padding:8px;min-height:44px;white-space:normal}
+ body[data-presentation=outline] :is(.workspace-nav,.map-switcher,.workspace-files,.workspace-header,.toolbar,.comparison-context,.comparison-commandbar,.comparison-map-setup,.library-toolbar){max-width:100%;box-sizing:border-box;flex-wrap:wrap;padding:10px;gap:8px}
+ body[data-presentation=outline] .map-switcher{width:100%}
+ body[data-presentation=outline] .map-switcher select{width:auto;flex:1;min-width:100px;max-width:100%}
+ body[data-presentation=outline] :is(#editor-main,#comparison-workspace,#discover-workspace,#pods-workspace,#library-workspace){padding:0;width:auto;min-width:0}
+ body[data-presentation=outline] :is(.discovery-layout,.pod-layout,.comparison-sources,.comparison-bottom,.comparison-map-setup,.library-grid){display:block}
+ body[data-presentation=outline] :is(.discovery-catalog,.pod-controls){max-height:none;max-width:100%;padding:12px}
+ body[data-presentation=outline] :is(.library-content,.library-shell,.library-tabs,.comparison-map-tools,.context-heading,.context-maps){min-width:0;max-width:100%;flex-wrap:wrap}
+ body[data-presentation=outline] .outline-workspace{padding:10px}
+ body[data-presentation=outline] .outline-card{margin-left:0;padding:12px}
+ body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) :is(button,input,select,summary){min-height:44px;font-size:16px}
+ body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) textarea{font-size:16px}
+ body[data-presentation=outline] .presentation-switch{padding:8px 12px}
+ body[data-presentation=outline] :is(.definition-dialog,.adoption-dialog,.topic-focus-dialog,dialog){max-width:calc(100vw - 20px);box-sizing:border-box;max-height:calc(100dvh - 24px);overflow:auto}
+ body[data-presentation=outline] .workspace-header h1{font-size:24px}
+ body[data-presentation=outline] .toolbar{align-items:flex-start}
+}

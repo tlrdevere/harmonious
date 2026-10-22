@@ -1,4 +1,6 @@
 import {philosophyTypeLabel} from './definitions.mjs';
+import {PresentationUI} from './presentation-ui.mjs';
+import {presentationRoute} from './presentation-route.mjs';
 import {TopicFocusUI,topicNodeKey,markTopicElement} from './topic-focus-ui.mjs';
 import {WorkspaceController} from './workspace-ui.mjs';
 import {NodeActions} from './node-actions.mjs';
@@ -198,6 +200,7 @@ function selectNode(id){
   if(workspaceController.account?.facilitator?.context&&workspaceController.workspaceDirty){workspaceController.message('Review this facilitator contribution before selecting another node.');return;}
   connectionMenu.hide();activeConnectionKey=null;
   const panelOpen=!$('inspector').hidden;selected=id;activeRelation=null;loadInspector();$('inspector').hidden=!panelOpen;nodeActions.show(nodeById(id));syncCards();draw();
+  if(workspaceController.ready&&workspaceController.mode==='individual'){const route=presentationRoute({map:workspaceController.activeMapId,node:id});history.replaceState(null,'',location.pathname+location.search+'#'+route);}
 }
 function showConfidence(id){
   if(!workspaceController.canEditMap(workspaceController.activeMap())||nodeById(id)?.kind!=='position'||nodeById(id)?.parent===null)return;
@@ -386,6 +389,9 @@ const faceEditor=new NodeFaceEditor(viewport,{
   cancel:()=>closeInspector()
 });
 const workspaceController=new WorkspaceController({
+  outlineState:()=>({selected,topicFocus,map:{...workspaceController.activeMap(),nodes:renderNodes(),relations},camera:{...camera},panels:[faceEditor.host,nodeActions.host,connectionMenu.host,$('inspector')]}),
+  restoreCamera:value=>{settle();camera={...value};oldWidth=viewport.clientWidth;oldHeight=viewport.clientHeight;draw();},
+  outlineAction:(id,action)=>{expanded=revealPath(nodes,id,expanded);update({instant:true});selectNode(id);if(selected!==id)return;if(action==='edit')openNodeInspector('edit');else if(action==='add')addChild();else if(action==='confidence')showConfidence(id);},
   getMapData:()=>({nodes,relations}),beforeLeave:allowLeave,hasDraft:()=>dirty||connectionDirty||!!childDraft,hasChildDraft:()=>!!childDraft,
   discardDraft:()=>closeInspector(true),
   updateConfidence:(id,value)=>{const n=nodeById(id);if(!n)return;n.confidence=value;if(selected===id){$('confidence').value=value===null?'':String(value);confidenceScale.sync();}syncCards();draw();},
@@ -414,4 +420,5 @@ const nodeActions=new NodeActions(viewport,{
 });
 workspaceController.library.definitions.dialog.addEventListener('close',()=>{if(selected&&!childDraft)renderNodeReading(nodeById(selected));});
 update({fit:true,instant:true});
+workspaceController.presentation=new PresentationUI(workspaceController);
 workspaceController.initialize();

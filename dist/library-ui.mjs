@@ -1,3 +1,4 @@
+import {presentationRoute} from './presentation-route.mjs';
 import {comparisonPairKey,comparisonConsensus,comparisonProposalVersions} from './workspace.mjs';
 import {DefinitionsUI} from './definitions-ui.mjs';
 import {libraryMapOrder,libraryComparisonOrder} from './library-summary.mjs';
@@ -46,7 +47,7 @@ export class LibraryUI{
   open(section=this.section,{home=false}={}){
     if(!this.c.showMode('library'))return false;this.c.message();this.section=section;this.home=home;this.browsing=false;this.query='';libUI('library-search').value='';this.render();this.route({library:section,...(home?{home:'1'}:{})});return true;
   }
-  route(values){const hash=new URLSearchParams(values);history.replaceState(null,'',`${location.pathname}${location.search}#${hash}`);}
+  route(values){const hash=presentationRoute(values);history.replaceState(null,'',`${location.pathname}${location.search}#${hash}`);}
   ownedMaps(){return this.c.workspace.maps.filter(map=>!map.unavailable&&this.c.canEditMap(map));}
   name(map){return this.c.workspace.participants.find(p=>p.id===map.ownerId)?.name||map.person||'Participant';}
   matches(text){return !this.query||text.toLowerCase().includes(this.query);}
