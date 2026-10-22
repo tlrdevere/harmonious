@@ -1,5 +1,7 @@
 # Harmonious next-work plan
 
+The [dependency maintenance pass](dependency-review.md) is **complete as of October 21, 2026**, after **68/68 local and hosted checks**. The fresh audit found 13 advisories across three development dependencies; the updated lockfile returned zero known advisories. The rebuilt application is byte-for-byte unchanged and live asset/access checks passed, so Worker 70 remains live without a deployment. The existing technology stack and user-facing behavior are unchanged. Philosophy mapping remains deferred; continue user testing.
+
 The [Philosophy bank](philosophy-bank.md) is **live in Worker 70**, after **67/67 local and hosted checks**, the database validator update, and exact live asset/access verification. Refresh, select a node → Philosophy, and create or reuse a Definition, Standard, Principle, Belief or Other idea. Test reuse across nodes, retained versions after bank edits, removing an attachment, and reader privacy using [the checklist](user-testing-checklist.md). Existing entries and uses are preserved; a separate Philosophy mapping mode remains outside this increment. Continue user testing; existing deferrals are unchanged. See [deployment status](deployment-status.md) for release evidence.
 
 **Consistent cross-frame connection sides** are **live in Worker 69**, after **66/66 local and hosted checks**. Refresh and check right SQ → left TA and right TA → left GS, including vertically offset topics. Reverse meanings preserve arrow direction, and within-frame branches retain their routing. Continue user testing using [the checklist](user-testing-checklist.md); see [deployment status](deployment-status.md) for evidence.
@@ -96,7 +98,6 @@ The owner's subsequent [code and view-consistency review](code-review-2026-09-27
 - **Participant introduction and worked example:** explicitly deferred by the owner. Optional first-session guidance, meaningful-node guidance and a worked exchange using the current interaction modes or an example from the presentation are not active work.
 - **Change-context discoverability follow-up:** explicitly deferred by the owner. The proposed review/improvement of how people recover earlier wording and the discussion behind a change is not active work. Existing histories, source snapshots and changed-source warnings remain supported.
 - Manual dragging/rearranging, the future pod model, automatic merging of source records, multiple pinned windows, arbitrary reasoning links and richer disagreement-resolution tools remain deferred. The narrow [standstill proposal and confirmation workflow](argument-standstill-plan.md) is implemented; broader verdicts and resolution remain deferred. The approved [visual agreement grouping](agreement-overview-plan.md) is a separate display change that preserves both source records.
-- The [dependency disclosure/advisory review](dependency-review.md) remains a separate deferred maintenance follow-up.
 
 ## Earlier priorities — September 22, 2026 (UTC)
 

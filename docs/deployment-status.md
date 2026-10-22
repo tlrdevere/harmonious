@@ -1,6 +1,12 @@
 # Deployment status
 
-Updated October 9, 2026 (UTC).
+Updated October 21, 2026 (America/New_York).
+
+## Development-tool maintenance — October 21, 2026
+
+The [dependency maintenance pass](dependency-review.md) is complete on source `04f600eedd8d08bc6bad8bcd26c840bf55e8b7dc`, committed and pushed to `redesign/node-interactions`. All **68 local and hosted checks passed**, including the new loader/schema-generation/deployment-dry-run check. [Hosted evidence](https://github.com/tlrdevere/harmonious/actions/runs/39705542929) completed October 21 at 9:29 PM EDT. The fresh bulk audit returned 13 advisories before and zero known advisories after the updates; only package names and versions were sent.
+
+The rebuilt Worker has the same SHA-256 as Worker 70 (`c5016920e74adbb37c2ce80f0047db54704a612ca58830bf100fec75ba21978b`), and all live client assets/access checks passed. **No new Worker deployment, runtime-setting change, production data write, or database migration was required. Worker 70 remains live.** See the review for exact versions and evidence. Local verification: `build/verification/2026-10-22T01-24-36-599Z-32236/summary.json`; hosted verification: `build/maintenance-hosted-verification-evidence.json`.
 
 ## Current release — Worker 70
 
