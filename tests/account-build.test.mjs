@@ -9,6 +9,11 @@ assert(html.includes('Overall comparisons'));assert(html.includes('comparison-ba
 assert(htmlResponse.headers.get('content-security-policy').includes("script-src 'self'"));assert.equal(htmlResponse.headers.get('x-frame-options'),'DENY');
 for(const [path,asset] of Object.entries(await clientAssets())){const response=await get(path);assert.equal(response.status,200,path);const body=await response.text();assert.equal(body,asset.body,path+' must match the current source');for(const match of body.matchAll(/from ['"]\.\/([^'"]+)['"]/g))assert(clientFiles.includes(match[1]),`${path} imports a missing module: ${match[1]}`);assert(!body.includes('sb_secret_never_in_a_response'));}
 assert.equal((await get('/api/workspace')).status,401);assert.equal((await (await get('/api/session')).json()).actor,null);assert.equal((await get('/.dev.vars')).status,404);assert.equal((await get('/.openai/hosting.json')).status,404);
+assert.equal((await get('/api/activity')).status,401);
+for(const path of ['/api/activity/open','/api/activity/read','/api/activity/mute','/api/auth/code']){
+ const response=await worker.fetch(new Request(origin+path,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}'}),env);
+ assert.equal(response.status,path==='/api/auth/code'?400:401,path);
+}
 const unconfigured=await worker.fetch(new Request(origin+'/api/session'),{});assert.equal(unconfigured.status,503);
 const source=await readFile('build/cloudflare/worker.mjs','utf8');assert(!source.includes('appgprj_'),'Independent build has no Sites identity');
 console.log('Independent Worker routing, complete module graph, account gate, private configuration, and response headers passed.');

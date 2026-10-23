@@ -1,6 +1,6 @@
 # Sign up and sign in cleanup implementation plan
 
-October 23, 2026. **Status: planned, not implemented.** The optional Canvas / Outline presentation is live in Worker 71 and passed all 70 local and hosted checks plus exact live-asset verification. This is the next proposed authentication increment; retain the current technology stack.
+October 23, 2026. **Status: implemented locally; joint release verification pending.** This cleanup and [in app notifications](notifications-plan.md) will be published together after the full local and hosted checks pass. Worker 71 remains the recorded live baseline until [deployment status](deployment-status.md) records the verified release. The technology stack is unchanged.
 
 ## Outcome and scope
 
@@ -8,13 +8,19 @@ Returning users choose **Sign in**, enter their email address, and enter the cod
 
 The same accounts, map IDs, comparisons, contributions, facilitator permissions and saved names remain in place. Password login for normal accounts, social login, passkeys, changes to signup eligibility and changes to email delivery providers are outside this increment. Notifications are a separate implementation plan.
 
-## Current behavior
+## Implemented behavior
 
-`dist/account-ui.mjs` currently combines registration and sign-in, requiring a name on every code request. `worker/account-auth.mjs` sends every request to Supabase Auth with `create_user:true` and `data.display_name`. The browser talks to the Harmonious Worker; the Worker uses raw HTTP requests to `/auth/v1/otp` and `/auth/v1/verify`. There is no Supabase JavaScript SDK in this flow, and none needs to be introduced.
+`dist/account-ui.mjs` now opens on **Sign in** with email only and provides a separate **Create account** choice with an initial display name. Both use an email code. The code screen identifies the destination email and offers Resend code and Change email. An immutable pending request retains its email, intent and signup name across resends; stale send responses cannot reopen an abandoned attempt. Verification and test-account sign-in prevent a competing identity change while cookies are being established.
 
-The application already has a canonical profile record. `accountWorkspace()` in `worker/account-api.mjs` returns that saved profile name and creates an initial profile/private map only if the profile does not yet exist. The account-menu **Change display name** action updates the profile through an authenticated, owner-only, revision-checked save.
+`worker/account-auth.mjs` requires an explicit `signin` or `signup` intent. Sign-in sends `create_user:false` without any metadata; signup sends `create_user:true` with the initial display name. Only the documented unknown-user sign-in result receives the generic send acknowledgement. Rate limits, service failures and invalid/expired codes retain actionable errors. Clients without intent are asked to refresh rather than silently creating an account. The browser still talks to the Harmonious Worker, which uses raw HTTP requests to `/auth/v1/otp` and `/auth/v1/verify`; no new authentication dependency is introduced.
+
+The canonical profile remains authoritative. `accountWorkspace()` in `worker/account-api.mjs` returns that saved profile name and creates an initial profile/private map only if the profile does not yet exist. Duplicate signup and ordinary login do not replace a saved name or create another private map. The account-menu **Change display name** action remains an authenticated, owner-only, revision-checked save.
 
 Turnstile and native Supabase CAPTCHA were disabled at the owner's request. Preserve that setting and the dormant challenge component. Email verification, provider rate limits, public/invite eligibility and the separate test-account restrictions remain in force.
+
+## Focused verification
+
+The account-signup, account-api and test-account tests pass, along with the new `tests/auth-cleanup-browser.test.mjs` and existing test-account browser suite. Browser checks use the real Worker handler with disposable memory/Auth fixtures: they send no real participant email. Coverage includes email-only sign-in, unknown-account protection, signup and canonical-name preservation, immutable resend/verification, cooldowns, stale sends, duplicate submissions, 429/503 recovery, test-flow switching, map/node/layout destination restoration and 320–390 px layouts. The complete local/hosted suite and the coordinated production release remain pending.
 
 ## User experience
 
@@ -39,14 +45,11 @@ Supabase documents disabling automatic registration with `shouldCreateUser:false
 
 The current [email sign-in implementation](https://github.com/supabase/auth/blob/master/internal/api/magic_link.go) passes signup metadata through the new/unconfirmed-user path. Regardless of provider metadata behavior, the existing Harmonious profile must remain authoritative. Test duplicate signup for both confirmed and pending identities rather than relying only on a provider assumption.
 
-## Implementation order
+## Delivery progress
 
-1. **Pin the contract in tests.** Extend `tests/account-signup.test.mjs` and `tests/account-api.test.mjs` to cover intent validation, exact outgoing Auth payloads, name preservation, account bootstrap idempotency and error normalization. Confirm current provider error codes and resend settings without changing production configuration.
-2. **Update the Worker.** Implement the two request paths in `worker/account-auth.mjs`; adjust `worker/account-api.mjs` only where response contracts require it. Preserve the existing profile bootstrap, test-account endpoint and cookie behavior. No database migration is expected.
-3. **Update the account screen.** Refactor the gate in `dist/account-ui.mjs` into explicit intent and code-entry states; adjust `dist/accounts.css` for clear mobile/keyboard layouts. Keep `dist/test-accounts-ui.mjs` working with both normal account choices.
-4. **Handle request ordering.** Capture an immutable pending email/intent for each request. Ignore stale results after changing email, changing mode or starting a newer attempt. Clear sensitive code/password fields at the appropriate transitions; keep failed attempts editable without duplicating requests.
-5. **Complete browser and integration checks.** Add focused normal-account browser coverage and update `tests/test-accounts-browser.test.mjs`, whose organizer setup currently assumes a required name at sign-in. Preserve facilitator entry, account switching and dirty-work safeguards. Run the existing complete suite.
-6. **Publish a coordinated release.** Exercise the changed flow before publication using disposable identities and a controlled test mail destination. After local and hosted checks pass for the exact commit, ship Worker and client together and verify the live assets and unauthenticated endpoints. Do not send unsolicited codes to real participants.
+The validated Worker contract, account screen, request-ordering guards and focused integration/browser coverage are implemented. Existing test-account fixtures now choose the explicit sign-in intent. Authentication needs no database migration; the additive migration in the joint release belongs to notifications.
+
+Complete the full local and hosted checks for the exact source revision, then publish the Worker/client together with Activity and verify live assets and unauthenticated endpoints. Keep the controlled mail check confined to an intended test destination; do not send unsolicited codes to real participants. Record publication only after verification succeeds.
 
 ## Acceptance checks
 
@@ -67,4 +70,4 @@ The current [email sign-in implementation](https://github.com/supabase/auth/blob
 
 Keep the existing SMTP configuration, email-code templates, rate limits, invite policy and disabled CAPTCHA setting unchanged. Recheck the relevant [Supabase changelog](https://supabase.com/changelog) before implementation. Verify new-account and returning-account email templates still deliver a usable code in the controlled test environment; no template redesign or paid provider change is required by this plan.
 
-Use the established source, local-check, hosted-check, deployment and exact-live verification workflow. Record the new release in deployment status only after it is verified. A rollback restores the previous Worker/client release without rewriting profiles, maps or Auth identities; users of the new screen may need to refresh. Creating this plan sends no email, changes no account and enables no new authentication mechanism.
+Use the established source, local-check, hosted-check, deployment and exact-live verification workflow. Record the joint release in deployment status only after it is verified. A rollback restores the previous Worker/client release without rewriting profiles, maps or Auth identities; users of the new screen may need to refresh. Preserve any notification tables and saved inbox state if the application release is rolled back.

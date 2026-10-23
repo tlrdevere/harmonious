@@ -1,4 +1,6 @@
 import {FacilitatorUI} from './facilitator-ui.mjs';
+import {ActivityUI} from './activity-ui.mjs';
+import {comparisonPairKey} from './workspace.mjs';
 import {AccountChallenge} from './account-challenge.mjs';
 import {TestAccountsUI} from './test-accounts-ui.mjs';
 import {validateWorkspace,newId} from './workspace.mjs';
@@ -10,14 +12,15 @@ const accountOption=(value,label)=>{const o=document.createElement('option');o.v
 export class AccountWorkspace{
   constructor(controller){
     this.controller=controller;this.actor=null;this.baseline=new Map();this.revisions={};this.ownedKeys=[];this.timer=null;this.draftTimer=null;this.saving=false;this.blocked=false;this.loading=false;
-    this.mount();this.install();this.facilitator=new FacilitatorUI(this);
+    this.authIntent='signin';this.authEpoch=0;this.pendingCode=null;this.codeCooldowns=new Map();this.sending=false;this.verifying=false;
+    this.mount();this.install();this.facilitator=new FacilitatorUI(this);this.activity=new ActivityUI(this);
   }
   mount(){
     document.body.classList.add('accounts','account-locked');
     const topbar=document.querySelector('.topbar'),tabs=document.querySelector('.mode-tabs'),primaryNav=document.createElement('nav');
     primaryNav.className='topbar-primary-nav';primaryNav.setAttribute('aria-label','Main navigation');tabs.classList.add('topbar-tabs');primaryNav.append(tabs);topbar.insertBefore(primaryNav,accountUI('storage-status'));
     const panel=document.createElement('main');panel.id='account-gate';panel.className='account-gate';
-    panel.innerHTML=`<section class="account-card" aria-labelledby="account-title"><div class="eyebrow">HARMONIOUS BETA</div><h1 id="account-title">Make room for your worldview.</h1><p>Sign in to keep your maps and return to the conversation.</p><form id="account-email-form"><label for="account-name">Display name</label><input id="account-name" autocomplete="nickname" maxlength="100" required><p class="field-help">Other beta participants see this name when you share maps or co-sign shared nodes. Your email stays private.</p><label for="account-email">Email address</label><input id="account-email" type="email" autocomplete="email" required maxlength="254"><div id="account-challenge"></div><button class="primary" id="account-send" type="submit">Email me a sign-in code</button></form><form id="account-code-form" hidden><label for="account-code">Code from your email</label><input id="account-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" minlength="6" maxlength="10" required><button class="primary" id="account-verify" type="submit">Sign in</button><button id="account-change-email" type="button" class="text-button">Use a different email or resend</button></form><p id="account-feedback" role="status" aria-live="polite">Opening your account…</p><p class="field-help" id="account-signup-help">Personal maps start private.</p></section>`;
+    panel.innerHTML=`<section class="account-card" aria-labelledby="account-title"><div class="eyebrow">HARMONIOUS BETA</div><h1 id="account-title">Make room for your worldview.</h1><p id="account-intro">Sign in with a code sent to your email. No password to remember.</p><div id="account-intents" class="account-intents" role="group" aria-label="Choose sign in or account creation"><button id="account-intent-signin" type="button" aria-pressed="true">Sign in</button><button id="account-intent-signup" type="button" aria-pressed="false">Create account</button></div><form id="account-email-form"><div id="account-name-group" hidden><label for="account-name">Display name</label><input id="account-name" autocomplete="nickname" maxlength="100"><p class="field-help">Other participants see this name on your maps and contributions. You can change it later. Your email stays private.</p></div><label for="account-email">Email address</label><input id="account-email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" required maxlength="254"><div id="account-challenge"></div><button class="primary" id="account-send" type="submit">Email me a sign-in code</button></form><form id="account-code-form" hidden><p id="account-code-destination" class="field-help"></p><label for="account-code">Code from your email</label><input id="account-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" minlength="6" maxlength="10" required><button class="primary" id="account-verify" type="submit">Verify code and sign in</button><div class="account-code-actions"><button id="account-resend" type="button">Resend code</button><button id="account-change-email" type="button" class="text-button">Change email</button></div></form><p id="account-code-wait" class="field-help"></p><p id="account-feedback" role="status" aria-live="polite">Opening your account…</p><p class="field-help" id="account-signup-help">Personal maps start private.</p></section>`;
     topbar.after(panel);
     const controls=document.createElement('details');controls.className='account-controls account-menu';controls.innerHTML='<summary><span id="account-display">Account</span></summary><div class="account-menu-content"><button id="account-signout" type="button">Sign out</button></div>';document.querySelector('.topbar').append(controls);controls.querySelector('.account-menu-content').prepend(document.querySelector('.workspace-files'));controls.querySelector('.account-menu-content').addEventListener('click',event=>{if(event.target.closest('button'))controls.open=false;});
     accountUI('reset').hidden=true;accountUI('open-workspace').textContent='Import maps';accountUI('reload-workspace').hidden=false;accountUI('reload-workspace').textContent='Refresh maps';
@@ -27,11 +30,16 @@ export class AccountWorkspace{
     accountUI('map-settings').textContent='Map settings';accountUI('map-settings').setAttribute('aria-label','Map name and sharing');
     const sharing=document.createElement('div');sharing.id='account-sharing';sharing.innerHTML='<label for="map-visibility">Who can see this map?</label><select id="map-visibility"><option value="private">Only me</option><option value="shared">All beta participants</option></select><p class="field-help">Sharing lets other beta participants read, copy and co-sign its nodes. They can keep copies and earlier comparison records after you make it private again.</p>';
     accountUI('map-start-group').after(sharing);
-    this.challenge=new AccountChallenge(accountUI('account-challenge'),message=>{accountUI('account-send').disabled=this.sending||!!this.signup?.turnstile&&!this.challenge.token;if(message)accountUI('account-feedback').textContent=message;});
+    accountUI('account-code-form').before(accountUI('account-challenge'));
+    this.challenge=new AccountChallenge(accountUI('account-challenge'),message=>{this.renderAuth();if(message)accountUI('account-feedback').textContent=message;});
     accountUI('account-email-form').onsubmit=e=>{e.preventDefault();this.sendCode();};accountUI('account-code-form').onsubmit=e=>{e.preventDefault();this.verifyCode();};
-    accountUI('account-change-email').onclick=()=>{accountUI('account-code-form').hidden=true;accountUI('account-email-form').hidden=false;accountUI('account-feedback').textContent='You can request another code after a short wait.';accountUI('account-email').focus();};
+    accountUI('account-change-email').onclick=()=>{if(!this.cancelAuthAttempt())return;accountUI('account-feedback').textContent='Enter the email address you want to use.';accountUI('account-email').focus();};
+    accountUI('account-resend').onclick=()=>this.sendCode(true);
+    for(const intent of ['signin','signup'])accountUI('account-intent-'+intent).onclick=()=>this.setAuthIntent(intent);
+    accountUI('account-email').addEventListener('input',()=>this.renderAuth());
     accountUI('account-signout').onclick=()=>this.signOut();
     this.testAccounts=new TestAccountsUI(this);
+    this.renderAuth();
     const rename=document.createElement('button');rename.id='change-display-name';rename.type='button';rename.textContent='Change display name';controls.querySelector('.account-menu-content').prepend(rename);
     const profileDialog=document.createElement('dialog');profileDialog.id='display-name-dialog';profileDialog.className='account-settings-dialog';profileDialog.setAttribute('aria-labelledby','display-name-title');profileDialog.innerHTML='<form id="display-name-form"><h2 id="display-name-title">Change display name</h2><p>This name appears on your maps and contributions. Your login details stay the same.</p><label for="display-name-value">Display name</label><input id="display-name-value" autocomplete="nickname" maxlength="100" required><p id="display-name-error" role="status" aria-live="polite"></p><div class="dialog-actions"><button id="display-name-cancel" type="button">Cancel</button><button id="display-name-save" class="primary" type="submit">Save display name</button></div></form>';document.body.append(profileDialog);
     rename.onclick=()=>{if(!this.actor)return;accountUI('display-name-value').value=this.actor.name;accountUI('display-name-error').textContent='';profileDialog.showModal();accountUI('display-name-value').focus();accountUI('display-name-value').select();};
@@ -71,6 +79,28 @@ export class AccountWorkspace{
       this.baseline.set(key,accountClone(thread));this.revisions[key]=result.revision;
       return thread;
     }finally{this.loading=false;if(this.controller.workspaceDirty&&!this.blocked)this.schedule();}
+  }
+  async openActivity(id){
+    const c=this.controller,actorId=this.actor?.id,epoch=this.facilitator?.epoch;
+    const unfinished=()=>this.saving||this.blocked||c.workspaceDirty||c.editor.hasDraft()||c.comparisonDirty||c.discussion?.dirty||c.argument?.dirty||c.library.definitions?.dirty||[...document.querySelectorAll('dialog[open]')].some(dialog=>dialog.id!=='activity-dialog');
+    if(!actorId||this.facilitator?.context||this.loading||unfinished())throw Error('Finish saving or cancel your current edit before opening activity. Your work and unread status are unchanged.');
+    this.loading=true;
+    try{
+      const data=await this.request('/api/activity/open',{id});
+      if(this.actor?.id!==actorId||this.facilitator?.epoch!==epoch||this.facilitator?.context)return false;
+      if(data.actorId!==actorId||data.workspaceEnvelope?.actor?.id!==actorId){this.activity.clearUnavailable('Your signed-in account changed. Reopen Harmonious to read its activity.');return false;}
+      // Recheck after the request: a user may have started typing while it ran.
+      if(unfinished())throw Error('Finish saving or cancel your current edit before opening activity. Your work and unread status are unchanged.');
+      if(this.accept(data.workspaceEnvelope)===false)return false;
+      const route=data.item.route,d=c.discussion;
+      if(route.source)return c.library.openSource(route.source,route.node);
+      const thread=c.workspace.comparisonThreads.find(item=>item.id===route.comparison);
+      if(!thread||d.dialogue.active&&!d.dialogue.close({route:false})||!c.showMode('compare')||!c.openComparisonPair(comparisonPairKey(thread)))return false;
+      if(route.view==='dialogue'){
+        if(!await d.dialogue.open({type:'node',mapId:route.map,nodeId:route.node},{entry:route.entry}))return false;
+      }else d.reasoning.setFocus(route.view);
+      return d.revealInteraction(route.entry);
+    }finally{this.loading=false;this.status();if(c.workspaceDirty&&!this.blocked)this.schedule();}
   }
   renderAccountName(){
     if(!this.actor)return;const c=this.controller,person=c.workspace.participants.find(p=>p.id===this.actor.id);if(person)this.actor={...this.actor,name:person.name};accountUI('account-display').textContent=this.actor.name;
@@ -116,14 +146,56 @@ export class AccountWorkspace{
     };
     dialog.showModal();dialog.querySelector('#delete-map-cancel').focus();
   }
-  async sendCode(){
+  cancelAuthAttempt(){
+    // A verification response sets cookies: do not offer a competing identity
+    // change until that request has finished. Code sends may be abandoned safely.
+    if(this.verifying||this.testAccounts?.signingIn)return false;
+    this.authEpoch++;this.pendingCode=null;accountUI('account-code').value='';this.renderAuth();return true;
+  }
+  setAuthIntent(intent){
+    if(!['signin','signup'].includes(intent)||!this.cancelAuthAttempt())return;
+    this.authIntent=intent;if(this.testAccounts?.testLogin)this.testAccounts.switchLogin(false);
+    this.renderAuth();accountUI('account-feedback').textContent='';accountUI(intent==='signup'?'account-name':'account-email').focus();
+  }
+  renderAuth(){
+    const test=!!this.testAccounts?.testLogin,signup=this.authIntent==='signup',pending=this.pendingCode,locked=this.verifying||!!this.testAccounts?.signingIn;
+    const email=pending?.email||accountUI('account-email').value.trim().toLowerCase(),wait=Math.max(0,Math.ceil(((this.codeCooldowns.get(email)||0)-Date.now())/1000));
+    accountUI('account-intents').hidden=test;accountUI('account-challenge').hidden=test;accountUI('account-name-group').hidden=!signup;accountUI('account-name').required=signup&&!test;accountUI('account-name').disabled=!signup||locked||this.sending;
+    accountUI('account-email-form').hidden=test||!!pending;accountUI('account-code-form').hidden=test||!pending;
+    accountUI('account-email').disabled=locked||this.sending;accountUI('account-code').disabled=locked||this.sending;
+    accountUI('account-intro').textContent=test?'Use the login details your test organizer gave you.':signup?'Create your account with an email code. No password to remember.':'Sign in with a code sent to your email. No password to remember.';
+    for(const intent of ['signin','signup']){const button=accountUI('account-intent-'+intent);button.setAttribute('aria-pressed',String(intent===this.authIntent));button.disabled=locked;}
+    const challengeNeeded=!!this.signup?.turnstile&&!this.challenge.token;
+    accountUI('account-send').disabled=locked||this.sending||wait>0||challengeNeeded;
+    accountUI('account-send').textContent=signup?'Email me an account code':'Email me a sign-in code';
+    accountUI('account-resend').disabled=locked||this.sending||wait>0||challengeNeeded;accountUI('account-verify').disabled=locked||this.sending||!pending;accountUI('account-change-email').disabled=locked;
+    accountUI('account-code-destination').textContent=pending?'Enter the code sent to '+pending.email+'.':'';
+    const waitLabel=accountUI('account-code-wait');waitLabel.textContent=wait?`You can request another code in ${wait} second${wait===1?'':'s'}.`:'';waitLabel.hidden=test||!wait;
+    if(this.testAccounts)this.testAccounts.switchButton.disabled=locked;
+    clearTimeout(this.codeCooldownTimer);if(wait&&!test)this.codeCooldownTimer=setTimeout(()=>this.renderAuth(),1000);
+  }
+  async sendCode(resend=false){
+    if(this.sending||this.verifying||this.testAccounts?.testLogin)return;
+    const attempt=resend?this.pendingCode:{email:accountUI('account-email').value.trim().toLowerCase(),intent:this.authIntent,...(this.authIntent==='signup'?{name:accountUI('account-name').value.trim()}:{})};
+    if(!attempt||(!resend&&!accountUI('account-email-form').reportValidity()))return;
+    if((this.codeCooldowns.get(attempt.email)||0)>Date.now()){this.renderAuth();return;}
     if(this.signup?.turnstile&&!this.challenge.token){accountUI('account-feedback').textContent='Complete the security check first.';return;}
-    this.sending=true;accountUI('account-send').disabled=true;accountUI('account-feedback').textContent='Sending your code…';
-    try{const data=await this.request('/api/auth/code',{email:accountUI('account-email').value,name:accountUI('account-name').value,...(this.signup?.turnstile?{captchaToken:this.challenge.token}:{})});accountUI('account-feedback').textContent=data.message;accountUI('account-email-form').hidden=true;accountUI('account-code-form').hidden=false;accountUI('account-code').focus();}catch(error){accountUI('account-feedback').textContent=error.message;}finally{this.sending=false;this.challenge.reset();accountUI('account-send').disabled=!!this.signup?.turnstile;}
+    const epoch=this.authEpoch,body={...attempt,...(this.signup?.turnstile?{captchaToken:this.challenge.token}:{})};
+    this.sending=true;this.renderAuth();accountUI('account-feedback').textContent='Sending your code…';
+    try{
+      const data=await this.request('/api/auth/code',body),seconds=Number.isFinite(data.resendAfterSeconds)?Math.max(1,Math.min(3600,data.resendAfterSeconds)):60;
+      this.codeCooldowns.set(attempt.email,Date.now()+seconds*1000);
+      if(epoch!==this.authEpoch)return;
+      this.pendingCode=Object.freeze({...attempt});accountUI('account-email').value=attempt.email;accountUI('account-code').value='';accountUI('account-feedback').textContent=data.message;
+    }catch(error){if(error.status===429)this.codeCooldowns.set(attempt.email,Date.now()+60000);if(epoch===this.authEpoch)accountUI('account-feedback').textContent=error.message;}
+    finally{this.sending=false;this.challenge.reset();this.renderAuth();if(epoch===this.authEpoch&&this.pendingCode)accountUI('account-code').focus();}
   }
   async verifyCode(){
-    accountUI('account-verify').disabled=true;accountUI('account-feedback').textContent='Checking your code…';
-    try{await this.request('/api/auth/verify',{email:accountUI('account-email').value,code:accountUI('account-code').value});await this.initialize();}catch(error){accountUI('account-feedback').textContent=error.message;}finally{accountUI('account-verify').disabled=false;}
+    if(this.verifying||this.sending||!this.pendingCode||this.testAccounts?.testLogin||!accountUI('account-code-form').reportValidity())return;
+    const pending=this.pendingCode,epoch=this.authEpoch,code=accountUI('account-code').value.trim();this.verifying=true;this.renderAuth();accountUI('account-feedback').textContent='Checking your code…';
+    try{await this.request('/api/auth/verify',{email:pending.email,code});if(epoch!==this.authEpoch)return;accountUI('account-code').value='';await this.initialize();}
+    catch(error){if(epoch===this.authEpoch)accountUI('account-feedback').textContent=error.message;}
+    finally{this.verifying=false;this.renderAuth();}
   }
   async initialize(){
     const c=this.controller,previousReady=c.ready;clearTimeout(this.timer);this.loading=true;c.ready=false;
@@ -132,12 +204,13 @@ export class AccountWorkspace{
       const publicSignup=this.signup?.mode==='public';
       accountUI('account-signup-help').textContent=publicSignup?'Anyone can create an account with their email. Personal maps start private.':'Invited participants can create an account with their email. Personal maps start private.';
       if(!session.actor&&this.signup?.turnstile)await this.challenge.mount(this.signup.turnstile);
-      accountUI('account-send').disabled=!!this.signup?.turnstile&&!this.challenge.token;
-      if(!session.actor){document.body.classList.add('account-locked');accountUI('account-feedback').textContent=publicSignup?'Enter your email address and a display name to begin.':'Enter your invited email address to begin.';this.status('Sign in to open your maps');return;}
-      const data=await this.request('/api/workspace');if(this.accept(data,true)===false){c.ready=previousReady;return;}this.blocked=false;
-      document.body.classList.remove('account-locked');accountUI('account-display').textContent=this.actor.name;accountUI('account-feedback').textContent='';this.facilitator?.render();c.message();this.status();
+      this.renderAuth();
+      if(!session.actor){document.body.classList.add('account-locked');accountUI('account-feedback').textContent=publicSignup?'Enter your email to sign in, or choose Create account.':'Enter your invited email to sign in, or choose Create account.';this.status('Sign in to open your maps');return;}
+      const data=await this.request('/api/workspace');c.message();if(this.accept(data,true)===false){c.ready=previousReady;return;}this.blocked=false;
+      this.authEpoch++;this.pendingCode=null;accountUI('account-code').value='';accountUI('account-name').value='';clearTimeout(this.codeCooldownTimer);
+      document.body.classList.remove('account-locked');accountUI('account-display').textContent=this.actor.name;accountUI('account-feedback').textContent='';this.facilitator?.render();this.status();
     }catch(error){accountUI('account-feedback').textContent=error.message;c.message(error.message);this.status('Account unavailable');}
-    finally{this.loading=false;}
+    finally{this.loading=false;this.activity?.sync();}
   }
   accept(data,reset=false){
     const actorChanged=!!this.actor&&this.actor.id!==data.actor.id;
@@ -151,7 +224,7 @@ export class AccountWorkspace{
     c.workspace=workspace;this.revisions=data.revisions;this.ownedKeys=data.ownedKeys;this.actor=data.actor;
     this.renderAccountName();this.facilitator?.render();
     this.baseline=new Map(ownedAccountRecords(workspace,this.actor.id,this.ownedKeys).map(r=>[accountKey(r.kind,r.id),r.value]));
-    c.ready=true;c.cloudLoaded=true;c.workspaceDirty=false;document.body.classList.remove('account-locked');
+    c.ready=true;c.cloudLoaded=true;c.workspaceDirty=false;document.body.classList.remove('account-locked');this.activity?.sync();
     if(reset){c.activeComparisonPair=null;c.activeMapId=null;c.editor.discardDraft();c.clearComparison();c.sides={a:{mapId:null,nodeId:null},b:{mapId:null,nodeId:null}};c.mode='library';c.updateNavigation?.();}
     else if(c.activeMapId&&!workspace.maps.some(m=>m.id===c.activeMapId&&m.ownerId===this.actor.id&&!m.unavailable)){c.activeMapId=null;if(c.mode==='individual')c.library.open('maps');}
     if(c.editingRecord&&!workspace.comparisons.some(record=>record.id===c.editingRecord))c.clearComparison();
@@ -176,7 +249,7 @@ export class AccountWorkspace{
     try{
       validateWorkspace(c.workspace);const result=await this.request('/api/workspace',{changes},'PUT');this.revisions={...this.revisions,...result.revisions};if(result.facilitationHistory)c.workspace.facilitationHistory=result.facilitationHistory;
       for(const r of changes){const key=accountKey(r.kind,r.id);this.baseline.set(key,accountClone(r.value));if(!this.ownedKeys.includes(key))this.ownedKeys.push(key);}
-      this.blocked=false;c.workspaceDirty=accountChanges(ownedAccountRecords(c.workspace,this.actor.id,this.ownedKeys),this.baseline,this.revisions).length>0;c.message();
+      this.blocked=false;c.workspaceDirty=accountChanges(ownedAccountRecords(c.workspace,this.actor.id,this.ownedKeys),this.baseline,this.revisions).length>0;c.message();this.activity?.refresh({force:true});
     }catch(error){this.blocked=true;c.workspaceDirty=true;c.message(`${error.message} Download a backup to keep your current work.${error.status===401?' Sign in again in a new tab, then retry this save.':''}`);}
     finally{this.saving=false;accountUI('save-workspace').disabled=false;this.status();if(c.workspaceDirty&&!this.blocked)this.schedule();}
   }
@@ -204,7 +277,7 @@ export class AccountWorkspace{
       const ownedKeys=new Set(this.ownedKeys);
       for(const change of changes){const records=workspace[collections[change.kind]],index=records.findIndex(r=>r.id===change.id);if(index<0)records.push(accountClone(change.value));else records[index]=accountClone(change.value);ownedKeys.add(accountKey(change.kind,change.id));}
       this.accept({actor:current.actor,workspace,revisions:{...this.revisions,...result.revisions},ownedKeys:[...ownedKeys]});c.message();return prepared;
-    }finally{document.body.inert=wasInert;this.loading=false;this.saving=false;this.status();}
+    }finally{document.body.inert=wasInert;this.loading=false;this.saving=false;this.status();this.activity?.refresh({force:true});}
   }
   async refresh(){
     const c=this.controller;if(!this.actor||this.saving||this.loading||this.blocked||c.workspaceDirty||c.comparisonDirty||c.discussion?.dirty||c.argument?.dirty||c.editor.hasDraft()||document.querySelector('dialog[open]'))return;
@@ -212,7 +285,7 @@ export class AccountWorkspace{
   }
   async signOut(){
     const c=this.controller;await this.save();if((c.workspaceDirty||c.comparisonDirty||c.discussion?.dirty||c.argument?.dirty||c.editor.hasDraft())&&!confirm('Some work has not been saved. Sign out and discard it?'))return;
-    try{await this.request('/api/auth/logout',{});c.ready=false;c.workspaceDirty=false;c.comparisonDirty=false;c.editor.discardDraft();location.reload();}catch(error){c.message(error.message);}
+    try{await this.request('/api/auth/logout',{});c.ready=false;this.actor=null;this.activity?.sync();c.workspaceDirty=false;c.comparisonDirty=false;c.editor.discardDraft();location.reload();}catch(error){c.message(error.message);}
   }
   async importFile(file){
     const c=this.controller;if(this.facilitator?.context){c.message('Exit facilitation before importing maps.');return;}if(!file)return;

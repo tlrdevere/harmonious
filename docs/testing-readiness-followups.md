@@ -1,6 +1,6 @@
 # Testing and service-readiness follow-ups
 
-Recorded October 21; status updated October 23, 2026. The [Canvas / Outline presentation](off-canvas-view-plan.md) is now live in Worker 71. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) have separate implementation plans and are not yet implemented. The owner has deferred pods and operational backups/recovery; the requirements below are retained for when that work resumes. Provider backup settings have not been verified by this task.
+Recorded October 21; status updated October 23, 2026. The [Canvas / Outline presentation](off-canvas-view-plan.md) is live in Worker 71. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) are implemented together and awaiting release verification; see [deployment status](deployment-status.md) for publication. The owner has deferred pods and operational backups/recovery; the requirements below are retained for when that work resumes. Provider backup settings have not been verified by this task.
 
 ## Public and private pods
 
@@ -12,15 +12,15 @@ Decide what public means (readable to signed-in users or to the wider web), who 
 
 ## Notifications
 
-Recommend an in-app activity inbox with an unread count first. Notify the owner about new interactions on their maps and the appropriate participant about replies, requests and standstill responses. Each item opens the exact authorized target in the user's chosen Canvas/Outline presentation.
+The implemented in-app Activity inbox has an unread count. It notifies the appropriate participant about published interactions, replies, counterpart changes and standstill responses. Each item opens the exact authorized target in the user's chosen Canvas/Outline presentation. See [the delivered behavior and release evidence](notifications-plan.md).
 
 Generate durable events transactionally with successful publication, with stable event IDs for retry deduplication and per-recipient read state. Failed saves and private draft validation must roll back the events too. Avoid alerts for one's own actions, private drafts, autosave keystrokes or every background refresh. Marking read should be explicit/open-based, not an accidental side effect of polling. Validate access both when listing and opening; removed membership/private sources cannot leak content through old notification text. Group noisy activity and offer per-context muting. Facilitated contributions retain their existing attribution and recipient rules. The [implementation plan](notifications-plan.md) details the shared database hook and draft-safe polling.
 
-Email summaries or alerts can be added later as opt-in delivery, with preferences/unsubscribe and limited private content. Browser push is a separate optional channel. No notification sending or scheduled automation has been enabled by recording this proposal.
+Email summaries or alerts can be considered later as opt-in delivery, with preferences/unsubscribe and limited private content. Browser push is a separate optional channel. This increment adds no email notification delivery or scheduled automation.
 
 ## Sign-up and sign-in
 
-Current normal accounts use a passwordless email code; no password is set. The combined form in `dist/account-ui.mjs` currently requires display name and email on every visit. Organizer-created test accounts have a separate username/password flow.
+Normal accounts retain passwordless email codes. The implemented cleanup separates Sign in (email only) from Create account (initial display name and email). Organizer-created test accounts retain their separate username/password flow. Saved names and account identities remain unchanged; see [the delivered behavior and verification](auth-cleanup-plan.md).
 
 Requested cleanup: returning users sign in using email and the emailed code, without entering a display name. Recommend clear Sign in / Create account choices; account creation collects the display name once. Sign-in must not overwrite an existing name or create a new account accidentally. Retain the existing code verification, session handling, rate limits, signup availability, optional challenge settings and separate test-account access. Show clear resend/change-email controls and generic responses that do not disclose account existence. Test both new and returning accounts, duplicate signup, expired/incorrect codes, name preservation and narrow screens before release. No new password requirement is proposed.
 

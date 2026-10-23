@@ -9,5 +9,6 @@ export class SupabaseStore{
   }
   facilitate(operator,manager,generation,command,input){return this.rpc('harmonious_facilitate',{p_operator:operator,p_manager:manager,p_generation:generation,p_command:command,p_input:input});}
   snapshot(){return this.rpc('harmonious_snapshot');}
+  activity(actorId,command,input={}){return this.rpc('harmonious_activity',{p_actor:actorId,p_command:command,p_input:input});}
   commit(actorId,generation,changes){return this.rpc('harmonious_commit',{p_actor:actorId,p_generation:generation,p_changes:changes});}
 }

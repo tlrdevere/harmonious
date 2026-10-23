@@ -9,8 +9,8 @@ const request=(path,body,origin=env.APP_ORIGIN,method='POST')=>new Request(env.A
 assert(accountConfiguration(env));assert(!accountConfiguration({...env,BETA_INVITE_EMAILS:''}));
 let mode='ok',calls=[];const user={...alice,email:'alice@example.test',email_confirmed_at:'2026-09-08T00:00:00Z',user_metadata:{display_name:'Alice'}};
 const auth=new AccountAuth(env,async(url,options)=>{calls.push({url,options});if(url.endsWith('/user'))return mode==='expired'?Response.json({}, {status:401}):Response.json(user);if(url.includes('/token?')||url.endsWith('/verify'))return Response.json({user,access_token:'new-access',refresh_token:'new-refresh',expires_in:3600});return Response.json({});});
-await auth.requestCode({email:user.email,name:'Alice'});assert(calls.at(-1).url.endsWith('/otp'));assert.equal(JSON.parse(calls.at(-1).options.body).create_user,true);
-await assert.rejects(()=>auth.requestCode({email:'stranger@example.test',name:'Stranger'}),e=>e.status===403);
+await auth.requestCode({intent:'signup',email:user.email,name:'Alice'});assert(calls.at(-1).url.endsWith('/otp'));assert.equal(JSON.parse(calls.at(-1).options.body).create_user,true);
+await assert.rejects(()=>auth.requestCode({intent:'signin',email:'stranger@example.test'}),e=>e.status===403);
 const session=await auth.verifyCode({email:user.email,code:'123456'});for(const cookie of session.cookies){assert(cookie.includes('HttpOnly'));assert(cookie.includes('Secure'));assert(cookie.includes('SameSite=Lax'));assert(cookie.startsWith('__Host-'));}
 assert.equal(session.actor.id,alice.id);mode='expired';const restored=await auth.identify(new Request(env.APP_ORIGIN,{headers:{cookie:'__Host-harmonious-access=expired; __Host-harmonious-refresh=old-refresh'}}));assert.equal(restored.actor.id,alice.id);assert.equal(restored.cookies.length,2);assert(calls.at(-1).url.includes('grant_type=refresh_token'));
 const store=memoryStore(),fakeAuth={identify:async()=>({actor:alice,cookies:[]})};
@@ -32,6 +32,17 @@ response=await handleAccountAPI(request('/api/comparisons',pair),env,{store,auth
 const beforeRename=await store.snapshot(),profile=beforeRename.records.find(r=>r.kind==='profile'&&r.id===alice.id),rename={kind:'profile',id:alice.id,expectedRevision:profile.revision,value:{id:alice.id,name:'Alice Updated'}};
 await saveAccountChanges(store,alice.id,[rename]);
 assert.equal((await accountWorkspace(store,alice)).actor.name,'Alice Updated','The saved profile overrides the original sign-in name');
+const identityBefore=await store.snapshot();
+for(const confirmed of [false,true]){
+  const identity={...user,...(confirmed?{}:{email_confirmed_at:null}),user_metadata:{display_name:'Duplicate signup name'}},duplicateAuth=new AccountAuth(env,async(url,options)=>{calls.push({url,options});return Response.json(url.endsWith('/verify')?{user:{...identity,email_confirmed_at:user.email_confirmed_at},access_token:'duplicate',refresh_token:'duplicate-refresh'}:{});});
+  await duplicateAuth.requestCode({intent:'signup',email:user.email,name:'Duplicate signup name'});
+  const verified=await duplicateAuth.verifyCode({email:user.email,code:'123456'}),reopened=await accountWorkspace(store,verified.actor);
+  assert.equal(reopened.actor.name,'Alice Updated','Duplicate signup for a confirmed or formerly pending identity cannot overwrite a saved profile');
+}
+await accountWorkspace(store,alice);assert.deepEqual(await store.snapshot(),identityBefore,'Sign-in and duplicate verification do not create another profile/map or rewrite saved data');
+const signupStore=memoryStore(),newActor={id:'33333333-3333-4333-8333-333333333333',name:'New account'};
+await accountWorkspace(signupStore,newActor);await accountWorkspace(signupStore,newActor);const bootstrapped=await signupStore.snapshot();assert.equal(bootstrapped.records.filter(r=>r.kind==='profile').length,1);assert.equal(bootstrapped.records.filter(r=>r.kind==='map').length,1,'New-account verification retries bootstrap exactly once');
+response=await handleAccountAPI(request('/api/auth/code',{email:user.email,name:'Old screen'}),env,{auth,store});assert.equal(response.status,400);assert.match((await response.json()).error,/Refresh Harmonious/);
 assert.equal((await accountWorkspace(store,bob)).workspace.participants.find(p=>p.id===alice.id).name,'Alice Updated','Other participants see the current name');
 assert.deepEqual((await store.snapshot()).records.filter(r=>r.kind!=='profile'),beforeRename.records.filter(r=>r.kind!=='profile'),'Renaming does not rewrite maps, links or conversations');
 assert.equal((await saveAccountChanges(store,alice.id,[rename])).replayed,true);

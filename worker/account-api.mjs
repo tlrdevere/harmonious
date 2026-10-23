@@ -1,4 +1,5 @@
 import {FacilitationAPI} from './facilitation-api.mjs';
+import {handleActivity} from './activity-api.mjs';
 import {AccountError,initialAccountChanges,projectAccountWorkspace,validateAccountChanges} from './account-policy.mjs';
 import {AccountAuth,accountConfiguration,accountSignupConfiguration,requireAccountOrigin,accountBody} from './account-auth.mjs';
 import {SupabaseStore} from './supabase-store.mjs';
@@ -129,6 +130,8 @@ export async function handleAccountAPI(request,env,dependencies={}){
       if(path.startsWith('/api/facilitation/')&&request.method==='POST')return accountResponse(await facilitation.command(path.slice('/api/facilitation/'.length),await accountBody(request)),200,cookies);
       throw new AccountError('Not found.',404);
     }
+    if(path==='/api/activity'&&request.method==='GET'){const query=new URL(request.url).searchParams;return accountResponse(await handleActivity(store,session.actor,'list',{filter:query.get('filter')||'all',cursor:query.get('cursor')}),200,cookies);}
+    if(['/api/activity/open','/api/activity/read','/api/activity/mute'].includes(path)&&request.method==='POST')return accountResponse(await handleActivity(store,session.actor,path.split('/').at(-1),await accountBody(request,16384)),200,cookies);
     if(path==='/api/admin/test-accounts'&&request.method==='GET')return accountResponse(await currentTestAccountNames(store,await new TestAccounts(auth).list(session.actor,Number(new URL(request.url).searchParams.get('page')||1))),200,cookies);
     if(path==='/api/admin/test-accounts'&&request.method==='POST')return accountResponse(await new TestAccounts(auth).create(session.actor,await accountBody(request,4096)),201,cookies);
     if(path==='/api/admin/test-accounts/reset'&&request.method==='POST')return accountResponse(await currentTestAccountNames(store,await new TestAccounts(auth).reset(session.actor,await accountBody(request,4096))),200,cookies);

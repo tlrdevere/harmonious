@@ -29,7 +29,7 @@ await assert.rejects(()=>manager.create(actor,{username:'tester02',name:'Other',
 assert.deepEqual((await manager.list(actor)).accounts.map(u=>u.id),[account.id]);assert(!(JSON.stringify(await manager.list(actor))).includes('@'));
 assert.throws(()=>auth.actor({...user,app_metadata:{},user_metadata:{...user.app_metadata}}),e=>e.status===403);
 assert.throws(()=>auth.actor({...user,email_confirmed_at:null}),e=>e.status===403);
-await assert.rejects(()=>auth.requestCode({email:user.email,name:'Tester'}),e=>e.status===403);
+await assert.rejects(()=>auth.requestCode({intent:'signin',email:user.email,name:'Tester'}),e=>e.status===403);
 await assert.rejects(()=>auth.verifyCode({email:user.email,code:'123456'}),e=>e.status===403);
 await assert.rejects(()=>auth.signInTest({username:'tester01',password:'wrong'}),e=>e.status===400);
 const signed=await auth.signInTest({username:'TESTER01',password});assert.equal(signed.actor.id,account.id);assert(signed.actor.testAccount);for(const cookie of signed.cookies)assert(cookie.includes('HttpOnly')&&cookie.includes('Secure')&&cookie.includes('SameSite=Lax'));

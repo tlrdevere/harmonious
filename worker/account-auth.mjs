@@ -60,16 +60,26 @@ export class AccountAuth{
     const session=await response.json();return {actor:this.actor(session.user),cookies:this.cookies(session)};
   }
   async requestCode(input,request){
-    const email=String(input.email||'').trim().toLowerCase(),name=String(input.name||'').trim();
-    if(!EMAIL.test(email)||email.length>254||!name||name.length>100)throw new AccountError('Enter your email address and a display name.');
+    const intent=input?.intent;
+    if(!['signin','signup'].includes(intent))throw new AccountError('Refresh Harmonious, then choose Sign in or Create account.');
+    const email=typeof input.email==='string'?input.email.trim().toLowerCase():'',name=typeof input.name==='string'?input.name.trim():'';
+    if(!EMAIL.test(email)||email.length>254)throw new AccountError('Enter your email address.');
+    if(intent==='signup'&&(!name||name.length>100))throw new AccountError('Enter a display name between 1 and 100 characters.');
     if(!this.allowed(email))throw new AccountError('This beta is available to invited email addresses.',403);
-    const response=await this.call('otp',{email,create_user:true,data:{display_name:name}});
+    // Sign-in never registers an identity or supplies profile metadata. Existing
+    // Harmonious profiles remain authoritative even after duplicate signup.
+    const response=await this.call('otp',{email,create_user:intent==='signup',...(intent==='signup'?{data:{display_name:name}}:{})});
     if(!response.ok){
       const error=await response.json().catch(()=>({}));
-      if(error.code==='captcha_failed'||error.error_code==='captcha_failed')throw new AccountError('The security check expired or could not be verified. Please try again.',400);
-      throw new AccountError(response.status===429?'Please wait before requesting another code.':'The sign-in email could not be sent. Please try again later.',response.status===429?429:503);
+      const code=error.code||error.error_code;
+      // Auth's OTP endpoint uses this precise response for a nonexistent user
+      // when create_user is false. Do not hide provider outages or other errors.
+      if(!(intent==='signin'&&response.status===422&&code==='otp_disabled')){
+        if(code==='captcha_failed')throw new AccountError('The security check expired or could not be verified. Please try again.',400);
+        throw new AccountError(response.status===429?'Please wait before requesting another code.':'The sign-in email could not be sent. Please try again later.',response.status===429?429:503);
+      }
     }
-    return {message:'Check your email for a sign-in code.'};
+    return {message:'If this address can sign in, a code will arrive shortly.',resendAfterSeconds:60};
   }
   async verifyCode(input){
     const email=String(input.email||'').trim().toLowerCase(),token=String(input.code||'').trim();
@@ -77,7 +87,7 @@ export class AccountAuth{
     if(!this.allowed(email))throw new AccountError('This beta is available to invited email addresses.',403);
     if(!/^[0-9]{6,10}$/.test(token))throw new AccountError('Enter the code from your sign-in email.');
     const response=await this.call('verify',{email,token,type:'email'});
-    if(!response.ok)throw new AccountError(response.status===429?'Please wait before trying another code.':'This code is invalid or expired. Request another code.',response.status===429?429:400);
+    if(!response.ok)throw new AccountError(response.status===429?'Please wait before trying another code.':response.status>=500?'Sign-in is temporarily unavailable. Please try again.':'This code is invalid or expired. Request another code.',response.status===429?429:response.status>=500?503:400);
     const session=await response.json();return {actor:this.actor(session.user),cookies:this.cookies(session)};
   }
   async logout(request){const [access]=this.tokens(request);if(access)await this.call('logout?scope=local',{},access);return this.cookies();}

@@ -1,5 +1,20 @@
 # Harmonious: what to check on your next visit
 
+## Activity and sign in cleanup
+
+Implemented locally on October 23, 2026; joint release verification is pending. Use these checks after [deployment status](deployment-status.md) records publication, then refresh both browser profiles. The [notifications plan](notifications-plan.md) and [sign-in plan](auth-cleanup-plan.md) describe the implemented scope.
+
+- [ ] Sign out and return through **Sign in** using only your email and its code. Your saved display name, maps and comparison destination should remain. **Create account** should additionally request a display name; normal accounts still use email codes, without a password. Organizer-issued test accounts retain their separate username/password login.
+- [ ] On the code screen, check the displayed email, Resend code and Change email. A resend should retain the intended address and signup name. Try an incorrect code and wait through a resend cooldown; entered details should remain recoverable. Check keyboard use, pasting a code and a narrow phone screen.
+- [ ] With two disposable shared maps, record Agree/Disagree, an inquiry, a dispute and a reply. The other person's **Activity** count should update without changing an unfinished editor. The author should receive no alert about their own action. Expand the relevant group and read the full accessible explanation.
+- [ ] Open a node reply, connection dispute and standstill from Activity in both Canvas and Outline. The correct contribution and source should open, and that item should become read only after navigation succeeds. With an unfinished edit, try again: the draft and unread state should remain. Closing the inbox should return to the prior field and cursor.
+- [ ] Try Mark read, Mark unread, All / Unread, loading older items and **Mark shown items read**. Have the other person send a new reply while marking earlier items read; the new arrival should remain unread. Reload and check that read state persists.
+- [ ] Mute a comparison, receive another contribution and look in All. The new event should be labeled as muted when received and should not add an unread alert. Earlier unread events remain unread. Unmute and send another contribution; future alerts should resume without replaying suppressed history.
+- [ ] Link and unlink counterparts, make and resume a standstill, and co-sign a source section. Check the intended recipient and exact context. A section co-sign should create one event. Ordinary map edits, confidence changes, private copies and opening the inbox should create no notifications.
+- [ ] Save a private facilitator draft and check the other participant's inbox: it should remain unchanged. Approve it, or publish a separately directed contribution, then check the participant author and facilitator recorder. Personal Activity in a facilitator session should require returning to the signed-in account through the existing leave guard.
+- [ ] Make a source or cited reference private, or delete a disposable source, before opening its previous activity. Refresh Activity: inaccessible wording and counts should disappear. A stale item should show a neutral unavailable result. Restoring sharing should preserve the original event and its saved read state.
+- [ ] Check long explanations and groups at 320–390 px, enlarged text, keyboard focus, a temporary connection failure and signing out/in with another account. Activity must not retain the previous person's inbox or submit a draft while retrying.
+
 ## Canvas / Outline — Worker 71
 
 - Refresh and open a map. Choose **Outline** on desktop and **Canvas** again; check your selected node and camera. A new phone visit defaults to Outline, while an explicit choice stays selected through resize/reload.

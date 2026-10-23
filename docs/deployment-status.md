@@ -2,6 +2,12 @@
 
 Updated October 23, 2026 (America/New_York).
 
+## Release prepared — Activity and sign-in cleanup
+
+Both requested increments are implemented, with **75/75 local release checks passed** in `build/verification/2026-10-23T22-46-05-158Z-35048/summary.json`. The suite includes real two-account Activity navigation, current-access privacy, transaction rollback, facilitator publication, read/mute races, both presentations, sign-in/signup identity handling, narrow layouts and the existing application regressions. The new browser launcher's Windows path handling was corrected before the complete passing run. See [notifications](notifications-plan.md) and [sign-in cleanup](auth-cleanup-plan.md).
+
+GitHub verification, the additive `20261023223219_activity_notifications.sql` migration and Worker publication are pending. Worker 71 remains live until the release entry below is updated. Existing maps and accounts require no conversion; notifications start with new published contributions rather than backfilling historical activity.
+
 ## Current release — Worker 71
 
 The optional **Canvas / Outline** presentation deployed **2026-10-23T22:24:30.231557Z**. Release source: `cfd49162d6bea5ffe02a7ccc1e9302e4a75fee79` on `redesign/node-interactions`, committed and pushed before publication.

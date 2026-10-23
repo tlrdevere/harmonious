@@ -32,8 +32,10 @@
 .account-card form{display:grid;gap:12px;margin-top:26px}
 .account-card label{font-size:14px;font-weight:650}
 .account-card input{font-size:16px;min-height:44px;width:100%}
-.account-card button{min-height:44px;font-size:16px}
+.account-card button{min-height:44px;font-size:16px;white-space:normal;line-height:1.3}
 .account-card .field-help{font-size:14px;margin:0}
+#account-challenge:empty{display:none}
+.account-intents{display:flex;gap:8px;margin:20px 0 12px}.account-intents button{flex:1;min-width:0}.account-intents button[aria-pressed=true]{background:#173f49;color:#fff;border-color:#173f49}.account-code-actions{display:flex;flex-wrap:wrap;gap:8px}.account-code-actions button{flex:1;min-width:0}#account-name-group{display:grid;gap:10px}#account-code-destination,#account-feedback{overflow-wrap:anywhere}#account-code-wait{margin-top:12px}.account-card button:focus-visible,.account-card input:focus-visible{outline:3px solid #547fb0;outline-offset:3px}.account-card input:disabled{opacity:.7}
 #account-feedback{min-height:26px;color:#124c60}
 .accounts:not(.account-locked) #account-gate{display:none}
 .account-locked> :not(.topbar):not(#account-gate):not(script):not(link){display:none!important}

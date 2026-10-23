@@ -1,6 +1,22 @@
 # In app notifications implementation plan
 
-Requested October 23, 2026. **Status: planned, not implemented.** Baseline: the optional Canvas / Outline presentation is live in Worker 71, with 70 local and hosted checks passing. Keep the existing browser modules, Cloudflare Worker and Supabase database; no framework change or new delivery service is needed.
+Requested October 23, 2026. **Status: implemented locally; joint release verification pending.** Notifications and the [sign up and sign in cleanup](auth-cleanup-plan.md) will be published together after the full local and hosted checks pass. Worker 71 remains the recorded live baseline until [deployment status](deployment-status.md) records the verified release. The existing browser modules, Cloudflare Worker and Supabase database are retained.
+
+## Implemented behavior
+
+The signed-in account has an **Activity** button with an unread count, All / Unread filters, expandable groups, individual read controls, **Mark shown items read**, and per-comparison muting. Lists use pages of 50 events and retain exact contribution destinations in Canvas or Outline. Merely opening or refreshing the inbox does not change a contribution's read state. Opening an item rechecks access and marks it read only after navigation succeeds. An unfinished edit prevents destination navigation and keeps both the draft and unread state; the inbox itself can still be opened and closed without submitting that edit.
+
+The additive migration `20261023223219_activity_notifications.sql` creates event, recipient-state and mute tables with RLS and service-only access. The canonical-record trigger captures direct contributions, directed facilitator contributions and approved drafts in the same transaction. Pending or declined drafts produce no event. Existing history is not backfilled. Event records contain identifiers and attribution, while the Worker resolves current authorized wording, names and destinations when reading them.
+
+Muting suppresses future unread alerts without marking existing unread items read. Suppressed events remain in All, and unmuting does not replay them. Explicitly marking a suppressed event unread brings that item into Unread. Read and mute commands validate the current workspace generation under a shared lock, while leaving that generation unchanged. This keeps permission changes from racing a read action and avoids conflicts with ordinary map saves.
+
+The inbox polls independently of accepting workspace changes, pauses while the page is hidden and backs off after failures. Account and facilitator-context changes discard pending inbox results. A facilitator must return to their own account through the existing leave guard before reading personal activity. Portable files keep their existing offline workflows and have no authenticated inbox.
+
+## Focused verification
+
+`tests/activity-database.test.mjs` passes against the full migration sequence in disposable PostgreSQL. It covers rollout without historical backfill, every supported event family, intentional edits, silent metadata/source-snapshot refreshes, correct recipients, replay, co-sign grouping, private draft rollback, approval attribution, read/mute state and service-only permissions. Each successful direct or facilitated write also compares the SQL event with the independent memory classifier. Existing account-database, interaction-database and facilitation suites pass with the new trigger installed.
+
+`tests/activity-api.test.mjs` passes current-access filtering, dependent references and replies, standstill families, bounded pages, later arrivals, read/mute races, malformed requests and session/origin boundaries. Full application navigation, browser checks, the complete local/hosted suite and the joint release remain the publication gate. See the [user testing checklist](user-testing-checklist.md) for the two-account walkthrough.
 
 ## Outcome and scope
 
@@ -64,14 +80,11 @@ Clear inbox caches and invalidate in-flight responses on logout, account changes
 - Poll while the page is visible, refresh after returning to it and after relevant successful actions, and back off after failures. Do not stack overlapping requests or replace drafts. Keep the previous inbox usable when a refresh fails, with a clear retry state.
 - Reuse existing route and permission-aware opening commands. Resolve the source, comparison and exact entry before navigating. Preserve the chosen layout; node arguments may open their focused dialogue, while connection arguments retain their connection target.
 
-## Delivery order
+## Delivery progress
 
-1. Finalize the event/recipient matrix above against current record types, including edits, withdrawals, co-sign grouping and legacy records that remain readable. Add pure classification tests first.
-2. Add and test the transactional schema/hook, stable event identity, recipient state and mute preferences in the disposable database fixture. Verify current Supabase migration tooling/documentation before creating the migration.
-3. Add authenticated list/count/open/read/mute endpoints with current-access filtering, bounded cursors and watermark semantics. Keep older clients compatible and leave notification rows outside their workspace envelopes.
-4. Build Activity UI, lifecycle-safe polling and exact-target navigation for both presentations. Complete keyboard and narrow-screen review with unfinished forms open.
-5. Run the focused API/database/browser checks and the complete existing suite locally and on GitHub. Review the migration and deployment against the established release procedure before publication.
-6. Apply the additive migration and deploy the matching Worker/client after verification. Enable event creation from the rollout point only; do not turn existing historical interactions into a flood of new unread activity. Verify the live assets, access boundaries and a controlled two-account interaction/read cycle.
+The event classifier, transactional migration, authenticated API and Activity controller are implemented. The migration was created through the installed Supabase CLI after checking current documentation; it requires no rewrite of existing maps or contributions. Notification rows remain outside workspace saves and exports.
+
+Remaining release work is to finish integrated browser review, run the complete existing suite locally and on GitHub for the exact source revision, inspect database advisors, apply the additive migration, and publish the matching Worker/client together with the sign-in cleanup. Verify exact live assets, access boundaries and a controlled two-account interaction/read cycle. The rollout must leave historical interactions unchanged and produce activity only for subsequent supported actions.
 
 ## Acceptance and verification
 

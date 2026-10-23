@@ -15,7 +15,7 @@ export async function fixture(){
  for(const f of (await readdir('supabase/migrations')).filter(f=>f.endsWith('.sql')).sort())await db.exec(await readFile('supabase/migrations/'+f,'utf8'));
  await db.exec('set role service_role');
  const call=async(sql,args=[])=>{try{return(await db.query(sql,args)).rows[0].data;}catch(e){const error=new AccountError(e.message,e.code==='PT403'?403:e.code==='PT409'?409:400);error.snapshotChanged=e.message==='snapshot_changed';throw error;}};
- const store={snapshot:()=>call('select harmonious_snapshot() data'),commit:(a,g,c)=>call('select harmonious_commit($1,$2,$3) data',[a,g,JSON.stringify(c)]),facilitate:(a,m,g,c,i)=>call('select harmonious_facilitate($1,$2,$3,$4,$5) data',[a,m,g,c,JSON.stringify(i)])};
+ const store={snapshot:()=>call('select harmonious_snapshot() data'),commit:(a,g,c)=>call('select harmonious_commit($1,$2,$3) data',[a,g,JSON.stringify(c)]),facilitate:(a,m,g,c,i)=>call('select harmonious_facilitate($1,$2,$3,$4,$5) data',[a,m,g,c,JSON.stringify(i)]),activity:(a,c,i={})=>call('select harmonious_activity($1,$2,$3) data',[a,c,JSON.stringify(i)])};
  for(const a of [alice,bob,organizer,outsider])await seedActor(store,a);
  const users=[alice,bob].map(a=>({id:a.id,email:a.name.toLowerCase()+'@test-accounts.harmonious.invalid',app_metadata:{harmonious_test_account:true,test_username:a.name.toLowerCase(),created_by:organizer.id},user_metadata:{display_name:a.name},created_at:new Date().toISOString()}));
  const auth=actor=>({env,identify:async()=>({actor,cookies:[]}),fetcher:async url=>{const id=new URL(url).pathname.split('/').at(-1);return Response.json(id==='users'?{users}:users.find(u=>u.id===id)||{id});}});

@@ -8,5 +8,10 @@ for(const [path,asset] of Object.entries(await clientAssets())){const response=a
 const home=await get('/'),html=await home.text();assert.equal(home.status,200);assert(html.includes('library.css')&&html.includes('beta-boot.mjs'));assert(home.headers.get('content-security-policy').includes("script-src 'self'"));
 const session=await get('/api/session'),state=await session.json();assert.equal(session.status,200);assert.equal(state.configured,true);assert.equal(state.actor,null);
 assert.equal((await get('/api/workspace')).status,401);assert.equal((await get('/.dev.vars')).status,404);
+assert.equal((await get('/api/activity')).status,401);
+for(const path of ['/api/activity/open','/api/activity/read','/api/activity/mute','/api/auth/code']){
+ const response=await fetch(origin+path,{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(20000)});
+ assert.equal(response.status,path==='/api/auth/code'?400:401,path);
+}
 const bundle=await readFile('build/cloudflare/worker.mjs');console.log('Local Worker SHA-256: '+createHash('sha256').update(bundle).digest('hex'));
 console.log('Live release verified: exact frontend assets, homepage, configured sign-in, account gate, private configuration path and security headers.');

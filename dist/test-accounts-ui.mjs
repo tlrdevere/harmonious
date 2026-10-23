@@ -16,12 +16,14 @@ export class TestAccountsUI{
   this.dialog.querySelector('form').onsubmit=event=>{event.preventDefault();this.create();};this.dialog.addEventListener('cancel',event=>{event.preventDefault();this.close();});
  }
  switchLogin(test){
-  this.testLogin=test;this.login.hidden=!test;document.getElementById('account-email-form').hidden=test;document.getElementById('account-code-form').hidden=true;this.switchButton.textContent=test?'Use email sign-in':'Use a test account';document.getElementById('account-feedback').textContent='';document.getElementById(test?'test-username':'account-email').focus();
+  if(!this.account.cancelAuthAttempt())return;
+  this.testLogin=test;this.login.hidden=!test;this.switchButton.textContent=test?'Use email sign-in':'Use a test account';this.account.renderAuth();document.getElementById('account-feedback').textContent='';document.getElementById(test?'test-username':'account-email').focus();
   if(!test)document.getElementById('test-password').value='';
  }
  async signIn(){
-  const button=this.login.querySelector('button'),feedback=document.getElementById('account-feedback');button.disabled=true;feedback.textContent='Signing in…';
-  try{await this.account.request('/api/auth/test-login',{username:document.getElementById('test-username').value,password:document.getElementById('test-password').value});document.getElementById('test-password').value='';await this.account.initialize();}catch(error){feedback.textContent=error.message;}finally{button.disabled=false;}
+  if(this.signingIn||this.account.verifying)return;
+  const button=this.login.querySelector('button'),feedback=document.getElementById('account-feedback'),credentials={username:document.getElementById('test-username').value,password:document.getElementById('test-password').value};this.signingIn=true;button.disabled=true;this.account.renderAuth();feedback.textContent='Signing in…';
+  try{await this.account.request('/api/auth/test-login',credentials);document.getElementById('test-password').value='';await this.account.initialize();}catch(error){feedback.textContent=error.message;}finally{this.signingIn=false;button.disabled=false;this.account.renderAuth();}
  }
  session(session){this.manage.hidden=!session.canManageTestAccounts;if(!session.canManageTestAccounts&&this.dialog.open){this.dialog.close();this.clear();}if(session.actor)document.getElementById('test-password').value='';}
  clear(){this.pending=null;this.credentials.hidden=true;this.credentials.querySelector('textarea').value='';this.dialog.querySelector('form').reset();this.list.replaceChildren();this.feedback.textContent='';}
