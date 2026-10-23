@@ -1,6 +1,27 @@
 # Optional off-canvas view — implementation plan
 
-Requested October 21, 2026. **Status: planned, not implemented.** Baseline: Worker 70, followed by the completed development-tool maintenance pass with 68 passing local and hosted checks. Retain the existing technology stack and all existing desktop features.
+Requested October 21, 2026. **Status: implemented and live in Worker 71, October 23, 2026.** All **70 local and hosted checks passed**, followed by exact live verification. [Deployment status](deployment-status.md) records the tested source and publication. The existing technology stack and Canvas features are retained.
+
+## Delivered behavior and parity
+
+Use the **Canvas / Outline** switch above the workspace. Desktop starts in Canvas; a first visit at 700 pixels or narrower starts in Outline unless an explicit route or saved choice overrides it. Your explicit choice is remembered. Resizing never switches the view. Selection, form drafts and caret survive switching; a pending contribution save temporarily disables the switch. Restoring a selected node by URL opens reading controls, while explicit Edit actions still open the editor.
+
+| Area | Delivered Outline controls and shared behavior |
+| --- | --- |
+| Own maps | Frame/topic cards with full descriptions; Open node, Edit/Edit frame details and Add child node; the same confidence, Philosophy, connection and deletion forms. One provisional child/editor is shared with Canvas. Library creation/settings/copy/map deletion remain available. |
+| Hierarchy and focus | Expand/Collapse children and all; Open this branch / Back to all frames; Find a node; selected rows remain reachable outside filters. Connected-topic focus uses existing rules with Clear focus. |
+| Shared source / derived pod | Read-only source actions, co-sign/copy, source connection labels and directions, existing threshold/population controls and context-only markers. No new authored pod model. |
+| Comparisons | Frame/topic/search filters; explicit linked pairs, unmatched nodes and frame context; both owners' full wording and parent breadcrumbs; personal assessments and mutual pair states. Same eligible link/unlink/request/history actions. |
+| Inquiry and Argument | Existing action forms and exact node/connection targets; dispute/response counts; Open dialogue; full text, actual reply targets, Details, repeated replies and standstill. Placement in canvas preserves right/above/below without adding semantic categories. |
+| Facilitation and privacy | Existing participant permission, draft approval and attribution rules. Outline lists only the authorized workspace; unavailable sources never fall back to historical private wording. |
+| Navigation and editing | `layout=canvas` / `layout=outline` routes preserve object identity. Same form elements move between hosts, avoiding duplicate writes. Back/Forward, reload, failures/retries and account changes are covered. |
+| Large/mobile/portable views | Bounded lists with Show more, limited indentation, keyboard controls, ordinary scrolling and responsive cards. Standalone exports include both presentations. Canvas retains its spatial controls and saved camera when switching back. |
+
+Implementation uses `outline-projection.mjs`, `map-outline-ui.mjs`, `comparison-outline-ui.mjs`, `presentation-ui.mjs`, `presentation-route.mjs` and two scoped stylesheets. No database migration was required. The projection test includes a 10,000-level hierarchy; browser checks cover 320–390-pixel layouts, exact target routes, switching unfinished forms, retries and private-source isolation. Desktop/phone captures and a standalone editing/enlarged-text smoke check were reviewed. The [user checklist](user-testing-checklist.md) retains real-device and virtual-keyboard acceptance for testing.
+
+## Accepted implementation plan
+
+The sections below preserve the approved scope and delivery criteria. Follow-up [notification](notifications-plan.md) and [sign-in cleanup](auth-cleanup-plan.md) plans were created after this release; pods and operational backups/recovery are deferred.
 
 ## Outcome and boundaries
 

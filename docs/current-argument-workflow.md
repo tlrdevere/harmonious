@@ -1,5 +1,7 @@
 # Working in a shared Comparison
 
+**Canvas / Outline is live in Worker 71.** The presentation switch works on desktop and phones. Outline lists the same nodes, explicit counterparts, assessments and disputes, with **Open dialogue** for a scrolling view of the inner Argument conversation. Replies identify their actual targets; **Placement in canvas** retains right/above/below choices. Existing categories, permissions, histories and standstill actions are unchanged. Switching retains selection and unfinished forms. See [the delivered behavior](off-canvas-view-plan.md) and [deployment status](deployment-status.md).
+
 The [topic alignment and branch-focus increment](topic-alignment-and-focus.md) aligns connected first-tier topics across frames where compatible with counterpart placement. View options → Focus selection emphasizes explicitly chosen topic branches in the outer canvas; other nodes and connections fade. This is a personal viewing preference and leaves the inner dialogue canvas unchanged. See [deployment status](deployment-status.md) for publication.
 
 [Owner-only map deletion](map-deletion.md) is live in **Worker 65**. Deleting a source makes its comparisons unavailable for new contributions. Independent copies and recorded history are retained; current source contents are no longer browsable. My maps offers Delete map with confirmation. See [deployment status](deployment-status.md).

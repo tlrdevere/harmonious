@@ -1,5 +1,19 @@
 # Harmonious: what to check on your next visit
 
+## Canvas / Outline — Worker 71
+
+- Refresh and open a map. Choose **Outline** on desktop and **Canvas** again; check your selected node and camera. A new phone visit defaults to Outline, while an explicit choice stays selected through resize/reload.
+- In Outline, expand a branch, search, use Open this branch / Back to all frames and Clear focus. Full descriptions, owner names, confidence and source context should be readable without sideways panning.
+- Edit a node, switch presentations before saving, and check the same wording and cursor. Add a child, cancel one draft and save another once. Refresh a selected node: it should reopen for reading, without unexpectedly starting an edit.
+- Try confidence (blank, 0 and 100), Philosophy, connection inspection, map copy/settings and deletion on a disposable map. These should follow the same ownership and confirmation rules as Canvas.
+- In a comparison, check linked pairs, unmatched nodes, personal and mutual assessment states, frame/topic filters and exact target search. Link/unlink an eligible pair and check the other account after refresh.
+- In Argument Outline, open a node's dialogue, read its disputes and reply to a specific contribution. Check the actual reply target, Placement in canvas, repeated replies, standstill and return to the outer comparison. Switch to Canvas to inspect the same records.
+- Read a shared source and the existing derived-pod view. Read-only source actions and context-only threshold labels should remain correct. A private, deleted or unavailable source must not appear through search or a direct link.
+- In an enabled facilitator session, check approved contribution attribution in both views. Private drafts remain unpublished and participant switching still respects pending work.
+- On a real phone, try long text with the keyboard open, enlarged text, scrolling to Save/Cancel, and switching views. On desktop, try keyboard-only branch expansion and returning to an unfinished form. Report any clipping or lost focus.
+
+Automated desktop/narrow checks passed; this walkthrough gathers real-device usability feedback. See [release evidence](deployment-status.md) and [delivered scope](off-canvas-view-plan.md).
+
 ## Philosophy bank
 
 - Select a node → Philosophy → Create a new idea. Try Definition, Standard, Principle, Belief and Other. Save once; the idea should appear on that node and in Map Library → Philosophy.

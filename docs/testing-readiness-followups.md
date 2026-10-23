@@ -1,6 +1,6 @@
 # Testing and service-readiness follow-ups
 
-Recorded October 21, 2026. These are requirements and recommendations for discussion; this document does not claim they are implemented or that provider backup settings have been verified. The requested [off-canvas implementation plan](off-canvas-view-plan.md) is separate. Discuss pods next.
+Recorded October 21; status updated October 23, 2026. The [Canvas / Outline presentation](off-canvas-view-plan.md) is now live in Worker 71. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) have separate implementation plans and are not yet implemented. The owner has deferred pods and operational backups/recovery; the requirements below are retained for when that work resumes. Provider backup settings have not been verified by this task.
 
 ## Public and private pods
 
@@ -14,7 +14,7 @@ Decide what public means (readable to signed-in users or to the wider web), who 
 
 Recommend an in-app activity inbox with an unread count first. Notify the owner about new interactions on their maps and the appropriate participant about replies, requests and standstill responses. Each item opens the exact authorized target in the user's chosen Canvas/Outline presentation.
 
-Generate durable events only after successful saves, with stable event IDs for retry deduplication and per-recipient read state. Avoid alerts for one's own actions, private drafts, autosave keystrokes or every background refresh. Marking read should be explicit/open-based, not an accidental side effect of polling. Validate access both when listing and opening; removed membership/private sources cannot leak content through old notification text. Group noisy activity and offer per-context muting. Facilitated contributions retain their existing attribution and recipient rules.
+Generate durable events transactionally with successful publication, with stable event IDs for retry deduplication and per-recipient read state. Failed saves and private draft validation must roll back the events too. Avoid alerts for one's own actions, private drafts, autosave keystrokes or every background refresh. Marking read should be explicit/open-based, not an accidental side effect of polling. Validate access both when listing and opening; removed membership/private sources cannot leak content through old notification text. Group noisy activity and offer per-context muting. Facilitated contributions retain their existing attribution and recipient rules. The [implementation plan](notifications-plan.md) details the shared database hook and draft-safe polling.
 
 Email summaries or alerts can be added later as opt-in delivery, with preferences/unsubscribe and limited private content. Browser push is a separate optional channel. No notification sending or scheduled automation has been enabled by recording this proposal.
 
@@ -40,4 +40,4 @@ Before relying on the service for paid client work:
 
 Provider documentation checked October 21: [Supabase backups](https://supabase.com/docs/guides/platform/backups) describes daily backups on paid plans, free-tier off-site export guidance, point-in-time recovery, restore downtime, and Storage exclusions. At review time its seven-day PITR add-on is approximately $100/month in addition to required plan/compute charges; verify the actual account quote before enabling it. PITR supersedes the provider's separate daily-backup mode; independent logical backups remain a distinct layer.
 
-Recommended readiness order: verify and establish recovery safeguards before paid work; simplify sign-in; build the optional Outline presentation and in-app activity inbox as separately tested increments. Product discussion of public/private pods can proceed next without waiting for these implementations.
+Current work order: Outline is complete; sign-in cleanup and the activity inbox are planned as separate increments. Pods and operational backups/recovery are deferred at the owner's request. The recovery recommendations above remain requirements to revisit when that work resumes; no backup job, paid provider option or recovery guarantee was enabled by this task.

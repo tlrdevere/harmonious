@@ -1,14 +1,27 @@
 # Deployment status
 
-Updated October 21, 2026 (America/New_York).
+Updated October 23, 2026 (America/New_York).
+
+## Current release — Worker 71
+
+The optional **Canvas / Outline** presentation deployed **2026-10-23T22:24:30.231557Z**. Release source: `cfd49162d6bea5ffe02a7ccc1e9302e4a75fee79` on `redesign/node-interactions`, committed and pushed before publication.
+
+- Worker version **71**: `920dba04-5a5c-4366-9f3e-c2485d12cf38`, serving **100%** of traffic. Deployment: `6bf632a5-620d-4130-9533-b470a8df6b8b`.
+- Outline is available on desktop and phones for map authoring, shared sources, comparisons, Inquiry, Argument dialogue and the existing derived-pod prototype. It uses the same records, permissions, forms and save commands. Desktop defaults to Canvas; first visits at 700 pixels or narrower default to Outline unless an explicit route or saved choice says otherwise. Resize does not change the presentation. See [the delivered scope and parity matrix](off-canvas-view-plan.md).
+- **70/70 local checks passed**: `build/verification/2026-10-23T22-18-05-992Z-43272/summary.json`. **70/70 hosted checks passed** on the same source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/40032698953), completed **22:23:46 UTC**. Evidence: `build/outline-hosted-verification-evidence.json`.
+- Verification covers shared forms and draft/caret preservation, exact routes and Back/Forward, child creation, confidence, Philosophy, linking/unlinking, replies and standstill, source privacy, facilitator attribution, keyboard focus and 320–390-pixel layouts. Desktop/phone screenshots and standalone Outline editing with enlarged text were reviewed. A refresh regression was corrected so restoring a selected node does not automatically start editing it.
+- Live checks confirm all **71 client files** and the homepage match the tested checkout, configured sign-in, account restrictions, private configuration protection and security headers. Worker SHA-256: `ae0227d202b879b0c6430b80f47ac17f2f589ecdfe21783ee9dfff5cdde63a09`. Evidence: `build/outline-release-evidence.json`.
+- Runtime settings and all nine bindings were inherited unchanged. No database migration or production content edits were required. The technology stack is unchanged.
+
+**Refresh Harmonious and choose Canvas or Outline.** Follow [the testing checklist](user-testing-checklist.md), including a real-phone keyboard walkthrough. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) have implementation plans only; they are not part of Worker 71. Pods and operational backups/recovery are deferred in [the work plan](next-work-plan.md). Later documentation-only commits do not change this deployed bundle.
 
 ## Development-tool maintenance — October 21, 2026
 
 The [dependency maintenance pass](dependency-review.md) is complete on source `04f600eedd8d08bc6bad8bcd26c840bf55e8b7dc`, committed and pushed to `redesign/node-interactions`. All **68 local and hosted checks passed**, including the new loader/schema-generation/deployment-dry-run check. [Hosted evidence](https://github.com/tlrdevere/harmonious/actions/runs/39705542929) completed October 21 at 9:29 PM EDT. The fresh bulk audit returned 13 advisories before and zero known advisories after the updates; only package names and versions were sent.
 
-The rebuilt Worker has the same SHA-256 as Worker 70 (`c5016920e74adbb37c2ce80f0047db54704a612ca58830bf100fec75ba21978b`), and all live client assets/access checks passed. **No new Worker deployment, runtime-setting change, production data write, or database migration was required. Worker 70 remains live.** See the review for exact versions and evidence. Local verification: `build/verification/2026-10-22T01-24-36-599Z-32236/summary.json`; hosted verification: `build/maintenance-hosted-verification-evidence.json`.
+The rebuilt Worker had the same SHA-256 as Worker 70 (`c5016920e74adbb37c2ce80f0047db54704a612ca58830bf100fec75ba21978b`), and all live client assets/access checks passed. **No new Worker deployment, runtime-setting change, production data write, or database migration was required for maintenance; Worker 70 remained live at that point.** See the review for exact versions and evidence. Local verification: `build/verification/2026-10-22T01-24-36-599Z-32236/summary.json`; hosted verification: `build/maintenance-hosted-verification-evidence.json`.
 
-## Current release — Worker 70
+## Previous release — Worker 70
 
 The reusable Philosophy bank deployed **2026-10-09T19:43:24.735128Z**. Release source: `632ca28cb7861c307ec361bacd8d21fa34be4b1f` on `redesign/node-interactions`, committed and pushed before publication.
 

@@ -1,5 +1,7 @@
 # Interaction grammar v4
 
+The optional [Canvas / Outline presentation](off-canvas-view-plan.md) is live in Worker 71. Both presentations use the same records, validation and action eligibility. Outline does not add interaction categories, infer counterparts or merge records. Reply targets remain explicit; its Placement in canvas control retains the existing visual placement metadata. No grammar/schema migration was required. See [deployment status](deployment-status.md).
+
 The [topic alignment and focus increment](topic-alignment-and-focus.md) adds presentation behavior to existing cross-frame connections: first-tier topic alignment and explicit branch fading. It adds no connection type, assessment, ownership rule or Argument action. Counterpart placement takes priority where constraints conflict; the inner dialogue canvas is unchanged. See [deployment status](deployment-status.md) for publication.
 
 The [experimental reply placement increment](argument-reply-placement.md) adds optional immutable `interaction.placement` to targeted grammar-v7 replies: `right`, `above`, or `below`. It has no argumentative meaning. Missing placement preserves the earlier horizontal default. The `argument-placement-v1` capability protects this metadata across saved workspaces and history; [deployment status](deployment-status.md) records publication.
