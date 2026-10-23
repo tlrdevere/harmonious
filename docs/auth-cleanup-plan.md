@@ -1,12 +1,12 @@
 # Sign up and sign in cleanup implementation plan
 
-October 23, 2026. **Status: implemented locally; joint release verification pending.** This cleanup and [in app notifications](notifications-plan.md) will be published together after the full local and hosted checks pass. Worker 71 remains the recorded live baseline until [deployment status](deployment-status.md) records the verified release. The technology stack is unchanged.
+October 23, 2026. **Status: live in Worker 72**, published together after **75/75 local and hosted release checks passed**. The additive Activity migration and live asset/access checks passed; existing maps and accounts were preserved. See [deployment status](deployment-status.md) for the exact source, migration and release evidence. The technology stack is unchanged.
 
 ## Outcome and scope
 
 Returning users choose **Sign in**, enter their email address, and enter the code sent to that address. They do not supply a display name or create a password. New users choose **Create account**, provide an email address and initial display name, and verify their email with a code. Keep **Use a test account** as the separate organizer-issued username/password flow.
 
-The same accounts, map IDs, comparisons, contributions, facilitator permissions and saved names remain in place. Password login for normal accounts, social login, passkeys, changes to signup eligibility and changes to email delivery providers are outside this increment. Notifications are a separate implementation plan.
+The same accounts, map IDs, comparisons, contributions, facilitator permissions and saved names remain in place. Password login for normal accounts, social login, passkeys, changes to signup eligibility and changes to email delivery providers are outside this increment. The Activity inbox was delivered in the same release and is documented separately.
 
 ## Implemented behavior
 
@@ -20,7 +20,7 @@ Turnstile and native Supabase CAPTCHA were disabled at the owner's request. Pres
 
 ## Focused verification
 
-The account-signup, account-api and test-account tests pass, along with the new `tests/auth-cleanup-browser.test.mjs` and existing test-account browser suite. Browser checks use the real Worker handler with disposable memory/Auth fixtures: they send no real participant email. Coverage includes email-only sign-in, unknown-account protection, signup and canonical-name preservation, immutable resend/verification, cooldowns, stale sends, duplicate submissions, 429/503 recovery, test-flow switching, map/node/layout destination restoration and 320–390 px layouts. The complete local/hosted suite and the coordinated production release remain pending.
+The account-signup, account-api and test-account tests pass, along with the new `tests/auth-cleanup-browser.test.mjs` and existing test-account browser suite. Browser checks use the real Worker handler with disposable memory/Auth fixtures: they send no real participant email. Coverage includes email-only sign-in, unknown-account protection, signup and canonical-name preservation, immutable resend/verification, cooldowns, stale sends, duplicate submissions, 429/503 recovery, test-flow switching, map/node/layout destination restoration and 320–390 px layouts. All 75 local and hosted checks passed, followed by the coordinated Worker 72 release and live asset/access verification. See [deployment status](deployment-status.md).
 
 ## User experience
 

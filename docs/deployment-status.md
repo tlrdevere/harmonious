@@ -2,13 +2,23 @@
 
 Updated October 23, 2026 (America/New_York).
 
-## Release prepared — Activity and sign-in cleanup
+## Current release — Worker 72
 
-Both requested increments are implemented, with **75/75 local release checks passed** in `build/verification/2026-10-23T22-46-05-158Z-35048/summary.json`. The suite includes real two-account Activity navigation, current-access privacy, transaction rollback, facilitator publication, read/mute races, both presentations, sign-in/signup identity handling, narrow layouts and the existing application regressions. The new browser launcher's Windows path handling was corrected before the complete passing run. See [notifications](notifications-plan.md) and [sign-in cleanup](auth-cleanup-plan.md).
+**Activity notifications and separate sign-in/account creation** deployed **2026-10-23T22:59:22.432467Z**. Release source: `d796b99a899ad74c7bf34bde39b9b6671af7b0b6` on `redesign/node-interactions`, committed and pushed before publication.
 
-GitHub verification, the additive `20261023223219_activity_notifications.sql` migration and Worker publication are pending. Worker 71 remains live until the release entry below is updated. Existing maps and accounts require no conversion; notifications start with new published contributions rather than backfilling historical activity.
+- Worker version **72**: `c9e6ae06-078a-429b-b0aa-47d67d60dc7d`, serving **100%** of traffic. Deployment: `1fc01182-e5aa-4967-95a6-b484eee54410`.
+- **Activity** shows new published interactions, replies, counterpart changes, standstill updates and co-signs. It supports grouped history, unread counts, exact contribution opening in Canvas or Outline, read/unread controls and comparison muting. Current-access filtering covers previews, counts and navigation. Unfinished edits and private facilitator drafts stay protected. See [notifications](notifications-plan.md).
+- **Sign in** asks for email and its code. **Create account** additionally asks for the initial display name. Resend/change-email controls retain the intended address; returning sign-in cannot register an unknown account or overwrite an existing name. Organizer-issued test accounts retain username/password access. See [sign-in cleanup](auth-cleanup-plan.md).
+- **75/75 local checks passed**: `build/verification/2026-10-23T22-46-05-158Z-35048/summary.json`. **75/75 hosted checks passed** on the same source in [Release checks](https://github.com/tlrdevere/harmonious/actions/runs/40036297540), completed **22:57:26 UTC**. Evidence: `build/activity-hosted-verification-evidence.json`. The new browser launcher's Windows path handling was corrected before the complete passing run.
+- Applied local `20261023223219_activity_notifications.sql` as remote migration **`20261023225832_activity_notifications`**. Existing canonical data remained identical: generation **267**, **211** records, fingerprint `6c92899d9f86919bd74b28f5171d131c`. No historical events were backfilled. New tables have RLS and no browser-role access; RPCs are invoker-only with empty search paths and service-only execution. The production service-role snapshot returned revision 267 and empty event/mute lists. Evidence: `build/activity-database-evidence.json`.
+- Advisor changes are informational notices for three intentionally service-only RLS tables and their three newly unused indexes. Existing warnings and unrelated performance findings are unchanged.
+- Live checks confirm all **73 client files** and the homepage match the tested checkout, configured sign-in, unauthenticated Activity restrictions, missing-intent rejection, private configuration protection and security headers. Worker SHA-256: `4887314b8cfd9767e2ae8eafb7072316904f6ff981546cb3746e5e81c8e95c5d`. Evidence: `build/activity-release-evidence.json`.
+- Two-account interaction/read/navigation cycles ran through the real Worker API against disposable fixtures, plus the full PostgreSQL migration sequence. Mobile captures were reviewed. No real email messages or test contributions were published to participant maps. Follow the manual checklist for real-device/email-delivery feedback.
+- Runtime settings and all nine bindings were inherited unchanged. The technology stack and current signup/CAPTCHA settings are unchanged. Pods and operational backups/recovery remain deferred.
 
-## Current release — Worker 71
+**Refresh Harmonious.** Activity starts with new contributions after this rollout; existing history remains in its normal conversation views. Follow [the testing checklist](user-testing-checklist.md). Later documentation-only commits do not change the deployed bundle.
+
+## Previous release — Worker 71
 
 The optional **Canvas / Outline** presentation deployed **2026-10-23T22:24:30.231557Z**. Release source: `cfd49162d6bea5ffe02a7ccc1e9302e4a75fee79` on `redesign/node-interactions`, committed and pushed before publication.
 
@@ -19,7 +29,7 @@ The optional **Canvas / Outline** presentation deployed **2026-10-23T22:24:30.23
 - Live checks confirm all **71 client files** and the homepage match the tested checkout, configured sign-in, account restrictions, private configuration protection and security headers. Worker SHA-256: `ae0227d202b879b0c6430b80f47ac17f2f589ecdfe21783ee9dfff5cdde63a09`. Evidence: `build/outline-release-evidence.json`.
 - Runtime settings and all nine bindings were inherited unchanged. No database migration or production content edits were required. The technology stack is unchanged.
 
-**Refresh Harmonious and choose Canvas or Outline.** Follow [the testing checklist](user-testing-checklist.md), including a real-phone keyboard walkthrough. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) have implementation plans only; they are not part of Worker 71. Pods and operational backups/recovery are deferred in [the work plan](next-work-plan.md). Later documentation-only commits do not change this deployed bundle.
+**Refresh Harmonious and choose Canvas or Outline.** Follow [the testing checklist](user-testing-checklist.md), including a real-phone keyboard walkthrough. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) were planned at this point and subsequently shipped in Worker 72. Pods and operational backups/recovery are deferred in [the work plan](next-work-plan.md). Later documentation-only commits do not change this deployed bundle.
 
 ## Development-tool maintenance — October 21, 2026
 

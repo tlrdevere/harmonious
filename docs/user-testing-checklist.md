@@ -2,7 +2,7 @@
 
 ## Activity and sign in cleanup
 
-Implemented locally on October 23, 2026; joint release verification is pending. Use these checks after [deployment status](deployment-status.md) records publication, then refresh both browser profiles. The [notifications plan](notifications-plan.md) and [sign-in plan](auth-cleanup-plan.md) describe the implemented scope.
+Live in Worker 72 on October 23, 2026, after 75 local and 75 hosted checks passed. Refresh both browser profiles; Activity starts with new contributions after rollout. See [deployment status](deployment-status.md). The [notifications plan](notifications-plan.md) and [sign-in plan](auth-cleanup-plan.md) describe the implemented scope.
 
 - [ ] Sign out and return through **Sign in** using only your email and its code. Your saved display name, maps and comparison destination should remain. **Create account** should additionally request a display name; normal accounts still use email codes, without a password. Organizer-issued test accounts retain their separate username/password login.
 - [ ] On the code screen, check the displayed email, Resend code and Change email. A resend should retain the intended address and signup name. Try an incorrect code and wait through a resend cooldown; entered details should remain recoverable. Check keyboard use, pasting a code and a narrow phone screen.

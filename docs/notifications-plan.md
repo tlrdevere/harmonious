@@ -1,6 +1,6 @@
 # In app notifications implementation plan
 
-Requested October 23, 2026. **Status: implemented locally; joint release verification pending.** Notifications and the [sign up and sign in cleanup](auth-cleanup-plan.md) will be published together after the full local and hosted checks pass. Worker 71 remains the recorded live baseline until [deployment status](deployment-status.md) records the verified release. The existing browser modules, Cloudflare Worker and Supabase database are retained.
+October 23, 2026. **Status: live in Worker 72**, published together after **75/75 local and hosted release checks passed**. The additive Activity migration and live asset/access checks passed; existing maps and accounts were preserved. See [deployment status](deployment-status.md) for the exact source, migration and release evidence. The technology stack is unchanged.
 
 ## Implemented behavior
 
@@ -16,7 +16,7 @@ The inbox polls independently of accepting workspace changes, pauses while the p
 
 `tests/activity-database.test.mjs` passes against the full migration sequence in disposable PostgreSQL. It covers rollout without historical backfill, every supported event family, intentional edits, silent metadata/source-snapshot refreshes, correct recipients, replay, co-sign grouping, private draft rollback, approval attribution, read/mute state and service-only permissions. Each successful direct or facilitated write also compares the SQL event with the independent memory classifier. Existing account-database, interaction-database and facilitation suites pass with the new trigger installed.
 
-`tests/activity-api.test.mjs` passes current-access filtering, dependent references and replies, standstill families, bounded pages, later arrivals, read/mute races, malformed requests and session/origin boundaries. Full application navigation, browser checks, the complete local/hosted suite and the joint release remain the publication gate. See the [user testing checklist](user-testing-checklist.md) for the two-account walkthrough.
+`tests/activity-api.test.mjs` passes current-access filtering, dependent references and replies, standstill families, bounded pages, later arrivals, read/mute races, malformed requests and session/origin boundaries. `tests/activity-browser.test.mjs` and `tests/activity-integration-browser.test.mjs` also passed: real Worker API publication, exact reply/edge/standstill destinations, Canvas/Outline, unfinished edits, in-flight draft changes, identity changes, read timing, pagination and mobile layout. All 75 local and hosted checks passed before the migration and joint Worker 72 release. See the [user testing checklist](user-testing-checklist.md) for the two-account walkthrough.
 
 ## Outcome and scope
 

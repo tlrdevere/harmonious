@@ -1,6 +1,6 @@
 # Testing and service-readiness follow-ups
 
-Recorded October 21; status updated October 23, 2026. The [Canvas / Outline presentation](off-canvas-view-plan.md) is live in Worker 71. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) are implemented together and awaiting release verification; see [deployment status](deployment-status.md) for publication. The owner has deferred pods and operational backups/recovery; the requirements below are retained for when that work resumes. Provider backup settings have not been verified by this task.
+Recorded October 21; status updated October 23, 2026. The [Canvas / Outline presentation](off-canvas-view-plan.md) is live in Worker 71. [Notifications](notifications-plan.md) and [sign-up/sign-in cleanup](auth-cleanup-plan.md) are live together in Worker 72; see [deployment status](deployment-status.md) for release evidence. The owner has deferred pods and operational backups/recovery; the requirements below are retained for when that work resumes. Provider backup settings have not been verified by this task.
 
 ## Public and private pods
 

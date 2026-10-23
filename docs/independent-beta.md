@@ -6,6 +6,10 @@ Status: public signup is deployed at https://harmonious-beta.tlrdevere.workers.d
 
 The existing radial map editor, shared comparison canvas, reference maps, co-signs, and pods run on a standard Cloudflare Worker. Supabase provides managed email-code authentication and PostgreSQL storage. Testers do not need ChatGPT accounts.
 
+Normal accounts use **Sign in → email → emailed code**. **Create account** additionally collects the initial display name. Returning sign-in never creates a new identity; saved names change only through the account menu. Organizer-issued test accounts retain their separate username/password flow. See [sign-in behavior](auth-cleanup-plan.md).
+
+The account header's **Activity** inbox tracks new published interactions from other participants, independently of workspace refresh. It can refresh while someone writes, and exact-target opening preserves unfinished edits. It includes read/unread controls and per-comparison muting; current access governs both content and counts. Notifications begin at Worker 72 rollout. See [Activity behavior](notifications-plan.md).
+
 Each verified email address gets one authenticated identity, a display name, and an initially private worldview with three frames. The same identity opens the same saved maps after signing out or using another device. Display names are visible within the beta; email addresses are not included in shared workspace responses.
 
 Map settings let the owner choose **Only me** or **All beta participants**. Reference maps are also private until explicitly shared. Only owners edit their maps. Participants may copy or co-sign visible nodes; they can edit their own adopted copies. Co-signs on shared source maps disclose the person's display name and selected wording, without exposing the person's private destination map. Comparisons between shared maps are joint records: both map owners see the same correspondence and can save separate judgments, notes, and history. A comparison involving a private source remains visible only to the participant who recorded it until both sources are shared. There is no shared editing of a single personal map in this release.
