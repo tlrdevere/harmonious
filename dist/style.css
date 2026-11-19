@@ -107,3 +107,4 @@
 .topic-source-options{margin:6px 0}.topic-source-options>summary{cursor:pointer}.topic-source-options .topic-focus-controls{padding:8px}
 .topic-focus-active .topic-faded{opacity:.2!important}
 .topic-focus-active .topic-faded:focus-within,.topic-focus-active .topic-faded:focus{opacity:1!important}
+.node[data-temporal-section] .node-main:disabled{opacity:1;cursor:default;background:transparent}

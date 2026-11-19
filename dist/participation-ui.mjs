@@ -9,7 +9,7 @@ export class ParticipationUI{
   constructor(controller){
     this.controller=controller;this.actorId=controller.workspace.participants[0]?.id;this.mapId=null;this.nodeId=null;this.podMapId=null;this.podNodeId=null;this.peopleSelection=null;this.nodeSet=new Set();this.history=false;this.index=new Map();this.pending=null;
     this.canvas=new ComparisonCanvas(adUI('reference-canvas'),(_,id)=>{this.nodeId=id;this.canvas.pick('a',id);this.renderDetail();},()=>{},{single:true,nodeMeta:n=>n.parent===null?'Frame':`${nodeEndorsements(this.index,n).current.size} co-signs · ${NODE_KINDS[n.kind].label}`});
-    this.podCanvas=new ComparisonCanvas(adUI('pod-canvas'),(_,id)=>{this.podNodeId=id;this.podCanvas.pick('a',id);this.renderPodDetail();},()=>{},{single:true,hint:'Select a shared node to see its members. Muted nodes provide context.',nodeMeta:n=>n.parent===null?'Frame':n.podContext?'Context only':`${nodeEndorsements(this.pod?.index||new Map(),n).current.size} / ${this.pod?.people.length||0} co-sign`});
+    this.podCanvas=new ComparisonCanvas(adUI('pod-canvas'),(_,id)=>{this.podNodeId=id;this.podCanvas.pick('a',id);this.renderPodDetail();},()=>{},{single:true,pod:true,hint:'Select a shared node to see its members. Muted nodes provide context.',nodeMeta:n=>n.parent===null?'Frame':n.podContext?'Context only':`${nodeEndorsements(this.pod?.index||new Map(),n).current.size} / ${this.pod?.people.length||0} co-sign`});
     this.bind();
   }
   get workspace(){return this.controller.workspace;}
@@ -24,7 +24,11 @@ export class ParticipationUI{
     if(!this.workspace.maps.some(m=>m.id===this.podMapId))this.podMapId=this.mapId;
     if(this.controller.mode==='discover')this.renderExplore();if(this.controller.mode==='pods')this.renderPods();
   }
-  openMap(id,nodeId=null){this.mapId=id;this.nodeId=nodeId;this.history=false;this.renderExplore(true);if(nodeId)this.canvas.fitSelection();}
+  openMap(id,nodeId=null){
+    const map=this.workspace.maps.find(m=>m.id===id&&!m.unavailable);
+    if(!map||this.controller.presentation?.showFrameForNode(map.nodes.find(n=>n.id===nodeId),map)===false)return false;
+    this.mapId=id;this.nodeId=nodeId;this.history=false;this.renderExplore(true);if(nodeId)this.canvas.fitSelection();return true;
+  }
   renderExplore(fit=false){
     this.index=endorsementIndex(this.workspace);adUI('discovery-browse').hidden=this.history;adUI('endorsement-history').hidden=!this.history;
     adUI('browse-endorsements').classList.toggle('active',!this.history);adUI('my-endorsements').classList.toggle('active',this.history);

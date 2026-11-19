@@ -4,6 +4,7 @@ import {readFile,mkdir} from 'node:fs/promises';
 import {pathToFileURL} from 'node:url';
 import {resolve} from 'node:path';
 import {alice,bob,memoryStore,seedActor,edit,addNode,view} from './accounts.test.mjs';
+import {startAccountComparison} from '../worker/account-api.mjs';
 import {validateAccountChanges} from '../worker/account-policy.mjs';
 import {synchronizeIdeas} from '../dist/adoption.mjs';
 
@@ -157,5 +158,79 @@ try{
   const crossPair=sourceCanvas.getByRole('button',{name:'Inspect connection: A verifiable reason to Alice goal',exact:true});await crossPair.focus();await page.keyboard.press('Enter');assert.match(await sourceMenu.innerText(),/A cross-frame cause/);
   await page.setViewportSize({width:390,height:844});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));const sourceBounds=await sourceMenu.boundingBox(),surfaceBounds=await sourceCanvas.locator('.comparison-canvas').boundingBox();assert(sourceBounds.x>=0&&sourceBounds.x+sourceBounds.width<=390&&sourceBounds.y>=surfaceBounds.y&&sourceBounds.y+sourceBounds.height<=surfaceBounds.y+surfaceBounds.height,'Read-only source details remain inside the narrow canvas: '+JSON.stringify({sourceBounds,surfaceBounds}));await page.screenshot({path:'build/design-review/source-connections-mobile.png',fullPage:true});
   await sourceMenu.getByRole('button',{name:'Close',exact:true}).click();await sourcePair.focus();await page.keyboard.press('Enter');await sourceCanvas.getByRole('button',{name:'Collapse Status Quo in map A',exact:true}).focus();await page.keyboard.press('Enter');assert.equal(await sourceMenu.isVisible(),false,'Folding source endpoints closes their detail');assert.equal(await sourceCanvas.locator('.semantic-edge').count(),0,'Hidden source endpoints do not acquire ancestor substitute edges');assert.equal(JSON.stringify(await data()),sourceSnapshot,'Source browsing does not change the saved graph');assert.deepEqual(errors,[]);
+  await edit(store,alice,ws=>{
+    const owned=ws.maps.find(m=>m.id===map.id);
+    for(let i=0;i<8;i++){const entry=addNode(ws,alice,'Historic change '+i);entry.timeScope='history';entry.parent=claim.id;}
+    const forecast=addNode(ws,alice,'A likely result');forecast.timeScope='likely_future';forecast.parent=claim.id;
+    synchronizeIdeas(ws,owned);
+  });
+  const otherMap=initial.maps.find(m=>m.ownerId===bob.id);
+  const {comparisonThread}=await startAccountComparison(store,alice.id,{aMapId:map.id,bMapId:otherMap.id});
+  await page.setViewportSize({width:1440,height:1000});
+  await page.goto(origin+'/?canvas-test=1#map='+map.id+'&layout=canvas');
+  const mainSwitch=page.locator('#frame-view-main'),timelineSwitch=page.locator('#frame-view-timeline');
+  const editorCards=page.locator('#cards'),timelineCards=editorCards.locator('[data-temporal-section]');
+  const editorZoom=page.locator('#zoom');
+  await page.locator('#all').click();await choose(claim.id);
+  const claimCard=editorCards.locator('[data-id="'+claim.id+'"]');
+  const before=await claimCard.boundingBox(),zoom=await editorZoom.innerText();
+  await timelineSwitch.click();await timelineCards.first().waitFor();await page.waitForFunction(()=>document.querySelector('#cards [data-id="goal"]')===null);
+  assert.equal(await timelineCards.count(),2);assert.equal(await editorCards.locator('[data-id="action"]').count(),0);
+  assert.equal(await editorZoom.innerText(),zoom,'Switching preserves the canvas zoom');
+  const after=await claimCard.boundingBox();
+  assert(Math.abs(after.x-before.x)<2&&Math.abs(after.y-before.y)<2,'The selected Present claim stays at its screen position');
+  await page.locator('#all').click();assert.equal(await editorCards.getByText('Historic change 7',{exact:true}).count(),1);
+  await mainSwitch.click();assert.equal(await editorCards.getByText('Historic change 7',{exact:true}).count(),0);
+  await timelineSwitch.click();assert.equal(await editorCards.getByText('Historic change 7',{exact:true}).count(),1,'The timeline retains previous expansion');
+  await editorCards.locator('[data-temporal-section="history"] .node-add-child').focus();await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#child-time-scope').inputValue(),'history');
+  await page.locator('#cancel-child').click();
+  await page.goto(origin+'/?canvas-test=2#comparison='+comparisonThread.id+'&layout=canvas');
+  await timelineSwitch.click();const comparison=page.locator('#compare-canvas');
+  assert.equal(await comparison.locator('[data-temporal-section]').count(),4);
+  assert.equal(await comparison.locator('[data-node-id="goal"]').count(),0);
+  await comparison.locator('[data-side="a"][data-temporal-section="history"] .toggle').or(comparison.locator('[data-side="b"][data-temporal-section="history"] .toggle')).click();
+  assert.equal(await comparison.getByText('Historic change 7',{exact:true}).count(),1);
+  await mainSwitch.click();await timelineSwitch.click();
+  assert.equal(await comparison.getByText('Historic change 7',{exact:true}).count(),1);
+  assert.deepEqual(errors,[]);
+  await page.setViewportSize({width:1440,height:1000});await page.goto(origin+'/#map='+map.id+'&layout=canvas');await page.locator('#editor-main').waitFor();
+  const openInsertion=async(layout,id)=>{
+    if(layout==='canvas'){if(await page.locator('#all').isEnabled())await page.locator('#all').click();await choose(id);await page.locator('.on-map-actions').getByRole('button',{name:'Insert node above'}).click();}
+    else{await page.locator('#outline-map .outline-toolbar').getByRole('button',{name:'Expand all'}).click();await page.locator('#outline-map [data-outline-node="'+id+'"]').getByRole('button',{name:'Insert node above'}).click();}
+    assert(await page.locator('#child-title').evaluate(el=>el===document.activeElement));assert.match(await page.locator('#child-parent').innerText(),/ → New node → /);
+    if(await page.locator('#insert-relationships').isVisible()){
+      assert.equal(await page.locator('#insert-upper').inputValue(),'');assert.equal(await page.locator('#insert-lower').inputValue(),'');
+      await page.locator('#insert-upper').selectOption('nesting');await page.locator('#insert-lower').selectOption('nesting');
+    }
+  };
+  for(const layout of ['canvas','outline']){
+    await page.locator('#presentation-'+layout).click();await openInsertion(layout,claim.id);await page.locator('#child-title').fill('Cancelled insertion');
+    const before=await data();await page.locator('#cancel-child').click();assert.deepEqual(await data(),before);
+    await openInsertion(layout,claim.id);const title='Parent inserted in '+layout;await page.locator('#child-title').fill(title);
+    await page.locator('#child-submit').click();await saved();await page.locator('#node-face-editor #edit-form').waitFor();
+    const updated=await data(),wrapper=updated.nodes.find(n=>n.title===title);
+    assert.equal(updated.nodes.find(n=>n.id===claim.id).parent,wrapper.id);assert.equal(updated.revision,before.revision+1);assert.deepEqual(updated.relations,before.relations);
+    await page.locator('#node-face-editor .node-face-done').click();
+  }
+  await openInsertion('outline',claim.id);await page.locator('#child-title').fill('Retry insertion');
+  let dropAcknowledgment=true;
+  const lostResponse=async route=>{
+    if(dropAcknowledgment&&route.request().method()==='PUT'){dropAcknowledgment=false;await route.fetch();await route.abort();return;}
+    await route.continue();
+  };
+  await page.route('**/api/workspace',lostResponse);await page.locator('#child-submit').click();
+  await page.waitForFunction(()=>document.getElementById('child-error').textContent.length>0);
+  assert.equal((await data()).nodes.filter(n=>n.title==='Retry insertion').length,1);
+  await page.locator('#child-title').fill('Revised while disconnected');await page.locator('#child-submit').click();
+  await page.waitForFunction(()=>document.getElementById('child-error').textContent.includes('earlier insertion was saved'));
+  assert.equal(await page.locator('#child-title').inputValue(),'Revised while disconnected');
+  await page.locator('#child-title').fill('Retry insertion');await page.locator('#child-submit').click();await page.locator('#node-face-editor #edit-form').waitFor();
+  await page.unroute('**/api/workspace',lostResponse);assert.equal((await data()).nodes.filter(n=>n.title==='Retry insertion').length,1);
+  await page.locator('#node-face-editor .node-face-done').click();
+  await openInsertion('outline',claim.id);await page.locator('#child-title').fill('Keep this wording');
+  await edit(store,alice,ws=>{const current=ws.maps.find(m=>m.id===map.id);current.name+=' (changed elsewhere)';current.revision++;});
+  await page.locator('#child-submit').click();await page.waitForFunction(()=>document.getElementById('child-error').textContent.includes('map changed'));
+  assert.equal(await page.locator('#child-title').inputValue(),'Keep this wording');assert(!(await data()).nodes.some(n=>n.title==='Keep this wording'));assert.deepEqual(errors,[]);
   console.log('Map grammar browser checks passed: node-face editing, autosave focus/caret and Details preservation, wheel isolation, provisional child identity and cancellation, save/download guards, creation and deletion, grouped on-map and read-only source connection inspection, preserved directions, stable reveal, fold cleanup, citations, cross-frame types, reload and narrow layout.');
 }catch(error){for(const context of browser.contexts())for(const page of context.pages()){await page.screenshot({path:'build/design-review/map-grammar-failure.png',fullPage:true});console.error((await page.locator('body').innerText()).slice(-6000));}throw error;}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

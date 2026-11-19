@@ -98,9 +98,10 @@ export class LibraryUI{
     const map=this.c.workspace.maps.find(m=>m.id===id&&!m.unavailable);if(!map){this.open('maps');this.c.message('This map is unavailable.');return false;}
     if(!this.c.canEditMap(map))return this.openSource(id,nodeId);
     if(!this.c.editor.beforeLeave()||!this.c.showMode('individual'))return false;
+    if(this.c.presentation?.showFrameForNode(map.nodes.find(n=>n.id===nodeId),map)===false)return false;
     this.c.captureActive();this.c.loadMap(id);this.c.showMode('individual');this.c.populateMaps();this.c.updateNavigation();if(nodeId&&map.nodes.some(n=>n.id===nodeId)){if(edit)this.c.editor.focusNode(nodeId);else this.c.editor.outlineAction(nodeId,'select');}this.route({map:id,...(nodeId?{node:nodeId}:{})});return true;
   }
-  openSource(id,nodeId=null){if(!this.c.showMode('discover'))return false;this.c.participation.openMap(id,nodeId);this.route({source:id,...(nodeId?{node:nodeId}:{})});return true;}
+  openSource(id,nodeId=null){if(!this.c.showMode('discover')||!this.c.participation.openMap(id,nodeId))return false;this.route({source:id,...(nodeId?{node:nodeId}:{})});return true;}
   createComparison(mapId=null,nodeId=null,otherMapId=null){
     if(this.c.discussion?.dialogue?.active&&!this.c.discussion.dialogue.close())return;
     if(!this.c.showMode('compare')||!this.c.canLeaveComparison()||!this.c.argument.canLeave())return;

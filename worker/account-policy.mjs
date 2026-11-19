@@ -1,6 +1,7 @@
 import {validateDefinitionEdit} from '../dist/definitions.mjs';
 import {validateDiscussionEdit} from '../dist/discussion.mjs';
 import {roots,exampleMap} from '../dist/data.mjs';
+import {structuralEdgeId} from '../dist/model.mjs';
 import {validateWorkspace,sourceSnapshot,newId,comparisonParticipants,comparisonJudgments,comparisonJudgmentRevision,validateComparisonInput,comparisonPairKey,comparisonProposalVersions,comparisonResponseSet} from '../dist/workspace.mjs';
 import {nodeWording,selectionContext,scopeNodeIds,endorsementEntryHealth} from '../dist/adoption.mjs';
 import {accountKey,accountClone,stableJSON} from '../dist/account-model.mjs';
@@ -188,6 +189,15 @@ export function validateAccountChanges(snapshot,actorId,input,{allowMapDeletion=
       check(candidate.comparisonThreads.filter(thread=>comparisonPairKey(thread)===comparisonPairKey(value)).length===1,'This comparison already exists. Refresh maps to open it.',409);
     }
     if(kind==='idea'){const map=candidate.maps.find(m=>m.id===value.originMapId);check(map?.ownerId===actorId,'Shared wording can only be edited by its author.',403);}
+    if(kind==='map'&&old){
+      const previous=new Map(old.nodes.map(n=>[n.id,n]));
+      for(const node of value.nodes){
+        const prior=previous.get(node.id);if(!prior||prior.parent===null)continue;
+        const unchanged=structuralEdgeId(node)===structuralEdgeId(prior);
+        check(prior.parent===node.parent?unchanged:!unchanged&&!!node.structuralEdgeId,
+          'The branch connection changed. Reopen the map before saving.',409);
+      }
+    }
     if(kind==='map')for(const n of value.nodes){
       if(n.parent===null)continue;const idea=records.get(accountKey('idea',n.ideaId));
       check(idea?.ownerId===actorId||visibleVersions.has(accountKey(n.ideaId,n.ideaVersion)),'This wording is not available to add to your map.',403);

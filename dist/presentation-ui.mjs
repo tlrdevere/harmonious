@@ -1,5 +1,6 @@
 import {MapOutlineUI} from './map-outline-ui.mjs';
 import {ComparisonOutlineUI} from './comparison-outline-ui.mjs';
+import {temporalViewForNode} from './temporal-frames.mjs';
 
 const presentationEl=(tag,cls='')=>{const e=document.createElement(tag);e.className=cls;return e;};
 export class PresentationUI{
@@ -7,36 +8,90 @@ export class PresentationUI{
   this.c=c;this.homes=new Map();this.views=new Map();this.cameras=new Map();this.scrolls=new Map();
   this.controls=presentationEl('div','presentation-switch');this.controls.setAttribute('role','group');this.controls.setAttribute('aria-label','Workspace presentation');
   for(const value of ['canvas','outline']){const b=presentationEl('button');b.type='button';b.id='presentation-'+value;b.textContent=value==='canvas'?'Canvas':'Outline';b.onclick=()=>this.set(value);this.controls.append(b);}
-  document.getElementById('workspace-message').after(this.controls);
+  const bar=presentationEl('div','presentation-bar');
+  this.frameControls=presentationEl('div','frame-view-switch');this.frameControls.setAttribute('role','group');this.frameControls.setAttribute('aria-label','Visible frames');
+  for(const [value,label] of [['main','Main frames'],['timeline','Status Quo timeline']]){
+   const button=presentationEl('button');button.type='button';button.id='frame-view-'+value;button.textContent=label;
+   button.onclick=()=>this.setFrameView(value);this.frameControls.append(button);
+  }
+  bar.append(this.frameControls,this.controls);document.getElementById('workspace-message').after(bar);
   for(const [kind,anchor]of [['map','viewport'],['source','reference-canvas'],['pod','pod-canvas'],['comparison','compare-canvas']]){const host=presentationEl('section','outline-workspace');host.id='outline-'+kind;host.hidden=true;host.setAttribute('aria-label',kind==='comparison'?'Comparison outline':kind+' outline');document.getElementById(anchor).after(host);this.views.set(kind,kind==='comparison'?new ComparisonOutlineUI(c,host):new MapOutlineUI(c,host,kind));}
   let saved;try{saved=localStorage.getItem('harmonious-presentation');}catch{}
   const route=new URLSearchParams(location.hash.slice(1)).get('layout');this.value=['canvas','outline'].includes(route)?route:['canvas','outline'].includes(saved)?saved:matchMedia('(max-width: 700px)').matches?'outline':'canvas';
   document.body.dataset.presentation=this.value;
+  this.frameView=new URLSearchParams(location.hash.slice(1)).get('frames')==='timeline'?'timeline':'main';
+  document.body.dataset.frameView=this.frameView;
   this.observer=new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.oldValue!==r.target.getAttribute(r.attributeName)))this.schedule();});this.observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeOldValue:true,attributeFilter:['hidden']});
   for(const event of ['click','input','change','submit'])document.addEventListener(event,()=>this.schedule());
   document.addEventListener('focusin',event=>{if(event.target.matches('input,textarea,select')&&event.target.closest('.node-face-editor,.on-map-actions,#inspector,.discussion-popover'))this.lastField={element:event.target,context:this.context()};});
-  this.routeChanged=()=>{const value=new URLSearchParams(location.hash.slice(1)).get('layout');if(['canvas','outline'].includes(value)&&value!==this.value)this.set(value,{route:false});};
-  window.addEventListener('hashchange',this.routeChanged);window.addEventListener('popstate',this.routeChanged);
+  this.routeChanged=()=>{
+   const params=new URLSearchParams(location.hash.slice(1)),frames=params.get('frames')==='timeline'?'timeline':'main';
+   if(!this.setFrameView(frames,{route:false})){this.writeFrameRoute();return false;}
+   const value=params.get('layout');if(['canvas','outline'].includes(value)&&value!==this.value)this.set(value,{route:false});
+   return true;
+  };
   this.refresh();
  }
  get outline(){return this.value==='outline';}
+ writeFrameRoute(){
+  const params=new URLSearchParams(location.hash.slice(1));
+  if(this.frameView==='timeline')params.set('frames','timeline');else params.delete('frames');
+  history.replaceState(null,'',location.pathname+location.search+(params.size?'#'+params:''));
+ }
+ showFrameForNode(node,map){
+  if(!node||!map||map.unavailable)return true;
+  return this.setFrameView(temporalViewForNode(map,node.id,this.frameView));
+ }
+ setFrameView(value,{route=true}={}){
+  if(value===this.frameView)return true;
+  if(!['main','timeline'].includes(value))return false;
+  const c=this.c,d=c.discussion,old=this.frameView;
+  if(d.saving){c.message('Please wait for this contribution to finish saving.');return false;}
+  const hidden=(map,id)=>!!id&&map?.nodes.some(n=>n.id===id)&&temporalViewForNode(map,id,value)!==value;
+  if(c.mode==='compare'&&c.comparisonDirty&&Object.values(c.sides).some(s=>hidden(c.workspace.maps.find(m=>m.id===s.mapId),s.nodeId))){
+   c.message('Save or close the comparison draft before changing its selected sources.');return false;
+  }
+  if(c.mode==='individual'&&c.editor.hasDraft()&&!c.editor.beforeLeave())return false;
+  if(c.mode==='compare'&&d.dirty&&!d.canLeave())return false;
+  this.frameView=value;document.body.dataset.frameView=value;
+  if(c.mode==='individual'){
+   const selected=c.editor.outlineState().selected;
+   c.editor.refreshFrameView(old);
+   if(hidden(c.activeMap(),selected)&&route)c.library.route({map:c.activeMapId});
+  }else if(c.mode==='discover'){
+   const p=c.participation;if(hidden(p.source(),p.nodeId)){p.nodeId=null;if(route)c.library.route({source:p.mapId});}
+   p.renderExplore();
+  }else if(c.mode==='compare'&&!d.dialogue.active){
+   for(const side of ['a','b']){
+    const s=c.sides[side],map=c.workspace.maps.find(m=>m.id===s.mapId);
+    if(hidden(map,s.nodeId))s.nodeId=null;
+    document.getElementById('compare-frame-'+side).value='all';
+   }
+   const anchor=d.reasoning.anchorFor(d.target),targets=anchor?.type==='connection'?[anchor.a,anchor.b]:[anchor];
+   if(d.sourceNodesFor(targets).some(n=>hidden(n.map,n.id))){d.canLeave();d.target=null;}
+   c.renderComparison();
+  }
+  if(route)this.writeFrameRoute();
+  this.refresh();return true;
+ }
  identity(){return JSON.stringify([this.c.accountMode?this.c.account?.actor?.id||null:'local',this.c.account?.facilitator?.context?.participantId||null]);}
- context(){return JSON.stringify([this.identity(),this.c.mode,this.c.activeMapId,this.c.sides?.a?.mapId,this.c.sides?.b?.mapId,this.c.participation.mapId,this.c.participation.podMapId,this.c.discussion.dialogue.active?this.c.discussion.dialogue.target:null]);}
- cameraKey(canvas){const index=this.canvases().indexOf(canvas),target=index===3?this.c.discussion.dialogue.target:null;return JSON.stringify([this.identity(),index,canvas.states?.a?.map?.id,canvas.states?.b?.map?.id,target]);}
+ context(){return JSON.stringify([this.identity(),this.frameView,this.c.mode,this.c.activeMapId,this.c.sides?.a?.mapId,this.c.sides?.b?.mapId,this.c.participation.mapId,this.c.participation.podMapId,this.c.discussion.dialogue.active?this.c.discussion.dialogue.target:null]);}
+ cameraKey(canvas){const index=this.canvases().indexOf(canvas),target=index===3?this.c.discussion.dialogue.target:null;return JSON.stringify([this.identity(),this.frameView,index,canvas.states?.a?.map?.id,canvas.states?.b?.map?.id,target]);}
  schedule(){if(this.pending)return;this.pending=true;requestAnimationFrame(()=>{this.pending=false;this.refresh();});}
  set(value,{route=true}={}){
   if(!['canvas','outline'].includes(value)||value===this.value)return;
   if(this.c.discussion?.saving){this.c.message('Please wait for this contribution to finish saving.');return;}
   const active=document.activeElement,prior=this.lastField?.context===this.context()?this.lastField.element:null,focus=active?.closest('form')?active:prior?.getClientRects().length?prior:active,selection=focus&&'selectionStart'in focus?[focus.selectionStart,focus.selectionEnd]:null;
   const context=this.context(),identity=this.identity();this.scrolls.set(context+':'+this.value,scrollY);
-  if(value==='outline'){this.cameras.set(identity+':map:'+this.c.activeMapId,this.c.editor.outlineState().camera);for(const canvas of this.canvases())this.cameras.set(this.cameraKey(canvas),{...canvas.camera});}
+  const mapKey=JSON.stringify([identity,'map',this.frameView,this.c.activeMapId]);
+  if(value==='outline'){this.cameras.set(mapKey,this.c.editor.outlineState().camera);for(const canvas of this.canvases())this.cameras.set(this.cameraKey(canvas),{...canvas.camera});}
   this.value=value;document.body.dataset.presentation=value;
   try{localStorage.setItem('harmonious-presentation',value);}catch{}
   if(route){const params=new URLSearchParams(location.hash.slice(1));params.set('layout',value);history.pushState(null,'',location.pathname+location.search+'#'+params);}
   this.refresh();
   requestAnimationFrame(()=>{
    if(value!==this.value||context!==this.context()||identity!==this.identity())return;
-   if(value==='canvas'){const mapCamera=this.cameras.get(identity+':map:'+this.c.activeMapId);if(mapCamera)this.c.editor.restoreCamera(mapCamera);for(const canvas of this.canvases()){const camera=this.cameras.get(this.cameraKey(canvas));if(camera){canvas.camera={...camera};canvas.drawCamera();}}}
+   if(value==='canvas'){const mapCamera=this.cameras.get(mapKey);if(mapCamera)this.c.editor.restoreCamera(mapCamera);for(const canvas of this.canvases()){const camera=this.cameras.get(this.cameraKey(canvas));if(camera){canvas.camera={...camera};canvas.drawCamera();}}}
    if(focus?.isConnected&&focus.closest('form')&&focus.getClientRects().length){focus.focus({preventScroll:true});if(selection&&selection[0]!==null)focus.setSelectionRange?.(...selection);focus.scrollIntoView({block:'nearest'});}else scrollTo(0,this.scrolls.get(context+':'+value)||0);
   });
  }
@@ -62,6 +117,10 @@ export class PresentationUI{
   try{
    const identity=this.identity();if(identity!==this.lastIdentity){this.lastIdentity=identity;this.cameras.clear();this.scrolls.clear();for(const view of this.views.values())view.reset?.();}
    if(this.controls.hidden===this.c.ready)this.controls.hidden=!this.c.ready;for(const button of this.controls.children){const active=button.id==='presentation-'+this.value;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active);button.disabled=!!this.c.discussion.saving;}
+   const framesAvailable=this.c.ready&&(!this.c.accountMode||!!this.c.account?.actor)&&
+    (this.c.mode==='individual'||this.c.mode==='discover'&&!this.c.participation.history||this.c.mode==='compare'&&!this.c.discussion.dialogue.active);
+   if(this.frameControls.hidden===framesAvailable)this.frameControls.hidden=!framesAvailable;
+   for(const button of this.frameControls.children){const active=button.id==='frame-view-'+this.frameView;button.setAttribute('aria-pressed',String(active));button.classList.toggle('active',active);button.disabled=!!this.c.discussion.saving;}
    this.mountPanels();
    const mode=this.c.mode,active=mode==='individual'?'map':mode==='discover'?'source':mode==='pods'?'pod':mode==='compare'?'comparison':null;
    for(const [kind,view]of this.views){const visible=this.c.ready&&(!this.c.accountMode||!!this.c.account?.actor)&&this.outline&&kind===active;if(view.host.hidden===visible)view.host.hidden=!visible;if(visible)view.render();}

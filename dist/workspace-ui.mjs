@@ -1,4 +1,5 @@
 import {presentationRoute} from './presentation-route.mjs';
+import {temporalRoots} from './temporal-frames.mjs';
 import {graphEdges} from './model.mjs';
 import {FacilitationPresentation} from './facilitation-presentation.mjs';
 import {initialWorkspace,validateWorkspace,startComparisonThread,comparisonHealth,comparisonJudgments,comparisonJudgmentFor,comparisonConsensus,comparisonPairKey,comparisonProposalVersions,comparisonElicitation,comparisonResponseSet,QUESTION_STATUSES,ANSWER_STATUSES} from './workspace.mjs';
@@ -42,6 +43,7 @@ export class WorkspaceController{
     try{const response=await fetch('/api/workspace',{cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not open the saved workspace.');if(data.workspace)this.workspace=validateWorkspace(data.workspace);this.serverRevision=data.revision;this.cloudLoaded=true;this.workspaceDirty=!data.workspace;}
     catch(error){this.message(`${error.message} You can use Open file or download a backup. Reopen saved will retry.`);this.cloudLoaded=false;}
     finally{this.argument?.reset();this.ready=true;for(const id of ['editor-main','comparison-workspace','argument-workspace','discover-workspace','pods-workspace','workspace-nav'])ui(id).inert=false;this.activeComparisonPair=null;this.clearComparison();this.activeMapId=null;this.sides={a:{mapId:this.workspace.maps[0]?.id||null,nodeId:null},b:{mapId:this.workspace.maps[1]?.id||null,nodeId:null}};this.mode='library';this.updateNavigation();this.populateMaps();this.status(this.cloudLoaded?null:'Saved workspace unavailable');if(this.mode==='compare')this.renderComparison();this.participation.peopleSelection=null;this.participation.refresh();}
+    if(this.cloudLoaded&&location.hash)this.openComparisonRoute();
   }
   loadMap(id){
     const map=this.workspace.maps.find(m=>m.id===id);if(!map)return;this.loadingMap=true;this.activeMapId=id;this.editor.setMap(map);this.baseline=JSON.stringify({nodes:map.nodes,relations:map.relations});this.loadingMap=false;
@@ -87,7 +89,14 @@ export class WorkspaceController{
     if(mode==='argument')this.argument.render();if(mode==='library')this.library.render();if(['discover','pods'].includes(mode))this.participation.refresh();return true;
   }
   renderComparison(fit=false){
+    const view=this.presentation?.frameView||'main',maps=['a','b'].map(side=>this.workspace.maps.find(map=>map.id===this.sides[side].mapId));
+    const sections=temporalRoots(view,maps),labels=view==='timeline'?['History','Status Quo · Present','Likely Future']:['Status Quo','Transformative Action','Goal State'];
     for(const side of ['a','b']){
+      const filter=ui('compare-frame-'+side),previous=filter.value;
+      if(sections.some((id,index)=>filter.options[index+1]?.value!==id)){
+        filter.replaceChildren(wsOption('all','All frames'),...sections.map((id,index)=>wsOption(id,labels[index])));
+        filter.value=sections.includes(previous)?previous:'all';
+      }
       const state=this.sides[side],map=this.workspace.maps.find(m=>m.id===state.mapId),picker=ui(`compare-node-${side}`);picker.replaceChildren(wsOption('','No response on this side'));
       ui(`edit-source-${side}`).disabled=!this.canEditMap(map);
       for(const action of ['next','all','collapse'])ui(`compare-${action}-${side}`).disabled=!map;
@@ -110,7 +119,12 @@ export class WorkspaceController{
     if(node.parent!==null){const actions=document.createElement('div');actions.className='comparison-source-actions';const endorse=document.createElement('button');endorse.type='button';endorse.className='text-button';endorse.textContent='Co-sign this wording…';endorse.onclick=()=>this.openSourceAction(side,'endorse');actions.append(endorse);const copy=document.createElement('button');copy.type='button';copy.className='text-button';copy.textContent='Copy & adapt…';copy.onclick=()=>this.openSourceAction(side,'copy');actions.append(copy);host.append(actions);}
   }
   openSourceAction(side,mode){const state=this.sides[side],map=this.workspace.maps.find(m=>m.id===state.mapId),node=map?.nodes.find(n=>n.id===state.nodeId);if(!map||!node||node.parent===null)return;this.participation.actorId=this.account?.actor?.id||this.participation.actorId;this.participation.mapId=map.id;this.participation.nodeId=node.id;this.participation.openAction(mode,'node');}
-  selectSource(side,id,focus=false){if(this.discussion?.dirty&&!this.discussion.canLeave())return;this.sides[side].nodeId=id||null;ui(`compare-node-${side}`).value=id||'';this.canvas.pick(side,id||null,focus);ui(`compare-frame-${side}`).value=this.canvas.states[side].frame;this.renderSource(side);this.renderElicitation(this.workspace.comparisons.find(record=>record.id===this.editingRecord));if(id)this.discussion?.selectNode(side,id);}
+  selectSource(side,id,focus=false){
+    if(this.discussion?.dirty&&!this.discussion.canLeave())return;
+    const map=this.workspace.maps.find(m=>m.id===this.sides[side].mapId);
+    if(this.presentation?.showFrameForNode(map?.nodes.find(n=>n.id===id),map)===false)return;
+    this.sides[side].nodeId=id||null;ui(`compare-node-${side}`).value=id||'';this.canvas.pick(side,id||null,focus);ui(`compare-frame-${side}`).value=this.canvas.states[side].frame;this.renderSource(side);this.renderElicitation(this.workspace.comparisons.find(record=>record.id===this.editingRecord));if(id)this.discussion?.selectNode(side,id);
+  }
   refreshStages(){const elicitation=ui('question-status').value==='needs_elicitation',matched=ui('question-status').value==='matched';ui('answer-stage').hidden=!matched;ui('answer-status').required=matched;if(!matched)ui('answer-status').value='';ui('divergence-note').hidden=ui('answer-status').value!=='divergent';ui('shared-question-label').textContent=elicitation?'Question to ask before deciding on counterparts':matched?'Shared question':ui('question-status').value==='incommensurable'?'Describe the different questions':'Question not yet addressed by both people';this.renderElicitation(this.workspace.comparisons.find(record=>record.id===this.editingRecord));}
   clearComparison(){this.editingRecord=null;this.comparisonDirty=false;ui('comparison-form').reset();ui('comparison-review-warning').hidden=true;ui('comparison-snapshots').hidden=true;ui('comparison-form-title').textContent='Record a correspondence';ui('comparison-editing').textContent='';ui('record-comparison').textContent='Record comparison';ui('comparison-error').textContent='';ui('comparison-error').dataset.state='';this.renderConsensus(null);ui('comparison-proposal-details').hidden=true;this.renderElicitation(null);this.refreshStages();}
   renderConsensus(record){let host=ui('comparison-consensus');if(!host){host=document.createElement('span');host.id='comparison-consensus';host.className='comparison-consensus';ui('comparison-form-title')?.parentElement?.insertBefore(host,ui('comparison-editing'));}if(!host)return;if(!record){host.hidden=true;host.textContent='';return;}const consensus=comparisonConsensus(this.workspace,record);host.hidden=false;host.dataset.state=consensus.state;host.textContent=consensus.label;}
@@ -159,7 +173,13 @@ export class WorkspaceController{
       if(entry&&this.discussion.allEntries().some(r=>r.id===entry))this.discussion.revealInteraction(entry);
       else if(inference&&this.discussion.allEntries().some(r=>r.id===inference))this.discussion.reasoning.openInference(inference);
       else if(map&&route.has('node')&&map.nodes.some(n=>n.id===route.get('node'))){const side=['a','b'].find(s=>this.sides[s].mapId===map.id);this.selectSource(side,route.get('node'),true);}
-      else if(map&&route.has('edge')&&graphEdges(map.nodes,map.relations).some(edge=>edge.id===route.get('edge')))this.discussion.selectTarget({type:'edge',mapId:map.id,edgeId:route.get('edge')});
+      else if(route.has('edge')){
+        if(map&&graphEdges(map.nodes,map.relations).some(edge=>edge.id===route.get('edge'))){
+          const target={type:'edge',mapId:map.id,edgeId:route.get('edge')};
+          if(this.discussion.revealSources([target]))this.discussion.selectTarget(target);
+        }
+        else this.message('This connection is no longer available. Earlier conversations you can access are in the comparison log.');
+      }
     }
     if(proposal&&route.get('view')==='argument')this.argument.open({proposalId:proposal.id,revision:Number(route.get('revision'))});
     }finally{this.restoringComparisonRoute=false;this.discussion?.syncRoute?.();}
@@ -265,7 +285,15 @@ export class WorkspaceController{
   bind(){
     ui('elicitation-response').addEventListener('input',()=>{ui('divergence-confirmation').checked=false;});
     ui('shared-question').addEventListener('input',()=>this.renderElicitation(this.workspace.comparisons.find(record=>record.id===this.editingRecord)));
-    ui('start-comparison').onclick=()=>this.startComparison();window.addEventListener('hashchange',event=>{const old=new URLSearchParams(new URL(event.oldURL).hash.slice(1)),next=new URLSearchParams(location.hash.slice(1));this.presentation?.routeChanged();old.delete('layout');next.delete('layout');if(old.toString()!==next.toString())this.openComparisonRoute();});
+    ui('start-comparison').onclick=()=>this.startComparison();window.addEventListener('hashchange',event=>{
+      const old=new URLSearchParams(new URL(event.oldURL).hash.slice(1)),next=new URLSearchParams(location.hash.slice(1));
+      // Updating the old canvas can otherwise write its selection over the incoming link.
+      const restoring=this.restoringComparisonRoute;this.restoringComparisonRoute=true;
+      try{if(this.presentation?.routeChanged()===false){history.replaceState(null,'',event.oldURL);return;}}
+      finally{this.restoringComparisonRoute=restoring;}
+      for(const key of ['layout','frames']){old.delete(key);next.delete(key);}
+      if(old.toString()!==next.toString())this.openComparisonRoute();
+    });
     ui('individual-mode').onclick=()=>this.activeMapId?this.library.openMap(this.activeMapId):this.library.open('maps');ui('comparison-mode').onclick=()=>this.library.open('comparisons');ui('discover-mode').onclick=()=>this.library.open(undefined,{home:true});ui('pods-mode').onclick=()=>this.library.open('pods');ui('explore-current').onclick=()=>this.library.open('maps');
     ui('map-select').onchange=()=>{const id=ui('map-select').value;if(id)this.library.openMap(id);else this.library.open('maps');};
     ui('new-map').onclick=()=>this.showMapDialog();ui('map-settings').onclick=()=>this.showMapDialog(true);ui('close-map-dialog').onclick=()=>ui('map-dialog').close();

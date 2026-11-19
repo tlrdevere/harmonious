@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import {pathToFileURL} from 'node:url';
+
+const {chromium}=await import(pathToFileURL(process.env.HARMONIOUS_PLAYWRIGHT));
+const browser=await chromium.launch({headless:true,channel:process.env.HARMONIOUS_BROWSER||'chromium'});
+try{
+  const page=await browser.newPage({viewport:{width:1350,height:850},reducedMotion:'reduce'});
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  page.setDefaultTimeout(8000);
+  const preview=new URL('../review/Harmonious-timeline.html',import.meta.url).href;
+  const card=id=>page.locator('#world .node[data-id="'+id+'"]');
+  await page.goto(preview);
+  await card('service').waitFor();
+  assert.equal(await page.locator('#frame-view-main').getAttribute('aria-pressed'),'true');
+  assert.equal(await card('cuts').count(),0);
+  await page.locator('#frame-view-timeline').click();
+  await page.locator('#all').click();
+  await card('cuts').waitFor();
+  await card('ridership').waitFor();
+  assert.equal(await card('action').count(),0);
+  await page.locator('#presentation-outline').click();
+  await page.locator('#outline-map').waitFor();
+  assert.equal(await page.locator('#frame-view-timeline').getAttribute('aria-pressed'),'true');
+  await page.goto(preview+'#map=sample-alex-bus&node=cuts&layout=canvas');
+  await card('cuts').waitFor();
+  assert.equal(await page.locator('#frame-view-timeline').getAttribute('aria-pressed'),'true');
+  await page.goto(preview+'#map=sample-alex-bus&node=trial&frames=timeline&layout=canvas');
+  await card('trial').waitFor();
+  assert.equal(await page.locator('#frame-view-main').getAttribute('aria-pressed'),'true');
+  await page.goto(preview+'#comparison=sample-bus-comparison&view=argument&map=sample-alex-bus&node=ridership&layout=canvas');
+  await page.locator('#compare-canvas .node').filter({hasText:'More riders will switch to driving'}).waitFor();
+  assert.equal(await page.locator('#frame-view-timeline').getAttribute('aria-pressed'),'true');
+  await page.goto(preview+'#comparison=sample-bus-comparison&view=inquiry&map=sample-alex-bus&edge=cuts-trial&layout=canvas');
+  await page.getByRole('button',{name:'Open Trial half-hourly service in Main frames'}).click();
+  await page.locator('#compare-canvas .node').filter({hasText:'Trial half-hourly service'}).waitFor();
+  assert.equal(await page.locator('#frame-view-main').getAttribute('aria-pressed'),'true');
+  await page.goto(preview+'#comparison=sample-bus-comparison&map=sample-alex-bus&edge=retired-link');
+  await page.locator('#workspace-message').filter({hasText:'This connection is no longer available'}).waitFor();
+  assert.deepEqual(errors,[]);
+  console.log('The offline preview opens both frame sets, shared presentations and exact historical, future and action links.');
+}finally{await browser.close();}

@@ -1,10 +1,16 @@
-.presentation-switch{display:flex;justify-content:flex-end;gap:4px;padding:8px 20px;background:#f6f9fa;border-bottom:1px solid #d9e3eb}
-.presentation-switch button{min-height:40px;padding:8px 20px;border-radius:8px}
-.presentation-switch .active{background:#173f49;color:white;border-color:#173f49}
+.presentation-bar{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px 20px;padding:5px 20px;background:#f6f9fa;border-bottom:1px solid #d9e3eb}
+.presentation-bar:has(>[hidden]+[hidden]){display:none}
+.presentation-switch,.frame-view-switch{display:flex;gap:4px}
+.presentation-bar button{min-height:36px;padding:5px 14px;border-radius:8px}
+.presentation-bar .active{background:#173f49;color:white;border-color:#173f49}
+@media(max-width:700px){.presentation-bar{justify-content:space-between;padding:4px 8px;gap:4px 8px}.presentation-bar button{padding:4px 8px;min-height:40px}}
 .outline-workspace{min-width:0;width:100%;max-width:1200px;margin:0 auto;padding:16px;box-sizing:border-box;color:#203449}
 .outline-toolbar,.outline-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .outline-toolbar input{flex:1;min-width:160px;max-width:500px}
 .outline-list{display:grid;gap:12px}
+.outline-list>.outline-frame{display:grid;gap:12px;min-width:0}
+.outline-list>.outline-frame>h2{margin:8px 0 0}
+.outline-list>.outline-frame>button{justify-self:start}
 .outline-card{position:relative;min-width:0;border:1px solid #cfdae6;border-left:4px solid #477aa0;border-radius:12px;background:white;padding:16px;margin-left:calc(var(--outline-depth,0)*12px);overflow-wrap:anywhere}
 .outline-card[data-frame=status]{border-top:3px solid #edaaa6}.outline-card[data-frame=action]{border-top:3px solid #a3c6e9}.outline-card[data-frame=goal]{border-top:3px solid #a6cba1}
 .outline-card.selected,.outline-card[aria-current=true]{outline:2px solid #2d637d;outline-offset:2px}
@@ -35,7 +41,7 @@ body[data-presentation=outline] .reference-inspector{padding:16px;border:1px sol
 body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) :is(input,select,textarea){max-width:100%;box-sizing:border-box}
 body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) button{white-space:normal;overflow-wrap:anywhere;max-width:100%;min-height:40px}
 body[data-presentation=outline] .outline-node>.facilitator-node-badge{position:static;display:block;width:auto;margin-top:12px}
-.outline-workspace[hidden],.presentation-switch[hidden],body[data-presentation=outline] [hidden]{display:none!important}
+.outline-workspace[hidden],.presentation-switch[hidden],.frame-view-switch[hidden],body[data-presentation=outline] [hidden]{display:none!important}
 @media(max-width:700px){
  body[data-presentation=outline] :is(.topbar,.workspace-nav,.library-header,.workspace-header,.comparison-context,.participation-heading,.reference-heading,.comparison-commandbar){flex-wrap:wrap;min-width:0}
  body[data-presentation=outline] .topbar{gap:10px;padding:12px;align-items:center}
@@ -54,7 +60,6 @@ body[data-presentation=outline] .outline-node>.facilitator-node-badge{position:s
  body[data-presentation=outline] .outline-card{margin-left:0;padding:12px}
  body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) :is(button,input,select,summary){min-height:44px;font-size:16px}
  body[data-presentation=outline] :is(.outline-workspace,.outline-detail,.comparison-outline-detail) textarea{font-size:16px}
- body[data-presentation=outline] .presentation-switch{padding:8px 12px}
  body[data-presentation=outline] :is(.definition-dialog,.adoption-dialog,.topic-focus-dialog,dialog){max-width:calc(100vw - 20px);box-sizing:border-box;max-height:calc(100dvh - 24px);overflow:auto}
  body[data-presentation=outline] .workspace-header h1{font-size:24px}
  body[data-presentation=outline] .toolbar{align-items:flex-start}

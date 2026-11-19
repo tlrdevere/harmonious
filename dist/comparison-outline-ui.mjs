@@ -8,7 +8,6 @@ import {topicNodeKey} from './topic-focus-ui.mjs';
 
 const coEl=(tag,text='',className='')=>{const el=document.createElement(tag);el.textContent=text;el.className=className;return el;};
 const coButton=(label,run,className='')=>{const b=coEl('button',label,className);b.type='button';b.onclick=run;return b;};
-const coFrameNames={status:'Status Quo',action:'Transformative Action',goal:'Goal State'};
 const coTargetKey=target=>target?JSON.stringify(target):'';
 const coText=node=>[node.title,node.summary,node.details,node.sourceTitle].filter(Boolean).join(' ').toLocaleLowerCase();
 
@@ -21,7 +20,7 @@ export class ComparisonOutlineUI{
   this.header=coEl('header','','outline-comparison-heading');this.heading=coEl('h2','Comparison outline');this.header.append(this.heading);
   this.filters=coEl('div','','outline-comparison-filters');
   this.search=coEl('input');this.search.type='search';this.search.id='outline-comparison-search';this.search.placeholder='Find wording or a person';
-  this.frameSelect=coEl('select');this.frameSelect.id='outline-comparison-frame';this.frameSelect.append(new Option('All frames','all'));for(const [value,label]of Object.entries(coFrameNames))this.frameSelect.append(new Option(label,value));
+  this.frameSelect=coEl('select');this.frameSelect.id='outline-comparison-frame';
   this.topicSelect=coEl('select');this.topicSelect.id='outline-comparison-topic';this.topicSelect.append(new Option('All topics',''));
   for(const [control,label]of [[this.search,'Search this outline'],[this.frameSelect,'Frame'],[this.topicSelect,'Topic']]){const field=coEl('label',label);field.htmlFor=control.id;field.append(control);this.filters.append(field);}
   this.search.oninput=()=>{this.query=this.search.value;this.limit=60;this.render();};this.frameSelect.onchange=()=>{this.frame=this.frameSelect.value;this.limit=60;this.render();};this.topicSelect.onchange=()=>{this.topic=this.topicSelect.value;this.limit=60;this.render();};
@@ -56,7 +55,7 @@ export class ComparisonOutlineUI{
  render(){
   const d=this.d,ws=this.c.workspace,maps={a:ws.maps.find(m=>m.id===this.c.sides.a.mapId),b:ws.maps.find(m=>m.id===this.c.sides.b.mapId)};
   const focus=d.canvas.topicFocus;
-  const signature=JSON.stringify([maps,ws.discussions,ws.participants,d.actor(),d.mode(),d.dialogue?.active,d.dialogue?.target,d.dialogue?.selected,this.frame,this.topic,this.query,this.limit,[...focus?.selection||[]],d.target,d.viewId,this.forcedTarget]);
+  const signature=JSON.stringify([document.body.dataset.frameView,maps,ws.discussions,ws.participants,d.actor(),d.mode(),d.dialogue?.active,d.dialogue?.target,d.dialogue?.selected,this.frame,this.topic,this.query,this.limit,[...focus?.selection||[]],d.target,d.viewId,this.forcedTarget]);
   if(signature===this.signature)return;this.signature=signature;
   const oldFocus=document.activeElement,control=oldFocus?.closest('[data-outline-control]')?.dataset.outlineControl,scroll=this.host.scrollTop;
   this.notice.replaceChildren();this.listHost.replaceChildren();this.connectionsHost.replaceChildren();
@@ -67,9 +66,15 @@ export class ComparisonOutlineUI{
   this.host.scrollTop=scroll;
  }
  renderComparison(maps,focus){
-  const d=this.d,ws=this.c.workspace,thread=d.thread(),links=thread?counterpartRecords(ws,thread.id):[],projection=outlineComparison(maps,links);
+  const d=this.d,ws=this.c.workspace,thread=d.thread(),links=thread?counterpartRecords(ws,thread.id):[],view=document.body.dataset.frameView||'main',projection=outlineComparison(maps,links,{view});
   this.projection=projection;
-  const topics=[];for(const side of ['a','b'])for(const row of projection.maps[side]?.allRows||[])if(row.depth===1)topics.push({value:topicNodeKey(row.mapId,row.id),label:`${d.name(maps[side].ownerId)} · ${row.node.title}`});
+  if(!projection.frames.some(section=>section.id===this.frame))this.frame='all';
+  this.frameSelect.replaceChildren(new Option('All frames','all'),...projection.frames.map(f=>new Option(f.title,f.id)));this.frameSelect.value=this.frame;
+  const topics=[];for(const side of ['a','b']){
+   const byId=new Map((maps[side]&&!maps[side].unavailable&&!maps[side].deletedAt?maps[side].nodes:[]).map(n=>[n.id,n]));
+   const topicIds=new Set(projection.maps[side].allRows.map(row=>row.topicId).filter(Boolean));
+   for(const id of topicIds){const node=byId.get(id);if(node)topics.push({value:topicNodeKey(maps[side].id,id),label:`${d.name(maps[side].ownerId)} · ${node.title}`});}
+  }
   const topicSignature=JSON.stringify(topics);if(topicSignature!==this.topicSignature){this.topicSignature=topicSignature;this.topicSelect.replaceChildren(new Option('All topics',''),...topics.map(t=>new Option(t.label,t.value)));if(!topics.some(t=>t.value===this.topic))this.topic='';this.topicSelect.value=this.topic;}
   if(!maps.a||!maps.b){this.listHost.append(coEl('p','Choose two maps to view their comparison.','field-help'));return;}
   if(maps.a.unavailable||maps.b.unavailable)this.notice.append(coEl('p','A source map is no longer available. Only accessible material is shown.','review-warning'));
@@ -78,18 +83,41 @@ export class ComparisonOutlineUI{
   const filtered=projection.groups.filter(matches),shown=filtered.slice(0,this.limit),pinned=projection.groups.filter(g=>isSelected(g)&&!shown.includes(g));
   if(focus?.active){const line=coEl('p',`${focus.selection.size} focused topic ${focus.selection.size===1?'branch':'branches'}. Other branches are excluded from this outline. `);line.append(coButton('Clear focus',()=>{focus.set([]);this.render();}));this.notice.append(line);}
   if(pinned.length){const section=coEl('section','','outline-filter-exception');section.append(coEl('h3','Selected outside the current list'));for(const g of pinned)section.append(this.group(g));this.listHost.append(section);}
-  const frameOrder=[...Object.keys(coFrameNames),...new Set(shown.map(g=>g.frameId).filter(id=>!coFrameNames[id]))];
-  for(const id of frameOrder){const groups=shown.filter(g=>g.frameId===id);if(!groups.length)continue;const section=coEl('section','','outline-frame');section.dataset.frame=id;section.append(coEl('h3',coFrameNames[id]||'Other source material'));for(const group of groups)section.append(this.group(group));this.listHost.append(section);}
+  for(const frame of projection.frames){const groups=shown.filter(g=>g.frameId===frame.id);
+   if(!groups.length&&(view!=='timeline'||this.frame!=='all'&&this.frame!==frame.id))continue;
+   const section=coEl('section','','outline-frame');section.dataset.frame=frame.id;section.append(coEl('h3',frame.title));for(const group of groups)section.append(this.group(group));
+   if(!frame.groups.length)section.append(coEl('p','No nodes in this period.','field-help'));
+   this.listHost.append(section);
+  }
+  if(query){const other=coEl('section','','outline-frame');other.append(coEl('h3','Matches in the other frame view'));
+   const hidden=[];
+   for(const [side,map] of Object.entries(maps)){
+    const visible=projection.maps[side].byId;
+    for(const row of projection.maps[side].sourceRows.values()){
+     if(visible.has(row.id)||this.frame!=='all'&&this.frame!==row.frameId||this.topic&&this.topic!==topicNodeKey(map.id,row.topicId))continue;
+     if(!coText(row.node).includes(query)||focus?.active&&!focus.members.has(row.key))continue;
+     hidden.push({row,map,side});
+    }
+   }
+   for(const {row,map,side} of hidden.slice(0,this.limit))other.append(coButton('Open '+row.node.title,()=>this.openSource(side,map,row.node)));
+   if(hidden.length>this.limit)other.append(coButton('Show more matches',()=>{this.limit+=60;this.render();}));
+   if(other.children.length>1)this.listHost.append(other);
+  }
   if(!filtered.length)this.listHost.append(coEl('p',projection.groups.length?'No nodes match these filters.':'No accessible nodes are available.','field-help'));
   if(shown.length<filtered.length){const more=coButton(`Show more (${filtered.length-shown.length} remaining)`,()=>{this.limit+=60;this.render();});more.dataset.outlineControl='more';this.listHost.append(more);}
   this.notice.prepend(coEl('p',`${filtered.length} ${filtered.length===1?'item':'items'} · Counterparts are explicitly linked. Each card keeps its own parent path.`,'field-help'));
   this.renderConnections(maps,projection);
  }
+ openSource(side,map,node){
+  if(!this.c.presentation.showFrameForNode(node,map))return;
+  return this.run(()=>this.c.selectSource(side,node.id));
+ }
  group(group){
   const d=this.d,section=coEl('section','','outline-comparison-group');section.dataset.groupKind=group.kind;section.dataset.groupId=group.id;
-  const label=group.kind==='pair'?'Linked counterparts':group.kind==='frame'?'Frame context':group.unavailableCounterpart?'Counterpart unavailable':'Unmatched node';
+  const linkedElsewhere=group.members.some(member=>member.separateCounterparts.length);
+  const label=group.kind==='pair'?'Linked counterparts':group.kind==='frame'?'Frame context':linkedElsewhere?'Linked counterpart':group.unavailableCounterpart?'Counterpart unavailable':'Unmatched node';
   const heading=coEl('div','','outline-group-heading');heading.append(coEl('strong',label));
-  if(group.kind==='pair'){
+  if(group.kind==='pair'||linkedElsewhere){
    const member=group.members[0],display=counterpartDisplay(this.c.workspace,d.thread()?.id,{type:'node',mapId:member.mapId,nodeId:member.id});
    if(display){const state=coEl('span',display.label,'outline-pair-state');state.dataset.pairAssessment=display.state;heading.append(state);}
    if(group.crossFrame)heading.append(coEl('span','Earlier link across frames','field-help'));
@@ -104,6 +132,10 @@ export class ComparisonOutlineUI{
   for(const text of [node.summary,node.details].filter(Boolean))card.append(coEl('p',text,'outline-full-text'));
   if(node.sourceTitle||node.sourceUrl){const source=coEl('p',node.sourceTitle||'Source','field-help');if(node.sourceUrl){const link=coEl('a','Open source');link.href=node.sourceUrl;link.target='_blank';link.rel='noopener noreferrer';source.append(' · ',link);}card.append(source);}
   const actions=coEl('div','','outline-actions'),select=()=>this.run(()=>this.c.selectSource(member.side,id));
+  for(const other of member.separateCounterparts){
+   const location=other.outsideView?'other frame view':'another period';
+   actions.append(coButton(`Open counterpart in ${location} · ${other.node.title}`,()=>this.openSource(other.side,other.map,other.node)));
+  }
   const button=coButton(`Actions for ${node.title}`,select);button.dataset.outlineControl=member.key;actions.append(button);
   if(node.parent!==null){
    const confidence=node.confidence===null||node.confidence===undefined?'Confidence —':`Confidence ${node.confidence}%`;
@@ -131,16 +163,19 @@ export class ComparisonOutlineUI{
    for(const side of ['a','b']){
     const map=maps[side];if(!map||map.unavailable)continue;
     for(const connection of outlineConnections(map)){
-     const {from,to}=connection;
-     const focus=d.canvas.topicFocus,selected=coTargetKey(d.target)===coTargetKey(connection.target),excluded=this.frame!=='all'&&![from.frameId,to.frameId].includes(this.frame)||this.topic&&![from,to].some(row=>topicNodeKey(map.id,row.topicId)===this.topic)||query&&!`${from.node.title} ${to.node.title} ${connection.label} ${connection.edge.note||''}`.toLocaleLowerCase().includes(query)||focus?.active&&![from,to].every(row=>focus.members.has(row.key)||focus.frames.has(row.key));
+     const {from,to}=connection,visible=projection.maps[side].byId,endpoints=[from,to].filter(row=>visible.has(row.id));
+     if(!endpoints.length)continue;
+     const focus=d.canvas.topicFocus,selected=coTargetKey(d.target)===coTargetKey(connection.target),excluded=this.frame!=='all'&&!endpoints.some(row=>visible.get(row.id).frameId===this.frame)||this.topic&&!endpoints.some(row=>topicNodeKey(map.id,row.topicId)===this.topic)||query&&!`${from.node.title} ${to.node.title} ${connection.label} ${connection.edge.note||''}`.toLocaleLowerCase().includes(query)||focus?.active&&!endpoints.every(row=>focus.members.has(row.key)||focus.frames.has(row.key));
      if(excluded&&!selected)continue;
-     connections.push({connection,map,selected,excluded});
+     connections.push({connection,map,side,selected,excluded,hidden:[from,to].find(row=>!visible.has(row.id))});
     }
    }
    connections.sort((a,b)=>Number(b.selected)-Number(a.selected));let shown=0;const more=coButton('Show more connections',()=>append());
-   const append=()=>{more.remove();for(const {connection,map,selected,excluded}of connections.slice(shown,shown+60)){
+   const append=()=>{more.remove();for(const {connection,map,side,selected,excluded,hidden}of connections.slice(shown,shown+60)){
     const {from,to}=connection,row=coEl('div','','outline-connection');row.append(coEl('p',`${d.name(map.ownerId)} · ${connection.structural?'Parent structure':'Source relationship'}`,'field-help'));
-    const label=`${from.node.title} ${connection.directed?'→':'↔'} ${to.node.title} · ${connection.forward||connection.label}`,button=coButton(label,()=>this.run(()=>d.selectTarget(connection.target)));button.dataset.outlineControl=coTargetKey(connection.target);button.setAttribute('aria-current',selected?'true':'false');row.append(button);if(excluded)row.append(coEl('p','Selected connection outside the current filters','field-help'));if(connection.edge.note)row.append(coEl('p',connection.edge.note,'outline-full-text'));body.append(row);
+    const label=`${from.node.title} ${connection.directed?'→':'↔'} ${to.node.title} · ${connection.forward||connection.label}`,button=coButton(label,()=>this.run(()=>d.selectTarget(connection.target)));button.dataset.outlineControl=coTargetKey(connection.target);button.setAttribute('aria-current',selected?'true':'false');row.append(button);
+    if(hidden)row.append(coButton('Open in other frame view · '+hidden.node.title,()=>this.openSource(side,map,hidden.node)));
+    if(excluded)row.append(coEl('p','Selected connection outside the current filters','field-help'));if(connection.edge.note)row.append(coEl('p',connection.edge.note,'outline-full-text'));body.append(row);
    }shown+=60;if(shown<connections.length)body.append(more);};
    if(!connections.length)body.append(coEl('p','No connections match these filters.','field-help'));else append();
   };

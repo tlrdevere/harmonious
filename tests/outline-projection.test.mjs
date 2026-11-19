@@ -47,6 +47,24 @@ assert.equal(filtered.groups.length,1);assert.equal(filtered.groups[0].members.l
 assert.equal(outlineComparison({a,b},[pair('one'),{id:'undo',kind:'counterpart_unlink',status:'active',unlinkedRecordIds:['one']}]).groups.filter(group=>group.kind==='pair').length,0);
 assert.equal(outlineComparison({a,b},[pair('withdrawn','child','child',{status:'withdrawn'})]).groups.filter(group=>group.kind==='pair').length,0);
 assert.deepEqual(outlineComparison({a,b},links).groups.map(group=>group.id),outlineComparison({a,b},[...links].reverse()).groups.map(group=>group.id),'Link retrieval order does not change identity or list placement');
+const historical=structuredClone(a);
+historical.nodes.find(n=>n.id==='topic').timeScope='history';
+const timeline=outlineMap(historical,{view:'timeline'});
+assert.deepEqual(timeline.frames.map(f=>f.title),['History','Status Quo · Present','Likely Future']);
+assert.equal(timeline.frames[2].rows.length,1,'An empty period retains its presentation heading.');
+assert(!timeline.byId.has('action'));
+assert.equal(timeline.byId.get('child').parentId,'status','A Present child can be read independently of its History parent.');
+assert.equal(timeline.byId.get('child').node.parent,'topic');
+assert.equal(timeline.byId.get('child').ancestors.at(-1).title,'Topic');
+const topicLink=pair('topic-pair','topic','topic');
+const mainPair=outlineComparison({a:historical,b},[topicLink],{view:'main'}).groups.find(group=>group.members.some(m=>m.side==='b'&&m.id==='topic'));
+assert.equal(mainPair.members[0].separateCounterparts[0].node.id,'topic');
+assert.equal(mainPair.members[0].separateCounterparts[0].outsideView,true);
+const timelineComparison=outlineComparison({a:historical,b},[topicLink],{view:'timeline'});
+const separated=timelineComparison.groups.filter(group=>group.members.some(m=>m.id==='topic'));
+assert.equal(separated.length,2,'Explicitly linked members keep their own periods.');
+assert(separated.every(group=>group.members.length===1&&!group.members[0].separateCounterparts[0].outsideView));
+assert(!timelineComparison.groups.some(g=>g.members.some(m=>m.node.temporalHeading)),'Presentation headings cannot be counterpart or discussion targets.');
 assert.equal(outlineComparison({a,b},[pair('other-map','child','child',{other:{type:'node',mapId:'elsewhere',nodeId:'child'}})]).groups.filter(group=>group.kind==='pair').length,0);
 
 // A stale object may still hold wording. The unavailable/deleted marker wins.

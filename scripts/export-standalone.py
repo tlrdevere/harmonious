@@ -10,7 +10,7 @@ css+='\n'+(root/'dist/reasoning.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/outline.css').read_text(encoding='utf-8')
 css+='\n'+(root/'dist/comparison-outline.css').read_text(encoding='utf-8')
 parts=[]
-for name in ['account-model.mjs','facilitation.mjs','facilitation-presentation.mjs','facilitator-ui.mjs','topic-layout.mjs','topic-focus-ui.mjs','layout.mjs','confidence.mjs','confidence-ui.mjs','frame-palette.mjs','model.mjs','data.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','premise.mjs','premise-ui.mjs','reflection.mjs','reflection-ui.mjs','interaction-grammar.mjs','argument-dialogue.mjs','standstill.mjs','discussion.mjs','standstill-ui.mjs','interaction-presentation.mjs','interaction-search-ui.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','comparison-routing.mjs','reasoning-view.mjs','reasoning-ui.mjs','interaction-application.mjs','interaction-application-ui.mjs','interaction-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','map-connections-ui.mjs','source-connections-ui.mjs','compare-canvas.mjs','argument-dialogue-ui.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-summary.mjs','library-ui.mjs','node-actions.mjs','node-face-editor.mjs','test-accounts-ui.mjs','activity-ui.mjs','account-ui.mjs','workspace-ui.mjs','outline-projection.mjs','presentation-route.mjs','map-outline-ui.mjs','comparison-outline-ui.mjs','presentation-ui.mjs','app.mjs']:
+for name in ['account-model.mjs','facilitation.mjs','facilitation-presentation.mjs','facilitator-ui.mjs','topic-layout.mjs','topic-focus-ui.mjs','layout.mjs','confidence.mjs','confidence-ui.mjs','frame-palette.mjs','model.mjs','data.mjs','temporal-frames.mjs','adoption.mjs','definitions.mjs','definitions-ui.mjs','counterparts.mjs','counterpart-ui.mjs','conversation-tree.mjs','premise.mjs','premise-ui.mjs','reflection.mjs','reflection-ui.mjs','interaction-grammar.mjs','argument-dialogue.mjs','standstill.mjs','discussion.mjs','standstill-ui.mjs','interaction-presentation.mjs','interaction-search-ui.mjs','adoption-fulfillment.mjs','adoption-ui.mjs','reasoning-layout.mjs','comparison-routing.mjs','reasoning-view.mjs','reasoning-ui.mjs','interaction-application.mjs','interaction-application-ui.mjs','interaction-ui.mjs','discussion-ui.mjs','argument.mjs','workspace.mjs','comparison-layout.mjs','map-connections-ui.mjs','source-connections-ui.mjs','compare-canvas.mjs','argument-dialogue-ui.mjs','argument-canvas.mjs','argument-ui.mjs','participation-ui.mjs','library-summary.mjs','library-ui.mjs','node-actions.mjs','node-face-editor.mjs','test-accounts-ui.mjs','activity-ui.mjs','account-ui.mjs','workspace-ui.mjs','outline-projection.mjs','presentation-route.mjs','map-outline-ui.mjs','comparison-outline-ui.mjs','presentation-ui.mjs','app.mjs']:
     code=(root/'dist'/name).read_text(encoding='utf-8')
     code=re.sub(r'^import .*?;\n','',code,flags=re.M)
     code=re.sub(r'^export ','',code,flags=re.M)
@@ -39,7 +39,7 @@ for name in ['account-model.mjs','facilitation.mjs','facilitation-presentation.m
     if name=='adoption-fulfillment.mjs':
         names='adoptionActions,isAdoptionReceipt,adoptionDefinitionKey,adoptionFulfillmentId,adoptionSourceSnapshot,adoptionState,adoptionPreview,prepareAdoption,validateAdoptionRecord,validateAdoptionBatch'
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
-    if name in ['outline-projection.mjs','presentation-route.mjs','map-outline-ui.mjs','comparison-outline-ui.mjs','presentation-ui.mjs','topic-layout.mjs','topic-focus-ui.mjs','standstill.mjs','standstill-ui.mjs','facilitation.mjs','facilitation-presentation.mjs','facilitator-ui.mjs']:
+    if name in ['temporal-frames.mjs','outline-projection.mjs','presentation-route.mjs','map-outline-ui.mjs','comparison-outline-ui.mjs','presentation-ui.mjs','topic-layout.mjs','topic-focus-ui.mjs','standstill.mjs','standstill-ui.mjs','facilitation.mjs','facilitation-presentation.mjs','facilitator-ui.mjs']:
         names=','.join(re.findall(r'^export (?:async )?(?:function|class|const) (\w+)',(root/'dist'/name).read_text(encoding='utf-8'),flags=re.M))
         code='const {'+names+'}=(()=>{\n'+code+'\nreturn {'+names+'};})();'
     parts.append(code)
@@ -53,6 +53,9 @@ html=html.replace('<link rel="stylesheet" href="./comparison-outline.css">','')
 html=html.replace('<script type="module" src="./app.mjs"></script>','<script type="module">'+script+'</script>')
 (root/'review').mkdir(exist_ok=True)
 (root/'review/Harmonious-radial.html').write_text(html,encoding='utf-8')
+timeline=html.replace('workspaceController.initialize();',(root/'scripts/timeline-preview.js').read_text(encoding='utf-8'))
+timeline=timeline.replace('<title>Harmonious — Worldview Map</title>','<title>Harmonious — Status Quo timeline preview</title>')
+(root/'review/Harmonious-timeline.html').write_text(timeline,encoding='utf-8')
 comparison=html.replace('workspaceController.initialize();', "workspaceController.initialize().then(()=>workspaceController.library.open('comparisons'));")
 comparison=comparison.replace('<title>Harmonious — Worldview Map</title>', '<title>Harmonious — Shared Comparison Canvas</title>')
 comparison=comparison.replace('Mapping prototype</span>', 'Shared canvas prototype</span>')

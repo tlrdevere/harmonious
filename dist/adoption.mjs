@@ -69,6 +69,7 @@ export function transferNodes(workspace,{sourceMapId,targetMapId,nodeIds,mode='l
     let ancestor=source.nodes.find(p=>p.id===n.parent);while(ancestor&&ancestor.parent!==null&&!mapping.has(ancestor.id))ancestor=source.nodes.find(p=>p.id===ancestor.parent);
     const destination=mapping.get(ancestor?.id)||parent?.id||frameOf(source.nodes,n.id),sameParent=mapping.has(n.parent);
     const copy={...adoptionClone(n),id,parent:destination,structuralType:sameParent?n.structuralType:'nesting',confidence:null,reuseMode:mode==='linked'?'linked':'adapted',copiedFrom:{ideaId:n.ideaId,version:n.ideaVersion,mapId:source.id,nodeId:n.id}};
+    delete copy.structuralEdgeId;
     if(mode==='copy'){delete copy.ideaId;delete copy.ideaVersion;}
     candidate.nodes.push(copy);added.push(id);
   }

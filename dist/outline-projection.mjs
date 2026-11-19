@@ -1,4 +1,5 @@
 import {graphEdges,RELATION_TYPES,STRUCTURAL_TYPES} from './model.mjs';
+import {projectTemporalMap,temporalRoots} from './temporal-frames.mjs';
 
 const frameIds=['status','action','goal'];
 const frameNames={status:'Status Quo',action:'Transformative Action',goal:'Goal State'};
@@ -11,11 +12,13 @@ const matches=(node,terms)=>{const value=['title','summary','details','sourceTit
 // Projection inputs are the already authorized workspace. Never fill a missing
 // source from a discussion snapshot or from another map with the same node ID.
 // Iterative traversal and lazy ancestry keep very deep maps usable.
-export function outlineMap(map,{roots=frameIds,frame='all',query='',scopeIds=null}={}){
-  const result={available:available(map),frames:[],rows:[],allRows:[],byId:new Map(),excludedCount:0};
+export function outlineMap(map,{view=null,roots=temporalRoots(view,[map]),frame='all',query='',scopeIds=null}={}){
+  const result={available:available(map),frames:[],rows:[],allRows:[],byId:new Map(),sourceRows:new Map(),excludedCount:0};
   if(!result.available)return result;
+  const display=view&&projectTemporalMap(map,view,roots),source=view&&outlineMap(map,{roots:frameIds});
+  result.sourceRows=source?source.byId:result.byId;
   const raw=new Map(),children=new Map(),terms=words(query),scope=scopeIds===null?null:new Set(scopeIds);
-  for(const node of map.nodes||[])if(node?.id&&!raw.has(node.id)){raw.set(node.id,node);children.set(node.id,[]);}
+  for(const node of (display?display.nodes:map.nodes)||[])if(node?.id&&!raw.has(node.id)){raw.set(node.id,node);children.set(node.id,[]);}
   for(const node of raw.values())if(node.parent!==null)children.get(node.parent)?.push(node.id);
   for(const rootId of roots){
     const root=raw.get(rootId);if(!root||root.parent!==null)continue;
@@ -23,10 +26,11 @@ export function outlineMap(map,{roots=frameIds,frame='all',query='',scopeIds=nul
     result.frames.push(section);
     while(pending.length){
       const {id,depth,topicId}=pending.pop();if(result.byId.has(id))continue;
-      const node=raw.get(id),key=sourceKey(map.id,id);
-      const row={id,key,mapId:map.id,node,parentId:node.parent,frameId:rootId,topicId,depth,children:children.get(id)||[],matches:matches(node,terms),inScope:!scope||depth===0||scope.has(id)||scope.has(key),context:false};
+      const displayNode=raw.get(id),sourceRow=source?.byId?.get(id),node=sourceRow?.node||displayNode,key=sourceKey(map.id,id);
+      const row={id,key,mapId:map.id,node,parentId:displayNode.parent,frameId:rootId,sourceFrameId:sourceRow?.frameId||rootId,topicId:sourceRow?sourceRow.topicId:topicId,depth,children:children.get(id)||[],matches:matches(node,terms),inScope:!scope||depth===0||scope.has(id)||scope.has(key),context:false};
       // Read only when a selected row needs its breadcrumb, not for every row.
       Object.defineProperty(row,'ancestors',{enumerable:true,get(){
+        if(sourceRow)return sourceRow.ancestors;
         const list=[];let parent=result.byId.get(row.parentId);
         while(parent){list.push({id:parent.id,title:parent.node.title||'Untitled node'});parent=result.byId.get(parent.parentId);}
         return list.reverse();
@@ -66,26 +70,39 @@ export function outlineConnections(map,nodeId=null){
 // array, identical wording and a shared parent never infer a counterpart.
 // Older many-to-one/cross-frame records remain distinct readable pair groups.
 export function outlineComparison(sourceMaps,links=[],options={}){
-  const sources=Array.isArray(sourceMaps)?{a:sourceMaps[0],b:sourceMaps[1]}:sourceMaps||{},roots=options.roots||frameIds;
+  const sources=Array.isArray(sourceMaps)?{a:sourceMaps[0],b:sourceMaps[1]}:sourceMaps||{},view=options.view||null,roots=options.roots||temporalRoots(view,[sources.a,sources.b].filter(available));
   const maps={},members=new Map(),groups=[],paired=new Set(),frames=roots.map(id=>({id,title:frameNames[id]||id,groups:[]}));
   for(const side of ['a','b']){
-    const map=sources[side];maps[side]=outlineMap(map,{roots});
+    const map=sources[side];maps[side]=outlineMap(map,{view,roots});
+    if(view==='timeline')for(const section of maps[side].frames){const frame=frames.find(item=>item.id===section.id);frame.title=section.title;}
     for(const row of maps[side].allRows){
+      if(row.node.temporalHeading)continue;
       const member=Object.defineProperties({side,map},Object.getOwnPropertyDescriptors(row));
       members.set(row.key,member);
     }
   }
   const removed=new Set(links.filter(record=>record.kind==='counterpart_unlink'&&record.status==='active').flatMap(record=>record.unlinkedRecordIds||[]));
   const records=links.filter(record=>record.status==='active'&&['correspondence','relationship'].includes(record.kind)&&!removed.has(record.id)).sort((a,b)=>(a.kind==='correspondence'?0:1)-(b.kind==='correspondence'?0:1)||compare(a.createdAt,b.createdAt)||compare(a.id,b.id));
-  const pairs=new Map(),unavailablePairs=new Map();
+  const pairs=new Map(),unavailablePairs=new Map(),hiddenPairs=new Map();
+  const sourceRows=new Map();
+  if(view&&records.length)for(const [side,map] of Object.entries(sources))for(const row of maps[side].sourceRows.values())sourceRows.set(row.key,{side,map,node:row.node});
   for(const record of records){
     const endpoints=[record.target,record.other];
     if(endpoints.some(target=>target?.type&&target.type!=='node')||endpoints.some(target=>!target?.mapId||!target?.nodeId)||endpoints[0].mapId===endpoints[1].mapId||!endpoints.every(target=>[sources.a?.id,sources.b?.id].includes(target.mapId)))continue;
     const keys=endpoints.map(target=>sourceKey(target.mapId,target.nodeId)).sort(compare),list=keys.map(key=>members.get(key)),id=JSON.stringify(['pair',...keys]);
-    if(list.every(Boolean)){
+    const separatePeriods=view==='timeline'&&list.every(Boolean)&&list[0].frameId!==list[1].frameId;
+    if(list.every(Boolean)&&!separatePeriods){
       if(!pairs.has(id))pairs.set(id,{id,kind:'pair',frameId:list[0].frameId,members:list.sort((a,b)=>compare(a.side,b.side)),records:[],crossFrame:list[0].frameId!==list[1].frameId});
       pairs.get(id).records.push(record);for(const member of list)paired.add(member.key);
     }else for(const member of list.filter(Boolean)){
+      const otherKey=keys.find(key=>key!==member.key),other=sourceRows.get(otherKey);
+      if(other){
+        if(!hiddenPairs.has(member.key))hiddenPairs.set(member.key,new Map());
+        const peers=hiddenPairs.get(member.key);
+        if(!peers.has(otherKey))peers.set(otherKey,{...other,outsideView:!separatePeriods,records:[]});
+        peers.get(otherKey).records.push(record);
+        continue;
+      }
       if(!unavailablePairs.has(member.key))unavailablePairs.set(member.key,[]);
       unavailablePairs.get(member.key).push(record);
     }
@@ -93,7 +110,13 @@ export function outlineComparison(sourceMaps,links=[],options={}){
   // Frame headings correspond structurally, without creating a link record.
   for(const root of roots){const list=[...members.values()].filter(member=>member.id===root&&!paired.has(member.key));if(list.length){groups.push({id:JSON.stringify(['frame',root]),kind:'frame',frameId:root,members:list,records:[],crossFrame:false});for(const member of list)paired.add(member.key);}}
   groups.push(...pairs.values());
-  for(const member of members.values())if(!paired.has(member.key))groups.push({id:JSON.stringify(['solo',member.key]),kind:'solo',frameId:member.frameId,members:[member],records:unavailablePairs.get(member.key)||[],crossFrame:false,unavailableCounterpart:unavailablePairs.has(member.key)});
+  for(const member of members.values()){
+    member.separateCounterparts=[...hiddenPairs.get(member.key)?.values()||[]];
+    if(!paired.has(member.key)){
+      const records=[...(unavailablePairs.get(member.key)||[]),...member.separateCounterparts.flatMap(other=>other.records)];
+      groups.push({id:JSON.stringify(['solo',member.key]),kind:'solo',frameId:member.frameId,members:[member],records,crossFrame:false,unavailableCounterpart:unavailablePairs.has(member.key)});
+    }
+  }
   const terms=words(options.query),scope=options.scopeIds===null||options.scopeIds===undefined?null:new Set(options.scopeIds),topic=options.topic||'all',frame=options.frame||'all';
   const accepts=group=>group.members.some(member=>(frame==='all'||member.frameId===frame)&&(topic==='all'||member.topicId===topic||sourceKey(member.mapId,member.topicId)===topic)&&(!scope||member.depth===0||scope.has(member.key)||scope.has(member.id))&&matches(member.node,terms));
   const filtered=groups.filter(accepts),order=new Map([...members.keys()].map((key,index)=>[key,index]));

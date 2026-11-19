@@ -29,6 +29,7 @@ export class ArgumentDialogueUI{
   if(!thread&&source&&source.item.parent!==null&&[this.c.sides.a.mapId,this.c.sides.b.mapId].includes(target.mapId)){try{thread=await this.c.ensureComparison();}catch(error){this.c.message(error.message);return false;}}
   if(!thread||!source||source.item.parent===null||![thread.aMapId,thread.bMapId].includes(target.mapId)){this.c.message('This node is unavailable in this comparison.');return false;}
   if(!this.d.canLeave())return false;
+  if(this.c.presentation?.showFrameForNode(source.item,source.map)===false)return false;
   if(this.active)this.detach();else this.comparisonCamera={...this.c.canvas.camera};
   this.target={...target};this.scope=this.key();this.state=this.sessions.get(this.scope)||{collapsed:new Set(),expanded:new Set(),camera:null};this.sessions.set(this.scope,this.state);
   this.active=true;this.selected=entry||'claim';this.d.activateMode('argument');this.host.hidden=false;this.comparisonHost.hidden=true;this.c.canvas.surface.hidden=true;

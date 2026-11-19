@@ -5,6 +5,7 @@ import {newId,validateWorkspace} from './workspace.mjs';
 import {synchronizeIdeas} from './adoption.mjs';
 import {stableJSON} from './account-model.mjs';
 import {actualNodePairKey} from './conversation-tree.mjs';
+import {createChildStatement} from './model.mjs';
 const cpEl=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;e.className=cls;return e;};
 const cpButton=(text,run)=>{const b=cpEl('button',text);b.type='button';b.onclick=run;return b;};
 const counterpartPath=(map,node)=>{const parts=[node.title],seen=new Set([node.id]);while(node.parent){node=map.nodes.find(p=>p.id===node.parent);if(!node||seen.has(node.id))break;seen.add(node.id);parts.unshift(node.title);}return parts.join(' › ');};
@@ -109,17 +110,26 @@ export class CounterpartUI{
     const pickLabel=cpEl('label',create?'Where in your map? Choose the parent.':`Node in ${map.name}`);pickLabel.htmlFor=pick.id;form.append(pickLabel,pick);
     const title=cpEl('input'),summary=cpEl('textarea');title.id='counterpart-title';title.maxLength=200;title.required=true;summary.id='counterpart-summary';summary.rows=3;summary.maxLength=10000;
     if(create)for(const [text,input]of [['Your node title',title],['Your explanation (optional)',summary]]){const l=cpEl('label',text);l.htmlFor=input.id;form.append(l,input);}
+    const period=create&&frame==='status'?cpEl('select'):null;
+    if(period){
+      period.id='counterpart-time-scope';period.append(new Option('Present','present'),new Option('History','history'),new Option('Likely Future','likely_future'));
+      const label=cpEl('label','Time perspective');label.htmlFor=period.id;form.append(label,period);
+    }
     const preview=cpEl('p','','field-help');preview.id='counterpart-preview';pick.setAttribute('aria-describedby',preview.id);form.append(preview);
     const submit=cpEl('button',create?'Create and link counterpart':'Link counterpart','primary');submit.type='submit';form.append(submit,cpButton('Cancel',()=>this.d.close()));
     const update=()=>{const n=candidates.find(n=>n.id===pick.value);submit.disabled=!n;preview.textContent=n?`${create?'New node under':'Selected'}: ${counterpartPath(map,n)}${!create?[n.summary,n.details].filter(Boolean).map(text=>' — '+text).join(''):''}`:candidates.length?'Choose a node before linking.':`${map.name} has no unlinked ordinary nodes in this frame.`;this.d.positionPopover();};
     const fill=()=>{const previous=pick.value,query=search.value.trim().toLowerCase(),matches=candidates.filter(n=>!query||`${counterpartPath(map,n)} ${n.summary} ${n.details}`.toLowerCase().includes(query));pick.replaceChildren(new Option(create?'Choose a parent…':matches.length?'Choose a node…':'No matching nodes',''));for(const n of matches)pick.append(new Option(counterpartPath(map,n),n.id));pick.value=matches.some(n=>n.id===previous)?previous:'';update();};
-    search.oninput=fill;pick.onchange=update;fill();if(create&&candidates.some(n=>n.id===frame)){pick.value=frame;update();}
+    const chooseParent=()=>{
+      if(period){const parent=candidates.find(n=>n.id===pick.value),inherited=parent?.parent?parent.timeScope:source.item.timeScope;period.value=['history','likely_future'].includes(inherited)?inherited:'present';}
+      update();
+    };
+    search.oninput=fill;pick.onchange=chooseParent;fill();if(create&&candidates.some(n=>n.id===frame)){pick.value=frame;chooseParent();}
     if(!candidates.length){if(this.canCreate(target,requestId))form.append(cpButton('Create counterpart in my map',()=>this.form(target,true,requestId)));else {const request=this.requests(target).at(-1);if(request)form.append(cpButton('View counterpart request',()=>this.d.open(request.id)));else if(source.map.ownerId===this.d.actor())form.append(cpButton('Request counterpart',()=>this.request(target)));}}
     const reviewed=counterpartReviewSnapshot(this.c.workspace,target),recordId=newId('discussion'),nodeId=newId('node');let stagedDraft=null;
     form.onsubmit=async e=>{e.preventDefault();if(this.d.saving)return;this.d.saving=true;this.d.host.inert=true;
       try{
         this.d.dirty=true;if(!this.c.editor.flushDraft())throw Error('Finish your map edit first.');this.c.captureActive();const anchor=this.canvas.captureAnchor(target);
-        const thread=await this.c.ensureComparison(),chosen={type:'node',mapId:map.id,nodeId:pick.value},chosenSnapshot=counterpartReviewSnapshot({ ...this.c.workspace,maps:this.c.workspace.maps.map(m=>m.id===map.id?map:m)},chosen),draft=stableJSON({chosen,title:create?title.value.trim():'',summary:create?summary.value.trim():''});
+        const thread=await this.c.ensureComparison(),chosen={type:'node',mapId:map.id,nodeId:pick.value},chosenSnapshot=counterpartReviewSnapshot({ ...this.c.workspace,maps:this.c.workspace.maps.map(m=>m.id===map.id?map:m)},chosen),draft=stableJSON({chosen,title:create?title.value.trim():'',summary:create?summary.value.trim():'',timeScope:period?.value||null});
         const prepare=workspace=>{
           const already=workspace.discussions.find(r=>r.id===recordId);if(already){if(stagedDraft!==draft)throw Error('Your earlier choice was saved, but this draft has further changes. Copy them before reopening the saved link.');return {workspace,record:already};}
           if(stableJSON(counterpartReviewSnapshot(workspace,target))!==stableJSON(reviewed)||stableJSON(counterpartReviewSnapshot(workspace,chosen))!==stableJSON(chosenSnapshot))throw Error('A source changed or is no longer available. Your draft is still here; close and review the source before linking.');
@@ -127,7 +137,11 @@ export class CounterpartUI{
           if(!currentThread?.participants.includes(actor)||!node||!currentSource||currentSource.item.parent===null||![destination,currentSource.map].some(m=>m.ownerId===actor)||create&&destination.ownerId!==actor||!create&&node.parent===null)throw Error('Choose available ordinary nodes with at least one in your own map.');
           if(counterpartFrame(destination,node.id)!==counterpartFrame(currentSource.map,target.nodeId))throw Error('Choose a counterpart in the same frame.');
           if(create&&!this.canCreate(target,requestId,workspace))throw Error('This counterpart request changed. Reopen the request before creating a node. Your draft is still here.');
-          if(create){const parent=node;node={id:nodeId,parent:parent.id,title:title.value.trim(),summary:summary.value.trim(),details:'',confidence:null,kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:'',sourceUrl:''};if(!node.title)throw Error('Enter a title.');destination.nodes.push(node);synchronizeIdeas(ws,destination);destination.revision++;destination.updatedAt=new Date().toISOString();}
+          if(create){
+            node=createChildStatement(destination.nodes,node.id,nodeId,{timeScope:period?.value}).node;
+            node.title=title.value.trim();node.summary=summary.value.trim();if(!node.title)throw Error('Enter a title.');
+            destination.nodes.push(node);synchronizeIdeas(ws,destination);destination.revision++;destination.updatedAt=new Date().toISOString();
+          }
           const other={type:'node',mapId:destination.id,nodeId:node.id},existing=counterpartLinks(ws,thread.id).find(r=>[r.target,r.other].some(t=>sameCounterpartSource(t,target))&&[r.target,r.other].some(t=>sameCounterpartSource(t,other)));
           if(existing)return {workspace,record:existing};
           const problem=counterpartLinkProblem(ws,thread.id,target,other);if(problem)throw Error(problem+' Your draft is still here.');

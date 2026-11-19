@@ -63,7 +63,7 @@ export class AccountWorkspace{
   async request(path,body,method='POST'){
     const epoch=this.facilitator?.epoch,context=this.facilitator?.context,delegated=context&&(path==='/api/workspace'||path==='/api/comparisons');
     if(context&&path==='/api/workspace'&&body!==undefined)throw Error('Review this contribution before publishing it for the participant.');
-    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1, interaction-grammar-v4, counterpart-integrity-v1, argument-categories-v1, argument-replies-v1, argument-dialogue-v1, argument-placement-v1, map-deletion-v1, argument-standstill-v1, facilitation-v1, philosophy-v1',...(delegated?{'X-Harmonious-Participant':context.participantId,'X-Harmonious-Grant-Version':String(context.version)}:{}),...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
+    const response=await fetch(path,{method:body===undefined?'GET':method,cache:'no-store',headers:{'X-Harmonious-Capabilities':'comparison-reasoning-v1, comparison-adoption-v1, comparison-premise-v1, comparison-reflection-v1, interaction-grammar-v4, counterpart-integrity-v1, argument-categories-v1, argument-replies-v1, argument-dialogue-v1, argument-placement-v1, map-deletion-v1, argument-standstill-v1, facilitation-v1, philosophy-v1, map-insertion-v1',...(delegated?{'X-Harmonious-Participant':context.participantId,'X-Harmonious-Grant-Version':String(context.version)}:{}),...(body===undefined?{}:{'content-type':'application/json'})},body:body===undefined?undefined:JSON.stringify(body)});
     let data;try{data=await response.json();}catch{throw Error('The service could not be reached. Your work is still on this page.');}
     if(delegated&&epoch!==this.facilitator.epoch)throw Error('Participant context changed.');
     if(!response.ok){const error=Error(data.error||'Please try again.');error.status=response.status;error.code=data.code;if(error.code==='CLIENT_UPDATE_REQUIRED'){this.blocked=true;this.controller.message(error.message);this.status('Update needed · Your work is still on this page');}throw error;}return data;
@@ -235,7 +235,7 @@ export class AccountWorkspace{
   }
   status(message=null){
     const c=this.controller;accountUI('save-workspace').textContent=this.blocked?'Retry save':'Save now';accountUI('storage-status').dataset.state=c.workspaceDirty?'dirty':'saved';
-    accountUI('storage-status').textContent=message||(!this.actor?'Sign in to open your maps':this.saving?'Saving…':this.blocked?'Save needs attention':c.workspaceDirty?'Changes waiting to save':c.editor.hasChildDraft?.()?'Child node draft · Add child node to save':c.editor.hasDraft()?'Node changes waiting to save':c.discussion?.dirty?'Conversation draft · Add to map to save':c.argument?.dirty?'Argument draft - Save the form':c.comparisonDirty?'Comparison draft · Record to save':'All changes saved');
+    accountUI('storage-status').textContent=message||(!this.actor?'Sign in to open your maps':this.saving?'Saving…':this.blocked?'Save needs attention':c.workspaceDirty?'Changes waiting to save':c.editor.hasInsertionDraft?.()?'Insertion draft · Insert node to save':c.editor.hasChildDraft?.()?'Child node draft · Add child node to save':c.editor.hasDraft()?'Node changes waiting to save':c.discussion?.dirty?'Conversation draft · Add to map to save':c.argument?.dirty?'Argument draft - Save the form':c.comparisonDirty?'Comparison draft · Record to save':'All changes saved');
   }
   schedule(){if(this.facilitator?.context){this.status('Facilitator changes waiting for review');return;}clearTimeout(this.timer);if(this.actor&&!this.blocked&&!this.loading)this.timer=setTimeout(()=>this.save(false),900);}
   scheduleDraft(){this.status();clearTimeout(this.draftTimer);this.draftTimer=setTimeout(()=>{if(this.controller.ready&&!this.controller.editor.hasChildDraft?.()&&accountUI('edit-form').checkValidity()&&accountUI('connection-form').hidden){this.controller.editor.flushDraft();this.controller.captureActive();this.status();}},1100);}
@@ -256,14 +256,16 @@ export class AccountWorkspace{
   // A reviewed choice stays staged until the whole account batch is acknowledged. The
   // callback can reuse its exact batch after a lost response; it first sees the
   // latest account, so an already-saved fulfillment is found before retrying.
-  async commitCandidate(prepare){
+  async commitCandidate(prepare,{checkDraftSource=null}={}){
     if(this.facilitator?.context)return this.facilitator.commit(prepare);
-    const c=this.controller;await this.save();
+    const c=this.controller;await this.save(!checkDraftSource);
     if(!this.actor||this.loading||this.saving||this.blocked||c.workspaceDirty)throw Error('Finish saving your earlier changes before saving this choice.');
     const actor=this.actor.id,wasInert=document.body.inert;this.loading=true;this.saving=true;document.body.inert=true;this.status('Checking and saving your choice…');
     try{
       const current=await this.request('/api/workspace');
       if(current.actor.id!==actor)throw Error('Another account is signed in. Your draft has been kept; reopen your original account before continuing.');
+      // A stale source must be detected before accept() replaces the mounted map editor.
+      checkDraftSource?.(current.workspace);
       if(this.accept(current)===false)throw Error('Your account needs attention before this choice can be saved.');
       const prepared=await prepare(c.workspace);
       const changes=prepared.changes||accountChanges(ownedAccountRecords(prepared.workspace,actor,this.ownedKeys),this.baseline,this.revisions);

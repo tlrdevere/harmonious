@@ -1,5 +1,5 @@
 import {discussionSource,discussionSourceSnapshot,makeDiscussion} from './discussion.mjs';
-import {frameOf,validateRelationship,canonicalRelationType} from './model.mjs';
+import {createChildStatement,frameOf,validateRelationship,canonicalRelationType} from './model.mjs';
 import {synchronizeIdeas} from './adoption.mjs';
 import {stableJSON} from './account-model.mjs';
 import {validateWorkspace} from './workspace.mjs';
@@ -40,10 +40,12 @@ export function applyInteractionToMap(ws,input,actor){
   if(stableJSON(input.reviewed)!==stableJSON(preview.reviewed))throw Error('The interaction or its source changed. Reopen the preview before applying it.');
   const candidate=structuredClone(ws),map=candidate.maps.find(m=>m.id===preview.destination.id),nodeIds=[],edgeIds=[];
   const id=suffix=>`${input.operationId}-${suffix}`;
-  const newNode=(source,parent,nodeId,title=source?.title)=>{
+  const newNode=(source,parent,nodeId,title=source?.title,sourceMap=preview.source.map)=>{
     if(!map.nodes.some(n=>n.id===parent))throw Error('Choose a parent in your map.');
     if(!title?.trim())throw Error('Enter a title for the node you want to add.');
-    const node={id:nodeId,parent,title:title.trim(),summary:source?.summary||'',details:source?.details||'',kind:'position',structuralType:'nesting',timeScope:'present',sourceTitle:source?.sourceTitle||'',sourceUrl:source?.sourceUrl||'',confidence:null};
+    const timeScope=source?.id&&sourceMap&&frameOf(sourceMap.nodes,source.id)==='status'?source.timeScope||'present':null;
+    const {node}=createChildStatement(map.nodes,parent,nodeId,{timeScope});
+    Object.assign(node,{title:title.trim(),summary:source?.summary||'',details:source?.details||'',sourceTitle:source?.sourceTitle||'',sourceUrl:source?.sourceUrl||''});
     map.nodes.push(node);nodeIds.push(node.id);return node;
   };
   const edge=(from,to,type,note='')=>{const existing=map.relations.find(e=>e.from===from&&e.to===to&&e.type===type);if(existing){edgeIds.push(existing.id);return;}const value={id:id('edge-'+edgeIds.length),from,to,type,note};validateRelationship(map.nodes,map.relations,value);map.relations.push(value);edgeIds.push(value.id);};
@@ -60,7 +62,7 @@ export function applyInteractionToMap(ws,input,actor){
     else node=newNode({...preview.source.item,summary:input.summary||'',details:input.details||''},input.parentId,id('node'),input.title);
     if(preview.origin.interaction.options.includes('own_reason')){
       let premise=preview.reference?.map.id===map.id?map.nodes.find(n=>n.id===preview.reference.item.id):null;
-      if(!premise&&(preview.reference||input.reasonTitle?.trim()))premise=newNode(preview.reference?.item,preview.reference?frameOf(preview.reference.map.nodes,preview.reference.item.id):'status',id('own-reason'),preview.reference?.item.title||input.reasonTitle);
+      if(!premise&&(preview.reference||input.reasonTitle?.trim()))premise=newNode(preview.reference?.item,preview.reference?frameOf(preview.reference.map.nodes,preview.reference.item.id):'status',id('own-reason'),preview.reference?.item.title||input.reasonTitle,preview.reference?.map);
       if(premise)edge(premise.id,node.id,'reason');
     }
     if(input.linkCounterpart){
@@ -75,7 +77,7 @@ export function applyInteractionToMap(ws,input,actor){
     const a=newNode(from,frameOf(sourceMap.nodes,from.id),id('from')),b=newNode(to,frameOf(sourceMap.nodes,to.id),id('to'));edge(a.id,b.id,type,original.note||'');
   }else{
     let node;if(input.mode==='existing'){node=map.nodes.find(n=>n.id===input.nodeId&&n.parent!==null);if(!node)throw Error('Choose an existing node in your map.');nodeIds.push(node.id);}
-    else node=newNode({...preview.reference?.item,summary:input.summary||'',details:input.details||''},input.parentId,id('reason'),input.title);
+    else node=newNode({...preview.reference?.item,summary:input.summary||'',details:input.details||''},input.parentId,id('reason'),input.title,preview.reference?.map);
     if(preview.origin.target.type==='node')edge(node.id,preview.source.item.id,'reason');
     // For an explanation of an edge, the original offer retains the precise
     // edge target. Do not invent a node-to-node inference with another meaning.

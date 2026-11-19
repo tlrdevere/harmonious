@@ -6,6 +6,10 @@ import {AccountError} from '../worker/account-policy.mjs';
 import {exerciseInteractionGrammar,exerciseArgumentReplies} from './interaction-grammar.test.mjs';
 import {makeDiscussion} from '../dist/discussion.mjs';
 import {optionsForClassification,makeInteraction} from '../dist/interaction-grammar.mjs';
+import {createChildStatement,structuralEdgeId,insertAboveNodes} from '../dist/model.mjs';
+import {synchronizeIdeas} from '../dist/adoption.mjs';
+import {discussionHealth} from '../dist/discussion.mjs';
+import {accountWorkspace,saveAccountChanges} from '../worker/account-api.mjs';
 
 const db=new PGlite();
 await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key); insert into auth.users(id) values('${alice.id}'),('${bob.id}');`);
@@ -55,5 +59,28 @@ try{
   const saved=(await view(store,alice)).workspace.discussions.find(r=>r.id===legacy.id);assert.deepEqual(saved.history.at(-1).interaction,legacy.interaction);assert.equal(saved.interaction.version,convert?5:4);
   if(convert){assert.deepEqual(saved.interaction.options,['consequences','feasibility']);assert.equal(saved.status,'active','A recipient response does not resolve the dispute');}
  }
- console.log('Interaction database parity, restricted functions, hidden signals, recipients, type filtering, reference snapshots, and rejected-write atomicity passed.');
+ const source=fixtures.refs.Bob,owner=(await view(store,bob)).workspace.maps.find(m=>m.id===source.mapId);
+ const child=owner.nodes.find(n=>n.id===source.nodeId),retired={type:'edge',mapId:owner.id,edgeId:structuralEdgeId(child)};
+ const history=makeDiscussion((await view(store,alice)).workspace,{kind:'inquiry',action:'question',comparisonId:fixtures.thread.id,target:retired,body:'What does this grouping mean?'},alice.id);
+ await edit(store,alice,ws=>ws.discussions.push(history));
+ await edit(store,bob,ws=>{
+   const map=ws.maps.find(m=>m.id===owner.id),wrapper=createChildStatement(map.nodes,child.parent,'insert-test-wrapper').node;
+   map.nodes=insertAboveNodes(map.nodes,child.id,wrapper,'nesting','branch-database-test');map.revision++;synchronizeIdeas(ws,map);
+ });
+ const afterInsertion=(await view(store,alice)).workspace,former=afterInsertion.discussions.find(r=>r.id===history.id);
+ assert.deepEqual(former.sourceSnapshots,history.sourceSnapshots);assert.equal(discussionHealth(afterInsertion,former).state,'unavailable');
+ await assert.rejects(()=>accountWorkspace(store,alice,{insertionCapable:false}),e=>e.code==='CLIENT_UPDATE_REQUIRED');
+ const savedMap=structuredClone(afterInsertion.maps.find(m=>m.id===owner.id));
+ delete savedMap.nodes.find(n=>n.id===child.id).structuralEdgeId;
+ const row=(await store.snapshot()).records.find(r=>r.kind==='map'&&r.id===savedMap.id),staleChanges=[{kind:'map',id:savedMap.id,expectedRevision:row.revision,value:savedMap}];
+ await assert.rejects(()=>saveAccountChanges(store,bob.id,staleChanges,{insertionCapable:false}),e=>e.code==='CLIENT_UPDATE_REQUIRED');
+ await assert.rejects(()=>saveAccountChanges(store,bob.id,staleChanges),/branch connection changed/);
+ const latest=(await store.snapshot()).revision;await assert.rejects(()=>store.commit(bob.id,latest,staleChanges),/branch connection changed/);
+ for(const edgeId of [retired.edgeId,'structure:insert-test-wrapper','branch-database-test']){
+   const target=JSON.stringify({...retired,edgeId});
+   const result=(await db.query('select harmonious_reflection_snapshot($1::jsonb) snapshot, harmonious_interaction_classification($1::jsonb) classification',[target])).rows[0];
+   if(edgeId===retired.edgeId){assert.equal(result.snapshot,null);assert.equal(result.classification,null);}
+   else{assert(result.snapshot);assert.equal(result.classification.edgeType,'nesting');}
+ }
+ console.log('Interaction database parity, restricted functions, hidden signals, recipients, type filtering, reference snapshots, insertion history and rejected-write atomicity passed.');
 }finally{await db.close();}

@@ -1,6 +1,5 @@
 import {isReflection,isDisagreementPoint,isReflectionOutcome,REFLECTION_CATEGORIES,REFLECTION_RESULTS,reflectionOutcomes} from './reflection.mjs';
-import {makeDiscussion,discussionSource,discussionSourceSnapshot,discussionTargetLabel,discussionHealth} from './discussion.mjs';
-import {revealPath} from './model.mjs';
+import {makeDiscussion,discussionSourceSnapshot,discussionTargetLabel,discussionHealth} from './discussion.mjs';
 import {stableJSON} from './account-model.mjs';
 
 const reflectionEl=(tag,text='',cls='')=>{const e=document.createElement(tag);e.textContent=text;e.className=cls;return e;};
@@ -55,11 +54,7 @@ export class ReflectionUI{
     if(pan){const p=this.d.point(target);if(p){const canvas=this.d.canvas;canvas.camera={...canvas.camera,x:canvas.surface.clientWidth/2-p.x*canvas.camera.z,y:canvas.surface.clientHeight/2-p.y*canvas.camera.z};canvas.drawCamera();}}
   }
   reveal(record){
-    if(!this.d.canLeave())return;const target=this.target(record),canvas=this.d.canvas;
-    if(target?.type==='node'||target?.type==='edge'){
-      const side=['a','b'].find(side=>this.c.sides[side].mapId===target.mapId),source=discussionSource(this.c.workspace,target);
-      if(side&&source){const state=canvas.states[side],ids=target.type==='node'?[target.nodeId]:[source.item.from,source.item.to];for(const id of ids)state.expanded=revealPath(state.map.nodes,id,state.expanded);state.frame='all';document.getElementById(`compare-frame-${side}`).value='all';canvas.reflow({animate:false});}
-    }
+    if(!this.d.canLeave()||!this.d.revealSources([this.target(record)]))return;
     this.d.reasoning.closeSearch(false);this.focus(record,{pan:true});this.open(record);
   }
   metadata(record,host){if(isDisagreementPoint(record)&&record.reflection.category)host.append(reflectionEl('p',REFLECTION_CATEGORIES[record.reflection.category],'discussion-byline'));if(isReflectionOutcome(record)){if(record.reflection.result)host.append(reflectionEl('p',REFLECTION_RESULTS[record.reflection.result],'discussion-state'));if(record.reflection.nextStep)host.append(reflectionEl('h3','Next step'),reflectionEl('p',record.reflection.nextStep,'discussion-body'));}}

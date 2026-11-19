@@ -18,7 +18,7 @@ export function validateForest(nodes, roots) {
 
 // Each frame is a radial tree. The horizontal gaps between the upper and
 // lower sectors reserve a clear corridor for the non-parent frame spine.
-export function layoutForest(nodes, roots, expanded, relations=[]){
+export function layoutForest(nodes, roots, expanded, relations=[],{compactChains=false}={}){
   validateForest(nodes,roots);
   const children=new Map(nodes.map(n=>[n.id,[]]));
   for(const n of nodes)if(n.parent!==null)children.get(n.parent).push(n.id);
@@ -37,18 +37,24 @@ export function layoutForest(nodes, roots, expanded, relations=[]){
       }
     }
     const kids=expanded.has(root)?children.get(root):[],split=Math.floor(kids.length/2);
-    if(sectors.size){for(const id of kids){const sector=sectors.get(id);distribute([id],sector.start,sector.end,1);}}
+    // A single temporal chain can use the wide horizontal canvas without
+    // reserving radial rings for siblings. Its entire section still has a
+    // measured bounding box, so it cannot intrude into the next period.
+    const linear=compactChains&&kids.length===1&&[...weights.keys()].every(id=>!expanded.has(id)||children.get(id).length<=1);
+    const slope=Math.PI/12,levelStep=linear?(CARD_W+44)/Math.cos(slope):clearance+40;
+    if(linear)distribute(kids,slope,slope,1);
+    else if(sectors.size){for(const id of kids){const sector=sectors.get(id);distribute([id],sector.start,sector.end,1);}}
     else if(kids.length===1)distribute(kids,-Math.PI*.75,-Math.PI*.25,1);
     else {distribute(kids.slice(0,split),-Math.PI+corridor,-corridor,1);distribute(kids.slice(split),corridor,Math.PI-corridor,1);}
     const radii=new Map();let previous=0;
     for(const [depth,angles] of levels){
-      angles.sort((a,b)=>a-b);let radius=previous+clearance+40;
+      angles.sort((a,b)=>a-b);let radius=previous+levelStep;
       for(let i=0;i<angles.length;i++)if(angles.length>1){const next=i+1<angles.length?angles[i+1]:angles[0]+2*Math.PI;const delta=next-angles[i];radius=Math.max(radius,clearance/(2*Math.sin(delta/2)));}
       radii.set(depth,radius);previous=radius;
     }
     // Recursion visits levels in depth-first order; solve rings in depth order.
     previous=0;
-    for(const depth of [...radii.keys()].sort((a,b)=>a-b)){radii.set(depth,Math.max(radii.get(depth),previous+clearance+40));previous=radii.get(depth);}
+    for(const depth of [...radii.keys()].sort((a,b)=>a-b)){radii.set(depth,Math.max(radii.get(depth),previous+levelStep));previous=radii.get(depth);}
     const local=new Map([[root,{x:-CARD_W/2,y:-CARD_H/2,frame,depth:0,angle:0,radius:0}]]);
     for(const [id,p] of polar){const radius=radii.get(p.depth);local.set(id,{x:Math.cos(p.angle)*radius-CARD_W/2,y:Math.sin(p.angle)*radius-CARD_H/2,frame,depth:p.depth,angle:p.angle,radius});edges.push({from:nodes.find(n=>n.id===id).parent,to:id,frame,kind:'branch'});}
     const values=[...local.values()];clusters.push({local,minX:Math.min(...values.map(p=>p.x)),maxX:Math.max(...values.map(p=>p.x+CARD_W)),minY:Math.min(...values.map(p=>p.y)),maxY:Math.max(...values.map(p=>p.y+CARD_H))});
@@ -57,6 +63,19 @@ export function layoutForest(nodes, roots, expanded, relations=[]){
   for(const c of clusters){for(const [id,p] of c.local)positions.set(id,{...p,x:p.x-c.minX+left,y:p.y-minY});left+=c.maxX-c.minX+FRAME_GAP;}
   for(let i=0;i<roots.length-1;i++)edges.push({from:roots[i],to:roots[i+1],frame:-1,kind:'spine'});
   return {positions,edges,children,width:left-FRAME_GAP,height:maxY-minY};
+}
+
+export function layoutTemporalForest(projection,expanded){
+  const layout=layoutForest(projection.nodes,projection.roots,expanded,projection.relations,{compactChains:projection.view==='timeline'});
+  // Section membership orders the cards. Only the saved parent and explicit
+  // relations represent connections, including those crossing time periods.
+  const edges=projection.view==='timeline'?[]:layout.edges.filter(edge=>edge.kind==='spine');
+  for(const [id,position] of layout.positions){
+    const node=projection.sourceById.get(id);
+    if(node?.parent!=null&&layout.positions.has(node.parent))
+      edges.push({from:node.parent,to:id,frame:position.frame,kind:'branch'});
+  }
+  return {...layout,edges,projection};
 }
 
 // Clip connectors at card edges, keeping lines and arrows out of node text.

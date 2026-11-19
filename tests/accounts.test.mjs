@@ -6,13 +6,31 @@ import {synchronizeIdeas,endorseNodes,endorsementIndex,nodeEndorsements,withdraw
 import {accountKey,accountClone,ownedAccountRecords,accountChanges,stableJSON} from '../dist/account-model.mjs';
 import {AccountError,initialAccountChanges,projectAccountWorkspace,validateAccountChanges} from '../worker/account-policy.mjs';
 import {withMemoryActivity} from './activity-memory-store.mjs';
+import {reparentNode,structuralEdgeId} from '../dist/model.mjs';
 
 export const alice={id:'11111111-1111-4111-8111-111111111111',name:'Alice'};
 export const bob={id:'22222222-2222-4222-8222-222222222222',name:'Bob'};
 export function memoryStore(){let snapshot={revision:0,records:[]};return withMemoryActivity({async snapshot(){return accountClone(snapshot);},async commit(actor,generation,changes){if(generation!==snapshot.revision){const error=new AccountError('snapshot_changed',409);error.snapshotChanged=true;throw error;}const revisions={};for(const c of changes){const key=accountKey(c.kind,c.id),old=snapshot.records.find(r=>r.kind===c.kind&&r.id===c.id);const r={kind:c.kind,id:c.id,ownerId:old?.ownerId||actor,revision:(old?.revision||0)+1,value:accountClone(c.value)};if(old)snapshot.records[snapshot.records.indexOf(old)]=r;else snapshot.records.push(r);revisions[key]=r.revision;}snapshot.revision++;return {revisions,revision:snapshot.revision};}});}
 export async function seedActor(store,actor){const snapshot=await store.snapshot(),changes=initialAccountChanges(actor);validateAccountChanges(snapshot,actor.id,changes);await store.commit(actor.id,snapshot.revision,changes);}
 export async function view(store,actor){return projectAccountWorkspace(await store.snapshot(),actor.id);}
-export async function edit(store,actor,fn){const data=await view(store,actor),base=new Map(ownedAccountRecords(data.workspace,actor.id,data.ownedKeys).map(r=>[accountKey(r.kind,r.id),accountClone(r.value)]));await fn(data.workspace);const changes=accountChanges(ownedAccountRecords(data.workspace,actor.id,data.ownedKeys),base,data.revisions);if(changes.length){const snapshot=await store.snapshot();validateAccountChanges(snapshot,actor.id,changes);await store.commit(actor.id,snapshot.revision,changes);}return changes;}
+export async function edit(store,actor,fn){
+  const data=await view(store,actor),base=new Map(ownedAccountRecords(data.workspace,actor.id,data.ownedKeys).map(r=>[accountKey(r.kind,r.id),accountClone(r.value)]));
+  await fn(data.workspace);
+  // A fixture edit simulates an author command. Changing an existing node's parent
+  // retires its former structural edge, just as the editor does when inserting above it.
+  for(const map of data.workspace.maps){
+    const prior=base.get(accountKey('map',map.id));if(!prior)continue;
+    const before=new Map(prior.nodes.map(n=>[n.id,n]));
+    for(const node of map.nodes){
+      const previous=before.get(node.id);
+      if(previous&&node.parent!==previous.parent&&structuralEdgeId(node)===structuralEdgeId(previous)){
+        node.structuralEdgeId=reparentNode(previous,node.parent,node.structuralType).structuralEdgeId;
+      }
+    }
+  }
+  const changes=accountChanges(ownedAccountRecords(data.workspace,actor.id,data.ownedKeys),base,data.revisions);
+  if(changes.length){const snapshot=await store.snapshot();validateAccountChanges(snapshot,actor.id,changes);await store.commit(actor.id,snapshot.revision,changes);}return changes;
+}
 export function addNode(workspace,actor,title='A shared idea'){const map=workspace.maps.find(m=>m.ownerId===actor.id),node={...exampleMap().find(n=>n.parent!==null),id:newId('node'),title};map.nodes.push(node);synchronizeIdeas(workspace,map);return node;}
 
 export async function exerciseAccounts(store){

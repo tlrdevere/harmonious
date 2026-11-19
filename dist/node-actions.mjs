@@ -21,6 +21,7 @@ export class NodeActions{
       this.group('Edit node').append(this.button(n.parent===null?'Edit frame details':'Edit',()=>this.actions.edit()));
     }
     const main=this.group('Add or inspect');if(canEdit){const add=this.button('Add child node',()=>this.actions.addChild());add.className='primary';main.append(add);}main.append(this.button('Inspect details',()=>this.actions.inspect()));
+    if(n.parent!==null&&this.actions.canInsert?.())main.append(this.button('Insert node above',()=>this.actions.insertAbove()));
     if(this.actions.canFocusBranch?.())main.append(this.button('Focus this branch',()=>this.actions.focusBranch()));
     if(n.parent!==null&&this.actions.philosophy)this.group('Foundations').append(this.button('Philosophy',()=>this.actions.philosophy()));
     const secondary=this.group('Other actions');

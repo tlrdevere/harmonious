@@ -5,8 +5,12 @@ const clone=value=>JSON.parse(JSON.stringify(value));
 
 // Existing workspaces gain shared identities without changing old comparison judgments.
 const oldA=createMap('First','A',true),oldB=createMap('Second','B',true),legacy={schemaVersion:1,maps:[oldA,oldB],comparisons:[]};
+oldA.nodes.find(n=>n.id==='s1').timeScope='history';
+delete oldA.nodes.find(n=>n.id==='s2').timeScope;
 const oldComparison=recordComparison(legacy,{aMapId:oldA.id,bMapId:oldB.id,aNodeId:'a211',bNodeId:'a211',questionStatus:'matched',question:'Which step comes first?',answerStatus:'aligned',notes:''});legacy.comparisons.push(oldComparison);
 const oldSnapshot=clone(oldComparison);validateWorkspace(legacy);assert.equal(legacy.schemaVersion,6);assert.deepEqual(legacy.comparisons[0],oldSnapshot);assert(!comparisonHealth(legacy,oldComparison).needsReview);
+assert.equal(oldA.nodes.find(n=>n.id==='s1').timeScope,'history');
+assert.equal(oldA.nodes.find(n=>n.id==='s2').timeScope??'present','present');
 
 const w=initialWorkspace(),[a,b,ref]=w.maps,source=ref.nodes.find(n=>n.kind==='position'),originalCount=w.endorsements.length;
 assert.equal(ref.mapType,'reference');assert.equal(ref.ownerId,a.ownerId);assert.notEqual(ref.id,a.id);assert.equal(originalCount,0,'Authorship and copied content do not fabricate endorsements');
@@ -60,6 +64,9 @@ const wrongPerson=clone(w);wrongPerson.endorsements[0].participantId='missing';a
 // and do not attribute another author's confidence to the new owner.
 const copies=initialWorkspace(),original=copies.maps[0],content=original.nodes.filter(n=>n.parent!==null);
 content[0].confidence=73;content[1].confidence=0;content[2].confidence=null;
+original.nodes.find(n=>n.id==='s1').timeScope='history';
+original.nodes.find(n=>n.id==='s11').timeScope='likely_future';
+synchronizeIdeas(copies,original);
 original.nodes.find(n=>n.id==='status').summary='My map-specific frame explanation.';
 const originalBefore=clone(original),priorRecords={comparisons:clone(copies.comparisons),endorsements:clone(copies.endorsements),discussions:clone(copies.discussions),definitions:clone(copies.definitions)};
 const duplicate=createOwnedMap(copies,{name:'My independent duplicate',ownerId:original.ownerId,fromMapId:original.id});
@@ -67,6 +74,10 @@ assert.deepEqual(original,originalBefore,'Duplicating a map never changes the or
 assert.deepEqual(duplicate.nodes.filter(n=>n.parent===null),original.nodes.filter(n=>n.parent===null),'Frame details are copied too');
 assert.equal(duplicate.nodes.length,original.nodes.length);assert.equal(duplicate.relations.length,original.relations.length);
 const copiedNodes=new Map(duplicate.nodes.filter(n=>n.parent!==null).map(n=>[n.copiedFrom.nodeId,n]));
+const imported=clone(copies);validateWorkspace(imported);
+const importedCopy=imported.maps.find(m=>m.id===duplicate.id),future=importedCopy.nodes.find(n=>n.id===copiedNodes.get('s11').id);
+assert.equal(future.timeScope,'likely_future');
+assert.equal(importedCopy.nodes.find(n=>n.id===future.parent).timeScope,'history');
 for(const n of content){const copy=copiedNodes.get(n.id);assert.notEqual(copy.id,n.id);assert.notEqual(copy.ideaId,n.ideaId);assert.equal(copy.confidence,n.confidence);assert.equal(copy.title,n.title);assert.equal(copy.summary,n.summary);assert.equal(copy.sourceTitle,n.sourceTitle);assert.equal(copy.sourceUrl,n.sourceUrl);assert.equal(copy.parent,copiedNodes.get(n.parent)?.id||n.parent);assert.equal(copy.structuralType,n.structuralType);assert.deepEqual(copy.copiedFrom,{ideaId:n.ideaId,version:n.ideaVersion,mapId:original.id,nodeId:n.id});}
 for(const edge of original.relations)assert(duplicate.relations.some(e=>e.id!==edge.id&&e.from===copiedNodes.get(edge.from).id&&e.to===copiedNodes.get(edge.to).id&&e.type===edge.type&&e.note===edge.note),'Semantic connections retain direction, type and note');
 assert.deepEqual({comparisons:copies.comparisons,endorsements:copies.endorsements,discussions:copies.discussions,definitions:copies.definitions},priorRecords,'Copying creates no co-signs, conversations, comparisons or definitions');

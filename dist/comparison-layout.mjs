@@ -1,5 +1,6 @@
 import {topicSectors} from './topic-layout.mjs';
-import {CARD_W,CARD_H,FRAME_GAP,layoutForest} from './layout.mjs';
+import {CARD_W,CARD_H,FRAME_GAP,layoutForest,layoutTemporalForest} from './layout.mjs';
+import {temporalRoots,projectTemporalMap} from './temporal-frames.mjs';
 
 export const COUNTERPART_W=CARD_W,COUNTERPART_H=CARD_H;
 export const COUNTERPART_GAP=16,COMPARISON_PAIR_GAP=16,COMPARISON_GROUP_GAP=44;
@@ -8,13 +9,22 @@ export const OVERLAY_TOP_GAP=72;
 // The two maps share frame columns, but retain independent trees and expansion state.
 export function comparisonNodeKey(side,id){return JSON.stringify([side,id]);}
 export function layoutComparison(states,roots,context={}){
+  if(context.frameView){
+    roots=temporalRoots(context.frameView,[states.a.map,states.b.map]);
+    states=Object.fromEntries(['a','b'].map(side=>{
+      const state=states[side],source=state.map;
+      const projection=projectTemporalMap(source,context.frameView,roots);
+      const map=projection.nodes.length?{...source,nodes:projection.nodes,relations:projection.relations}:null;
+      return [side,{...state,map,source,projection}];
+    }));
+  }
   if(states.a.map&&states.b.map)return layoutOverlay(states,roots,context);
   const maps={},columns=new Map();
   for(const side of ['a','b']){
     const state=states[side];if(!state.map)continue;
-    const layout=layoutForest(state.map.nodes,roots,state.expanded,state.map.relations);
+    const layout=sourceLayout(state,roots);
     const visible=new Map([...layout.positions].filter(([,p])=>state.frame==='all'||roots[p.frame]===state.frame));
-    maps[side]={map:state.map,layout,positions:visible};
+    maps[side]={map:state.source||state.map,projection:state.projection,layout,positions:visible};
     for(let frame=0;frame<roots.length;frame++){
       const points=[...visible.values()].filter(p=>p.frame===frame);if(!points.length)continue;
       const root=layout.positions.get(roots[frame]),column=columns.get(frame)||{left:0,right:0};
@@ -38,6 +48,10 @@ export function layoutComparison(states,roots,context={}){
   return {maps,positions,lanes,bounds:{x:0,y:0,width,height:Math.max(0,y-136)}};
 }
 
+function sourceLayout(state,roots){
+  return state.projection?layoutTemporalForest(state.projection,state.expanded):layoutForest(state.map.nodes,roots,state.expanded,state.map.relations);
+}
+
 // Only occupied, explicitly paired groups enter the display forest. Source
 // trees, records and their real parent connectors are never rewritten here.
 function layoutOverlay(states,roots,{links=[]}={}){
@@ -45,9 +59,9 @@ function layoutOverlay(states,roots,{links=[]}={}){
   const compare=(a,b)=>String(a).localeCompare(String(b));
   const memberOrder=(a,b)=>compare(a.mapId,b.mapId)||a.order-b.order||compare(a.nodeId,b.nodeId);
   for(const side of ['a','b']){
-    const state=states[side],layout=layoutForest(state.map.nodes,roots,state.expanded,state.map.relations);
+    const state=states[side],layout=sourceLayout(state,roots);
     const byId=new Map(state.map.nodes.map(n=>[n.id,n]));
-    maps[side]={map:state.map,layout,positions:new Map()};
+    maps[side]={map:state.source||state.map,projection:state.projection,layout,positions:new Map()};
     let order=0;
     for(const [nodeId,p]of layout.positions)if(state.frame==='all'||roots[p.frame]===state.frame){
       const key=comparisonNodeKey(side,nodeId);
@@ -266,7 +280,8 @@ export function comparisonDisplayRects(layout,positions=layout.positions){
 
 export function visibleComparisonEndpoint(layout,side,id){
   const view=layout.maps[side];if(!view||!id)return null;
-  const byId=new Map(view.map.nodes.map(n=>[n.id,n]));let node=byId.get(id);
+  if(view.map.unavailable||view.map.deletedAt||view.projection?.syntheticIds.has(id))return null;
+  const byId=view.projection?.byId||new Map(view.map.nodes.map(n=>[n.id,n]));let node=byId.get(id);
   while(node){if(view.positions.has(node.id))return {side,nodeId:id,visibleId:node.id,proxy:node.id!==id,key:comparisonNodeKey(side,node.id)};node=byId.get(node.parent);}
   return null;
 }
@@ -275,8 +290,10 @@ export function visibleComparisonEndpoint(layout,side,id){
 // still use visibleComparisonEndpoint's nearest visible ancestor.
 export function comparisonEndpoint(layout,side,id){
   const view=layout.maps[side],base={side,mapId:view?.map.id,nodeId:id,actualKey:JSON.stringify([view?.map.id,id]),visibleId:null,key:null,proxy:false};
-  if(!view||view.map.unavailable)return {...base,status:'unavailable'};
-  const byId=new Map(view.map.nodes.map(n=>[n.id,n]));let node=byId.get(id);
+  if(!view||view.map.unavailable||view.map.deletedAt)return {...base,status:'unavailable'};
+  const byId=view.projection?.byId||new Map(view.map.nodes.map(n=>[n.id,n]));let node=byId.get(id);
+  if(!node&&view.projection?.sourceById.has(id))return {...base,status:'filtered'};
+  if(view.projection?.syntheticIds.has(id))return {...base,status:'missing'};
   if(!node)return {...base,status:'missing'};
   const seen=new Set();while(node.parent&&!seen.has(node.id)){seen.add(node.id);node=byId.get(node.parent);if(!node)return {...base,status:'missing'};}
   if(!view.positions.has(node.id))return {...base,status:'filtered'};

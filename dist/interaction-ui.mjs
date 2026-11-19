@@ -23,6 +23,7 @@ export class InteractionUI{
     if(d.mode()==='argument'&&target.type==='node'){if(ordinary&&!d.dialogue?.active)d.host.append(interactionButton('Open argument canvas',()=>d.dialogue.open(target),'primary'));this.argumentLog();}
     const wording=[source.item.summary,source.item.details,source.item.note].filter(Boolean).join('\n');
     if(wording)d.host.append(interactionEl('p',wording,'discussion-body source-wording'));
+    if(target.type==='edge')d.actionGroup('Connected nodes',d.hiddenSourceButtons([target]));
     if(source.item.sourceTitle||source.item.sourceUrl){const citation=interactionEl('p',source.item.sourceTitle||'Source','field-help');if(source.item.sourceUrl){const a=interactionEl('a','Open source');a.href=source.item.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';citation.append(' · ',a);}d.host.append(citation);}
     if(ordinary&&!own){
       const actions=interactionActions(d.mode()).filter(action=>action.id!=='dispute'||interactionOptions(ws,target,'dispute').length>0);
